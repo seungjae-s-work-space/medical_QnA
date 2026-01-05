@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   collection,
@@ -16,16 +16,13 @@ import { db, auth } from '../firebase';
 import {
   Box,
   TextField,
-  Button,
-  List,
-  ListItem,
-  Typography,
-  AppBar,
-  Toolbar,
   IconButton,
-  Paper
+  Typography,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import { colors } from '../theme';
 
 function ChatWindow() {
   const { conversationId } = useParams();
@@ -33,6 +30,12 @@ function ChatWindow() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [userName, setUserName] = useState('');
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     // 대화방 정보 가져오기
@@ -56,6 +59,7 @@ function ChatWindow() {
         ...doc.data(),
       }));
       setMessages(msgs);
+      setTimeout(scrollToBottom, 100);
     });
 
     // 읽음 표시
@@ -68,10 +72,12 @@ function ChatWindow() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || sending) return;
 
     const currentUser = auth.currentUser;
     if (!currentUser) return;
+
+    setSending(true);
 
     await addDoc(collection(db, 'conversations', conversationId, 'messages'), {
       senderId: currentUser.uid,
@@ -90,73 +96,258 @@ function ChatWindow() {
     });
 
     setNewMessage('');
+    setSending(false);
   };
 
-  return (
-    <>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={() => navigate('/')}
-            sx={{ mr: 2 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6">{userName}</Typography>
-        </Toolbar>
-      </AppBar>
+  const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    return timestamp.toDate().toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
-      <Box sx={{ height: 'calc(100vh - 200px)', overflowY: 'auto', mt: 2 }}>
-        <List>
-          {messages.map((msg) => (
-            <ListItem
-              key={msg.id}
-              sx={{
-                justifyContent: msg.senderRole === 'admin' ? 'flex-end' : 'flex-start',
-              }}
-            >
-              <Paper
-                sx={{
-                  p: 1.5,
-                  maxWidth: '70%',
-                  bgcolor: msg.senderRole === 'admin' ? 'primary.main' : 'grey.300',
-                  color: msg.senderRole === 'admin' ? 'white' : 'black',
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>
-                  {msg.senderName}
-                </Typography>
-                <Typography variant="body1">{msg.text}</Typography>
-                <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
-                  {msg.createdAt?.toDate().toLocaleTimeString('ko-KR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </Typography>
-              </Paper>
-            </ListItem>
-          ))}
-        </List>
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate();
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    if (isToday) return '오늘';
+    if (isYesterday) return '어제';
+    return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  };
+
+  // 날짜별로 메시지 그룹화
+  const groupedMessages = messages.reduce((groups, msg) => {
+    const dateKey = msg.createdAt?.toDate().toDateString() || 'unknown';
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+    groups[dateKey].push(msg);
+    return groups;
+  }, {});
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {/* 헤더 */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          px: 1,
+          py: 1.5,
+          borderBottom: `1px solid ${colors.divider}`,
+          bgcolor: colors.inputBackground,
+        }}
+      >
+        <IconButton
+          onClick={() => navigate('/')}
+          sx={{ color: colors.textSecondary, mr: 1 }}
+        >
+          <ArrowBackIosNewIcon sx={{ fontSize: 20 }} />
+        </IconButton>
+        <Typography
+          sx={{
+            fontWeight: 500,
+            color: colors.textPrimary,
+            fontSize: 16,
+          }}
+        >
+          {userName}
+        </Typography>
       </Box>
 
+      {/* 메시지 영역 */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          px: 2,
+          py: 2,
+        }}
+      >
+        {Object.entries(groupedMessages).map(([dateKey, msgs]) => (
+          <Box key={dateKey}>
+            {/* 날짜 구분선 */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                my: 3,
+              }}
+            >
+              <Box sx={{ flex: 1, height: 1, bgcolor: colors.divider }} />
+              <Typography
+                sx={{
+                  px: 2,
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  fontWeight: 500,
+                }}
+              >
+                {formatDate(msgs[0]?.createdAt)}
+              </Typography>
+              <Box sx={{ flex: 1, height: 1, bgcolor: colors.divider }} />
+            </Box>
+
+            {/* 메시지들 */}
+            {msgs.map((msg) => {
+              const isAdmin = msg.senderRole === 'admin';
+              return (
+                <Box
+                  key={msg.id}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: isAdmin ? 'flex-end' : 'flex-start',
+                    mb: 1.5,
+                    px: isAdmin ? 0 : 0,
+                  }}
+                >
+                  {!isAdmin && (
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 1.5,
+                        bgcolor: colors.backgroundAlt,
+                        border: `1px solid ${colors.divider}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mr: 1,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Typography sx={{ fontSize: 14 }}>👤</Typography>
+                    </Box>
+                  )}
+                  <Box
+                    sx={{
+                      maxWidth: '70%',
+                      px: 2,
+                      py: 1.5,
+                      bgcolor: isAdmin ? colors.userMessage : colors.inputBackground,
+                      borderRadius: isAdmin
+                        ? '18px 18px 4px 18px'
+                        : '18px 18px 18px 4px',
+                      border: isAdmin ? 'none' : `1px solid ${colors.divider}`,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: 15,
+                        color: colors.textPrimary,
+                        lineHeight: 1.6,
+                        whiteSpace: 'pre-wrap',
+                      }}
+                    >
+                      {msg.text}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 11,
+                        color: colors.textTertiary,
+                        mt: 0.75,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {formatTime(msg.createdAt)}
+                    </Typography>
+                  </Box>
+                  {isAdmin && (
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 1.5,
+                        bgcolor: colors.adminMessage,
+                        border: `1px solid ${colors.divider}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        ml: 1,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <SupportAgentIcon sx={{ fontSize: 18, color: colors.textSecondary }} />
+                    </Box>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+        ))}
+        <div ref={messagesEndRef} />
+      </Box>
+
+      {/* 입력 영역 */}
       <Box
         component="form"
         onSubmit={handleSendMessage}
-        sx={{ display: 'flex', gap: 1, mt: 2 }}
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 1.5,
+          px: 2,
+          py: 1.5,
+          borderTop: `1px solid ${colors.divider}`,
+          bgcolor: colors.inputBackground,
+        }}
       >
-        <TextField
-          fullWidth
-          placeholder="답변 입력..."
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-        />
-        <Button variant="contained" type="submit">
-          전송
-        </Button>
+        <Box
+          sx={{
+            flex: 1,
+            bgcolor: colors.background,
+            borderRadius: 3,
+            border: `1px solid ${colors.divider}`,
+          }}
+        >
+          <TextField
+            fullWidth
+            multiline
+            maxRows={4}
+            placeholder="답변을 입력하세요"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: 'transparent',
+                '& fieldset': { border: 'none' },
+              },
+              '& .MuiInputBase-input': {
+                py: 1.5,
+                px: 2,
+                fontSize: 15,
+              },
+            }}
+          />
+        </Box>
+        <IconButton
+          type="submit"
+          disabled={sending || !newMessage.trim()}
+          sx={{
+            width: 44,
+            height: 44,
+            bgcolor: sending || !newMessage.trim() ? colors.divider : colors.textPrimary,
+            borderRadius: '50%',
+            color: colors.background,
+            '&:hover': {
+              bgcolor: colors.textPrimary,
+            },
+            '&.Mui-disabled': {
+              bgcolor: colors.divider,
+              color: colors.background,
+            },
+          }}
+        >
+          <ArrowUpwardIcon />
+        </IconButton>
       </Box>
-    </>
+    </Box>
   );
 }
 

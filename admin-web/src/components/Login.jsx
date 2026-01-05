@@ -6,9 +6,9 @@ import {
   TextField,
   Button,
   Typography,
-  Paper,
   Alert
 } from '@mui/material';
+import { colors } from '../theme';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -33,47 +33,92 @@ function Login() {
   return (
     <Box
       display="flex"
+      flexDirection="column"
       justifyContent="center"
       alignItems="center"
-      minHeight="80vh"
+      minHeight="100vh"
+      sx={{ px: 3 }}
     >
-      <Paper elevation={3} sx={{ p: 4, maxWidth: 400, width: '100%' }}>
-        <Typography variant="h5" component="h1" gutterBottom align="center">
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: 360,
+          p: 4,
+          bgcolor: colors.inputBackground,
+          borderRadius: 3,
+          border: `1px solid ${colors.divider}`,
+        }}
+      >
+        <Typography
+          variant="h5"
+          component="h1"
+          align="center"
+          sx={{
+            fontWeight: 600,
+            color: colors.textPrimary,
+            mb: 1,
+          }}
+        >
+          난임&상담톡
+        </Typography>
+        <Typography
+          align="center"
+          sx={{
+            color: colors.textSecondary,
+            fontSize: 14,
+            mb: 4,
+          }}
+        >
           관리자 로그인
         </Typography>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert
+            severity="error"
+            sx={{
+              mb: 2,
+              bgcolor: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: 2,
+            }}
+          >
+            {error}
+          </Alert>
+        )}
 
         <form onSubmit={handleLogin}>
           <TextField
             fullWidth
-            label="이메일"
+            placeholder="이메일"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            margin="normal"
             required
+            sx={{ mb: 2 }}
           />
           <TextField
             fullWidth
-            label="비밀번호"
+            placeholder="비밀번호"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            margin="normal"
             required
+            sx={{ mb: 3 }}
           />
           <Button
             fullWidth
             variant="contained"
             type="submit"
-            sx={{ mt: 2 }}
             disabled={loading}
+            sx={{
+              py: 1.5,
+              fontSize: 15,
+            }}
           >
             {loading ? '로그인 중...' : '로그인'}
           </Button>
         </form>
-      </Paper>
+      </Box>
     </Box>
   );
 }

@@ -6,7 +6,9 @@ import { auth, db } from './firebase';
 import Login from './components/Login';
 import ConversationList from './components/ConversationList';
 import ChatWindow from './components/ChatWindow';
-import { Container, CircularProgress, Box } from '@mui/material';
+import { Container, CircularProgress, Box, CssBaseline } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import theme, { colors } from './theme';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -38,31 +40,45 @@ function App() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="100vh"
+          sx={{ bgcolor: colors.background }}
+        >
+          <CircularProgress sx={{ color: colors.textSecondary }} />
+        </Box>
+      </ThemeProvider>
     );
   }
 
   return (
-    <HashRouter>
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Routes>
-          <Route
-            path="/login"
-            element={user && isAdmin ? <Navigate to="/" /> : <Login />}
-          />
-          <Route
-            path="/"
-            element={user && isAdmin ? <ConversationList /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/chat/:conversationId"
-            element={user && isAdmin ? <ChatWindow /> : <Navigate to="/login" />}
-          />
-        </Routes>
-      </Container>
-    </HashRouter>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ minHeight: '100vh', bgcolor: colors.background }}>
+        <HashRouter>
+          <Container maxWidth="md" sx={{ py: 0 }}>
+            <Routes>
+              <Route
+                path="/login"
+                element={user && isAdmin ? <Navigate to="/" /> : <Login />}
+              />
+              <Route
+                path="/"
+                element={user && isAdmin ? <ConversationList /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/chat/:conversationId"
+                element={user && isAdmin ? <ChatWindow /> : <Navigate to="/login" />}
+              />
+            </Routes>
+          </Container>
+        </HashRouter>
+      </Box>
+    </ThemeProvider>
   );
 }
 
