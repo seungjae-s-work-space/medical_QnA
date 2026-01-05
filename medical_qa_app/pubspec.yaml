@@ -32,6 +32,11 @@ dependencies:
   uuid: ^4.2.1
   shared_preferences: ^2.2.2
 
+  # Windows 알림 & 트레이
+  local_notifier: ^0.1.6
+  tray_manager: ^0.2.3
+  window_manager: ^0.4.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,20 +1,125 @@
+import 'dart:async';
 import 'dart:io';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+
+// 모바일 전용 (Windows에서는 사용 안함)
+import 'package:firebase_messaging/firebase_messaging.dart'
+    if (dart.library.io) 'package:firebase_messaging/firebase_messaging.dart';
+
+// Windows 전용
+import 'package:local_notifier/local_notifier.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// FCM 초기화 및 권한 요청
+  // 모바일 전용
+  FirebaseMessaging? _messaging;
+
+  // Windows 전용
+  StreamSubscription? _conversationSubscription;
+  int _lastUnreadCount = 0;
+
+  /// 플랫폼에 맞게 초기화
   Future<void> initialize() async {
+    if (Platform.isWindows) {
+      await _initializeWindows();
+    } else if (Platform.isAndroid || Platform.isIOS) {
+      await _initializeMobile();
+    }
+  }
+
+  // ==================== Windows 전용 ====================
+
+  /// Windows 알림 초기화
+  Future<void> _initializeWindows() async {
+    await localNotifier.setup(
+      appName: '난임&상담톡',
+      shortcutPolicy: ShortcutPolicy.requireCreate,
+    );
+
+    if (kDebugMode) {
+      print('Windows 알림 초기화 완료');
+    }
+  }
+
+  /// Windows: 토스트 알림 표시
+  void showWindowsNotification({
+    required String title,
+    required String body,
+  }) {
+    if (!Platform.isWindows) return;
+
+    final notification = LocalNotification(
+      title: title,
+      body: body,
+    );
+    notification.show();
+  }
+
+  /// Windows용: Firestore 리스너 시작 (관리자용 - 새 질문 감지)
+  void startListeningForNewMessages() {
+    if (!Platform.isWindows) return;
+
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    // 모든 대화방의 unreadByAdmin 변화 감지
+    _conversationSubscription = _firestore
+        .collection('conversations')
+        .orderBy('lastMessageAt', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      int totalUnread = 0;
+      String? latestUserName;
+      String? latestMessage;
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final unread = data['unreadByAdmin'] ?? 0;
+        totalUnread += unread as int;
+
+        // 가장 최근 읽지 않은 메시지 정보
+        if (unread > 0 && latestUserName == null) {
+          latestUserName = data['userName'] ?? '익명';
+          latestMessage = data['lastMessage'] ?? '새 메시지';
+        }
+      }
+
+      // 새 메시지가 도착했을 때만 알림
+      if (totalUnread > _lastUnreadCount && latestUserName != null) {
+        showWindowsNotification(
+          title: '$latestUserName님의 새 질문',
+          body: latestMessage ?? '새 메시지가 도착했습니다',
+        );
+      }
+
+      _lastUnreadCount = totalUnread;
+    });
+
+    if (kDebugMode) {
+      print('Windows: 새 메시지 리스너 시작');
+    }
+  }
+
+  /// Windows용: 리스너 중지
+  void stopListening() {
+    _conversationSubscription?.cancel();
+    _conversationSubscription = null;
+  }
+
+  // ==================== 모바일 전용 (Android/iOS) ====================
+
+  /// 모바일 FCM 초기화
+  Future<void> _initializeMobile() async {
+    _messaging = FirebaseMessaging.instance;
+
     // 알림 권한 요청
     await _requestPermission();
 
@@ -22,7 +127,7 @@ class NotificationService {
     await _saveToken();
 
     // 토큰 갱신 리스너
-    _messaging.onTokenRefresh.listen(_updateToken);
+    _messaging!.onTokenRefresh.listen(_updateToken);
 
     // 포그라운드 메시지 처리
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -31,15 +136,17 @@ class NotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
     // 앱이 종료된 상태에서 알림 탭해서 열렸을 때
-    final initialMessage = await _messaging.getInitialMessage();
+    final initialMessage = await _messaging!.getInitialMessage();
     if (initialMessage != null) {
       _handleMessageOpenedApp(initialMessage);
     }
   }
 
-  /// 알림 권한 요청
+  /// 모바일: 알림 권한 요청
   Future<void> _requestPermission() async {
-    final settings = await _messaging.requestPermission(
+    if (_messaging == null) return;
+
+    final settings = await _messaging!.requestPermission(
       alert: true,
       announcement: false,
       badge: true,
@@ -54,16 +161,15 @@ class NotificationService {
     }
   }
 
-  /// FCM 토큰 저장
+  /// 모바일: FCM 토큰 저장
   Future<void> _saveToken() async {
+    if (_messaging == null) return;
+
     final user = _auth.currentUser;
     if (user == null) return;
 
-    String? token;
-
     if (Platform.isIOS) {
-      // iOS는 APNs 토큰도 필요
-      final apnsToken = await _messaging.getAPNSToken();
+      final apnsToken = await _messaging!.getAPNSToken();
       if (apnsToken == null) {
         if (kDebugMode) {
           print('APNs 토큰을 아직 받지 못함');
@@ -72,14 +178,13 @@ class NotificationService {
       }
     }
 
-    token = await _messaging.getToken();
-
+    final token = await _messaging!.getToken();
     if (token != null) {
       await _updateToken(token);
     }
   }
 
-  /// 토큰 Firestore에 업데이트
+  /// 모바일: 토큰 Firestore에 업데이트
   Future<void> _updateToken(String token) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -101,35 +206,34 @@ class NotificationService {
     }
   }
 
-  /// 포그라운드 메시지 처리
+  /// 모바일: 포그라운드 메시지 처리
   void _handleForegroundMessage(RemoteMessage message) {
     if (kDebugMode) {
       print('포그라운드 메시지 수신: ${message.notification?.title}');
     }
-
-    // 포그라운드에서는 로컬 알림을 표시하거나
-    // 인앱 스낵바/다이얼로그로 알려줄 수 있음
-    // 여기서는 채팅 화면이면 무시, 아니면 알림 표시하는 로직 추가 가능
   }
 
-  /// 백그라운드에서 알림 탭해서 앱 열었을 때
+  /// 모바일: 백그라운드에서 알림 탭해서 앱 열었을 때
   void _handleMessageOpenedApp(RemoteMessage message) {
     if (kDebugMode) {
       print('알림 탭해서 앱 열림: ${message.data}');
     }
 
-    // 특정 대화로 이동하는 로직
-    // message.data['conversationId'] 등을 사용
     final conversationId = message.data['conversationId'];
     if (conversationId != null) {
-      // Navigator로 해당 채팅 화면으로 이동
-      // 이를 위해 GlobalKey<NavigatorState> 사용하거나
-      // Provider/Riverpod 등으로 상태 변경
+      // Navigator로 해당 채팅 화면으로 이동 로직
     }
   }
 
-  /// 로그아웃 시 토큰 삭제
+  // ==================== 공통 ====================
+
+  /// 로그아웃 시 토큰 삭제 (모바일) 및 리스너 중지 (Windows)
   Future<void> removeToken() async {
+    if (Platform.isWindows) {
+      stopListening();
+      return;
+    }
+
     final user = _auth.currentUser;
     if (user == null) return;
 
@@ -144,9 +248,10 @@ class NotificationService {
     }
   }
 
-  /// 현재 토큰 가져오기 (디버깅용)
+  /// 현재 토큰 가져오기 (모바일 전용)
   Future<String?> getToken() async {
-    return await _messaging.getToken();
+    if (Platform.isWindows || _messaging == null) return null;
+    return await _messaging!.getToken();
   }
 
   /// 알림 설정 상태 가져오기
@@ -157,7 +262,6 @@ class NotificationService {
     try {
       final doc = await _firestore.collection('users').doc(user.uid).get();
       if (doc.exists) {
-        // notificationsEnabled 필드가 없으면 기본값 true
         return doc.data()?['notificationsEnabled'] ?? true;
       }
       return true;
@@ -181,6 +285,15 @@ class NotificationService {
 
       if (kDebugMode) {
         print('알림 설정 변경: $enabled');
+      }
+
+      // Windows에서 알림 끄면 리스너도 중지, 켜면 시작
+      if (Platform.isWindows) {
+        if (enabled) {
+          startListeningForNewMessages();
+        } else {
+          stopListening();
+        }
       }
     } catch (e) {
       if (kDebugMode) {
