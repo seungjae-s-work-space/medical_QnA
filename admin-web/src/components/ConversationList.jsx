@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import {
@@ -9,19 +9,13 @@ import {
   ListItemButton,
   Typography,
   Box,
-  IconButton,
-  Snackbar
+  IconButton
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
 import { colors } from '../theme';
 
 function ConversationList() {
   const [conversations, setConversations] = useState([]);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,45 +34,6 @@ function ConversationList() {
 
     return unsubscribe;
   }, []);
-
-  // 알림 설정 로드
-  useEffect(() => {
-    const loadNotificationSetting = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setNotificationsEnabled(data.notificationsEnabled !== false);
-        }
-      } catch (error) {
-        console.error('알림 설정 로드 실패:', error);
-      }
-    };
-
-    loadNotificationSetting();
-  }, []);
-
-  const handleToggleNotification = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const newValue = !notificationsEnabled;
-
-    try {
-      await setDoc(doc(db, 'users', user.uid), {
-        notificationsEnabled: newValue,
-      }, { merge: true });
-
-      setNotificationsEnabled(newValue);
-      setSnackbarMessage(newValue ? '알림이 켜졌습니다' : '알림이 꺼졌습니다');
-      setSnackbarOpen(true);
-    } catch (error) {
-      console.error('알림 설정 변경 실패:', error);
-    }
-  };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -120,24 +75,12 @@ function ConversationList() {
         >
           난임&상담톡
         </Typography>
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <IconButton
-            onClick={handleToggleNotification}
-            sx={{ color: colors.textSecondary }}
-          >
-            {notificationsEnabled ? (
-              <NotificationsActiveIcon fontSize="small" />
-            ) : (
-              <NotificationsOffIcon fontSize="small" />
-            )}
-          </IconButton>
-          <IconButton
-            onClick={handleLogout}
-            sx={{ color: colors.textSecondary }}
-          >
-            <LogoutIcon fontSize="small" />
-          </IconButton>
-        </Box>
+        <IconButton
+          onClick={handleLogout}
+          sx={{ color: colors.textSecondary }}
+        >
+          <LogoutIcon fontSize="small" />
+        </IconButton>
       </Box>
 
       {/* 대화 목록 */}
@@ -298,15 +241,6 @@ function ConversationList() {
           </List>
         )}
       </Box>
-
-      {/* 스낵바 */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={2000}
-        onClose={() => setSnackbarOpen(false)}
-        message={snackbarMessage}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
     </Box>
   );
 }
