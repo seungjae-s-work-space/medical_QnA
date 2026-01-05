@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -45,7 +45,7 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Routes>
           <Route
@@ -62,7 +62,7 @@ function App() {
           />
         </Routes>
       </Container>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

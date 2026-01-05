@@ -2,6 +2,7 @@
   "name": "medical-qa-admin-web",
   "version": "1.0.0",
   "private": true,
+  "homepage": "https://seungjae-s-work-space.github.io/medical_QnA",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
