@@ -17,7 +17,9 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   final _firestoreService = FirestoreService();
+  final _scrollController = ScrollController();
   String? _conversationId;
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -39,6 +41,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
     if (_conversationId == null) return;
+    if (_isSending) return;
+
+    setState(() => _isSending = true);
 
     await _firestoreService.sendMessage(
       conversationId: _conversationId!,
@@ -46,9 +51,9 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     _messageController.clear();
+    setState(() => _isSending = false);
   }
 
-  /// 메시지를 날짜별로 그룹화하여 DateDivider와 함께 렌더링
   List<Widget> _buildMessagesWithDateDividers(List<MessageModel> messages, String currentUserId) {
     final List<Widget> widgets = [];
     DateTime? lastDate;
@@ -57,7 +62,6 @@ class _ChatScreenState extends State<ChatScreen> {
       final message = messages[i];
       final messageDate = message.createdAt;
 
-      // 날짜가 바뀌면 DateDivider 추가
       if (lastDate == null ||
           lastDate.year != messageDate.year ||
           lastDate.month != messageDate.month ||
@@ -66,7 +70,6 @@ class _ChatScreenState extends State<ChatScreen> {
         lastDate = messageDate;
       }
 
-      // 메시지 레코드 추가
       widgets.add(MessageRecord(
         message: message,
         isUser: message.isMine(currentUserId),
@@ -74,77 +77,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return widgets;
-  }
-
-  void _showQuestionDialog() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              '질문하기',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _messageController,
-              maxLines: 5,
-              style: const TextStyle(
-                fontSize: 15,
-                height: 1.6,
-                color: AppColors.textPrimary,
-              ),
-              decoration: InputDecoration(
-                hintText: '질문 내용을 입력하세요',
-                hintStyle: const TextStyle(
-                  color: AppColors.textSecondary,
-                ),
-                filled: true,
-                fillColor: AppColors.backgroundAlt,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                _sendMessage();
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.adminMessage,
-                foregroundColor: AppColors.textPrimary,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: const Text('전송'),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -163,38 +95,28 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
-          '상담 기록',
+          '상담',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 16,
+            fontSize: 17,
             fontWeight: FontWeight.w500,
+            letterSpacing: 0.5,
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.textSecondary),
-            onPressed: () => authProvider.signOut(),
-          ),
-        ],
       ),
       body: Column(
         children: [
-          // 안심 문구
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: const Text(
-              '질문은 관리자에게만 전달됩니다',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textTertiary,
-                letterSpacing: 0.3,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-
           // 메시지 목록
           Expanded(
             child: StreamBuilder<List<MessageModel>>(
@@ -206,23 +128,49 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 48,
-                          color: AppColors.textSecondary.withValues(alpha: 0.3),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          '아직 기록이 없습니다',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: AppColors.inputBackground,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AppColors.divider,
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.forum_outlined,
+                              size: 28,
+                              color: AppColors.textSecondary.withValues(alpha: 0.6),
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+                          const Text(
+                            '궁금한 점이 있으신가요?',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '편하게 질문해주세요.\n빠른 시일 내에 답변드리겠습니다.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary.withValues(alpha: 0.8),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -234,8 +182,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 );
 
                 return ListView.builder(
+                  controller: _scrollController,
                   reverse: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: widgets.length,
                   itemBuilder: (context, index) => widgets[index],
                 );
@@ -243,30 +192,96 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
 
-          // 질문하기 버튼
+          // 입력 영역
           Container(
-            padding: const EdgeInsets.all(24),
-            child: OutlinedButton(
-              onPressed: _showQuestionDialog,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(
-                  color: AppColors.buttonBorder,
-                  width: 1,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 12,
+              bottom: MediaQuery.of(context).padding.bottom + 12,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.inputBackground,
+              border: const Border(
+                top: BorderSide(color: AppColors.divider, width: 1),
               ),
-              child: const Text(
-                '질문하기',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.5,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
                 ),
-              ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: AppColors.divider,
+                        width: 1,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _messageController,
+                      maxLines: 4,
+                      minLines: 1,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textPrimary,
+                        height: 1.4,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: '메시지를 입력하세요',
+                        hintStyle: TextStyle(
+                          color: AppColors.textTertiary,
+                          fontSize: 14,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                        border: InputBorder.none,
+                      ),
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  width: 44,
+                  height: 44,
+                  margin: const EdgeInsets.only(bottom: 2),
+                  decoration: BoxDecoration(
+                    color: _isSending
+                        ? AppColors.divider
+                        : AppColors.textPrimary.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: IconButton(
+                    onPressed: _isSending ? null : _sendMessage,
+                    icon: _isSending
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.background,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.arrow_upward_rounded,
+                            color: AppColors.background,
+                            size: 22,
+                          ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -277,6 +292,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }

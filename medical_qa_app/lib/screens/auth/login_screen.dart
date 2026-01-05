@@ -75,25 +75,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // 타이틀
                   Text(
-                    '의료 Q&A',
+                    '난임&상담톡',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w300,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
-                      letterSpacing: 2,
+                      letterSpacing: 1,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // 서브 타이틀
                   Text(
-                    _isLogin ? '로그인하여 시작하세요' : '새 계정을 만들어주세요',
+                    _isLogin
+                        ? '난임시술, 이제 혼자 고민하지 마세요'
+                        : '새 계정을 만들어주세요',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.textSecondary,
-                      letterSpacing: 0.5,
+                      height: 1.5,
                     ),
                   ),
                   const SizedBox(height: 60),
