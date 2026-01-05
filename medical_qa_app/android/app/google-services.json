@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "299956056308",
+    "project_id": "medicalqa-e5313",
+    "storage_bucket": "medicalqa-e5313.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:299956056308:android:377044303745afe5a9aea1",
+        "android_client_info": {
+          "package_name": "com.example.medical_qa_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCD-tObyqkdjz6WfBFbuNaAqqM5ju0JS0c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

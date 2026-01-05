@@ -1,0 +1,47 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "medicalqa-e5313",
+          "appId": "1:299956056308:android:377044303745afe5a9aea1",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "medicalqa-e5313",
+          "appId": "1:299956056308:ios:f3771d8fce39efc9a9aea1",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "medicalqa-e5313",
+          "configurations": {
+            "android": "1:299956056308:android:377044303745afe5a9aea1",
+            "ios": "1:299956056308:ios:f3771d8fce39efc9a9aea1",
+            "macos": "1:299956056308:ios:f3771d8fce39efc9a9aea1",
+            "web": "1:299956056308:web:5b52c593437947dba9aea1",
+            "windows": "1:299956056308:web:23e88717d74b57a5a9aea1"
+          }
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "medicalqa-e5313",
+          "appId": "1:299956056308:ios:f3771d8fce39efc9a9aea1",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,177 @@
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../models/user_model.dart';
+import '../services/auth_service.dart';
+
+class AuthProvider with ChangeNotifier {
+  final AuthService _authService = AuthService();
+
+  UserModel? _currentUser;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  UserModel? get currentUser => _currentUser;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get isAuthenticated => _currentUser != null;
+  bool get isAdmin => _currentUser?.isAdmin ?? false;
+
+  AuthProvider() {
+    _init();
+  }
+
+  // 초기화: Firebase Auth 상태 변화 리스닝 + 로컬 자동 로그인
+  void _init() async {
+    // 로컬 저장소에서 사용자 정보 확인
+    _currentUser = await _authService.getLocalUser();
+    notifyListeners();
+
+    // Firebase Auth 상태 변화 리스닝
+    _authService.authStateChanges.listen((User? user) async {
+      if (user == null) {
+        _currentUser = null;
+        notifyListeners();
+      } else {
+        await _loadUserData(user.uid);
+      }
+    });
+  }
+
+  // 사용자 데이터 로드
+  Future<void> _loadUserData(String userId) async {
+    _currentUser = await _authService.getUserData(userId);
+    notifyListeners();
+  }
+
+  // 회원가입
+  Future<bool> signUp({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _currentUser = await _authService.signUp(
+        email: email,
+        password: password,
+        name: name,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _getErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // 로그인
+  Future<bool> signIn({
+    required String email,
+    required String password,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _currentUser = await _authService.signIn(
+        email: email,
+        password: password,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _getErrorMessage(e);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // 닉네임으로 로그인
+  Future<bool> signInWithNickname(String nickname) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _currentUser = await _authService.signInWithNickname(nickname);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // 로그아웃
+  Future<void> signOut() async {
+    await _authService.signOut();
+    _currentUser = null;
+    notifyListeners();
+  }
+
+  // 사용자 정보 업데이트
+  Future<void> updateProfile(UserModel updatedUser) async {
+    await _authService.updateUserData(updatedUser);
+    _currentUser = updatedUser;
+    notifyListeners();
+  }
+
+  // FCM 토큰 업데이트
+  Future<void> updateFcmToken(String token) async {
+    if (_currentUser == null) return;
+    await _authService.updateFcmToken(_currentUser!.userId, token);
+  }
+
+  // 비밀번호 재설정
+  Future<bool> sendPasswordResetEmail(String email) async {
+    try {
+      await _authService.sendPasswordResetEmail(email);
+      return true;
+    } catch (e) {
+      _errorMessage = _getErrorMessage(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // 에러 메시지 변환
+  String _getErrorMessage(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'user-not-found':
+          return '존재하지 않는 사용자입니다.';
+        case 'wrong-password':
+          return '비밀번호가 올바르지 않습니다.';
+        case 'email-already-in-use':
+          return '이미 사용 중인 이메일입니다.';
+        case 'invalid-email':
+          return '유효하지 않은 이메일 주소입니다.';
+        case 'weak-password':
+          return '비밀번호가 너무 약합니다. (최소 6자)';
+        case 'network-request-failed':
+          return '네트워크 연결을 확인해주세요.';
+        default:
+          return '오류가 발생했습니다: ${error.message}';
+      }
+    }
+    return '알 수 없는 오류가 발생했습니다.';
+  }
+
+  // 에러 메시지 초기화
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+}
