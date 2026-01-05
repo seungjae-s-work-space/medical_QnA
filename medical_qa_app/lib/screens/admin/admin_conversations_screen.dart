@@ -2,13 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../services/notification_service.dart';
 import '../../models/conversation_model.dart';
 import '../../widgets/conversation_tile.dart';
 import '../../utils/app_colors.dart';
 import 'admin_chat_screen.dart';
 
-class AdminConversationsScreen extends StatelessWidget {
+class AdminConversationsScreen extends StatefulWidget {
   const AdminConversationsScreen({super.key});
+
+  @override
+  State<AdminConversationsScreen> createState() => _AdminConversationsScreenState();
+}
+
+class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
+  final NotificationService _notificationService = NotificationService();
+  bool _notificationsEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationSetting();
+  }
+
+  Future<void> _loadNotificationSetting() async {
+    final enabled = await _notificationService.getNotificationEnabled();
+    if (mounted) {
+      setState(() {
+        _notificationsEnabled = enabled;
+      });
+    }
+  }
+
+  Future<void> _toggleNotification() async {
+    final newValue = !_notificationsEnabled;
+    setState(() {
+      _notificationsEnabled = newValue;
+    });
+    await _notificationService.setNotificationEnabled(newValue);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(newValue ? '알림이 켜졌습니다' : '알림이 꺼졌습니다'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: AppColors.textPrimary,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +72,15 @@ class AdminConversationsScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: Icon(
+              _notificationsEnabled
+                  ? Icons.notifications_active
+                  : Icons.notifications_off_outlined,
+              color: AppColors.textSecondary,
+            ),
+            onPressed: _toggleNotification,
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.textSecondary),
             onPressed: () => authProvider.signOut(),
