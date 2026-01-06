@@ -16,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   Timer? _autoScrollTimer;
+  Timer? _resumeTimer;
   final NotificationService _notificationService = NotificationService();
   bool _notificationsEnabled = true;
 
@@ -92,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
+    _resumeTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -114,10 +116,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _pauseAutoScroll() {
     _autoScrollTimer?.cancel();
+    _resumeTimer?.cancel();
   }
 
   void _resumeAutoScroll() {
-    _startAutoScroll();
+    _resumeTimer?.cancel();
+    _resumeTimer = Timer(const Duration(seconds: 1), () {
+      _startAutoScroll();
+    });
   }
 
   void _showAboutSheet() {
@@ -498,10 +504,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   // 자동 스크롤 캐러셀
                   SizedBox(
                     height: 70,
-                    child: GestureDetector(
-                      onPanDown: (_) => _pauseAutoScroll(),
-                      onPanEnd: (_) => _resumeAutoScroll(),
-                      onPanCancel: () => _resumeAutoScroll(),
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is ScrollStartNotification &&
+                            notification.dragDetails != null) {
+                          // 사용자가 직접 스크롤 시작
+                          _pauseAutoScroll();
+                        } else if (notification is ScrollEndNotification) {
+                          // 스크롤 끝나면 1초 후 자동 스크롤 재개
+                          _resumeAutoScroll();
+                        }
+                        return false;
+                      },
                       child: ListView.builder(
                         controller: _scrollController,
                         scrollDirection: Axis.horizontal,
