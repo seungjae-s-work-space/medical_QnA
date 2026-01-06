@@ -410,7 +410,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            const Spacer(flex: 2),
+            const Spacer(flex: 1),
+
+            // 화살표 아이콘 (본문과 버튼 중간)
+            const Icon(
+              Icons.arrow_downward,
+              size: 28,
+              color: AppColors.textSecondary,
+            ),
+
+            const Spacer(flex: 1),
 
             // 채팅하기 버튼
             Padding(
@@ -437,20 +446,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '채팅하기',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Icon(Icons.arrow_downward, size: 18),
-                    ],
+                  child: const Text(
+                    '채팅하기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ),

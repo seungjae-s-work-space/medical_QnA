@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
 
     <application
-        android:label="난임&amp;상담톡"
+        android:label="골통주부의 난임&amp;상담톡"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:extractNativeLibs="true">
