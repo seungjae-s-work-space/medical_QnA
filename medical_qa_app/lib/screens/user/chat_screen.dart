@@ -56,24 +56,29 @@ class _ChatScreenState extends State<ChatScreen> {
 
   List<Widget> _buildMessagesWithDateDividers(List<MessageModel> messages, String currentUserId) {
     final List<Widget> widgets = [];
-    DateTime? lastDate;
 
     for (int i = 0; i < messages.length; i++) {
       final message = messages[i];
       final messageDate = message.createdAt;
 
-      if (lastDate == null ||
-          lastDate.year != messageDate.year ||
-          lastDate.month != messageDate.month ||
-          lastDate.day != messageDate.day) {
-        widgets.add(DateDivider(date: messageDate));
-        lastDate = messageDate;
-      }
-
+      // 먼저 메시지 추가
       widgets.add(MessageRecord(
         message: message,
         isUser: message.isMine(currentUserId),
       ));
+
+      // 다음 메시지와 날짜가 다르거나 마지막 메시지면 구분선 추가
+      final isLastMessage = i == messages.length - 1;
+      if (isLastMessage) {
+        widgets.add(DateDivider(date: messageDate));
+      } else {
+        final nextMessage = messages[i + 1];
+        if (messageDate.year != nextMessage.createdAt.year ||
+            messageDate.month != nextMessage.createdAt.month ||
+            messageDate.day != nextMessage.createdAt.day) {
+          widgets.add(DateDivider(date: messageDate));
+        }
+      }
     }
 
     return widgets;
