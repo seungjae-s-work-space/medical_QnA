@@ -1,4 +1,7 @@
 {
+  "firestore": {
+    "rules": "medical_qa_app/firestore.rules"
+  },
   "functions": {
     "source": "functions",
     "codebase": "default",
