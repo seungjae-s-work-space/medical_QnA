@@ -3,6 +3,9 @@
     "rules": "medical_qa_app/firestore.rules",
     "indexes": "medical_qa_app/firestore.indexes.json"
   },
+  "storage": {
+    "rules": "medical_qa_app/storage.rules"
+  },
   "functions": {
     "source": "functions",
     "codebase": "default",
