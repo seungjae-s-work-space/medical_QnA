@@ -45,5 +45,31 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
     }
+
+    // encyclopedia 컬렉션 (난임백과)
+    match /encyclopedia/{articleId} {
+      // 읽기: 공개된 글은 인증된 사용자 모두, 비공개 글은 관리자만
+      allow read: if isAuthenticated() &&
+                     (resource.data.isPublished == true || isAdmin());
+      // 생성/삭제: 관리자만
+      allow create: if isAdmin();
+      // 수정: 관리자이거나, 조회수만 증가시키는 경우 허용
+      allow update: if isAdmin() ||
+                       (isAuthenticated() &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount']) &&
+                        request.resource.data.viewCount == resource.data.viewCount + 1);
+      allow delete: if isAdmin();
+    }
+
+    // news 컬렉션 (난임&뉴스)
+    match /news/{newsId} {
+      // 읽기: 공개된 글은 인증된 사용자 모두, 비공개 글은 관리자만
+      allow read: if isAuthenticated() &&
+                     (resource.data.isPublished == true || isAdmin());
+      // 생성/수정/삭제: 관리자만
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }

@@ -1,4 +1,4 @@
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
@@ -181,4 +181,118 @@ async function sendNotificationToAdmins(userName, message, conversationId, messa
 
   const successCount = results.filter((r) => r.status === "fulfilled").length;
   console.log(`Successfully sent notifications to ${successCount}/${tokens.length} admins`);
+}
+
+/**
+ * 새 뉴스가 공개되면 모든 사용자에게 푸시 알림 전송
+ * - 새 뉴스 생성 시 isPublished가 true인 경우
+ * - 기존 뉴스가 비공개→공개로 변경된 경우
+ */
+exports.sendNewsNotification = onDocumentCreated(
+  "news/{newsId}",
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      console.log("No data associated with the event");
+      return;
+    }
+
+    const news = snapshot.data();
+
+    // 비공개 글은 알림 안 보냄
+    if (!news.isPublished) {
+      console.log("News is not published, skipping notification");
+      return;
+    }
+
+    await sendNewsNotificationToAllUsers(news, event.params.newsId);
+  }
+);
+
+/**
+ * 뉴스가 비공개→공개로 변경되면 알림 전송
+ */
+exports.sendNewsPublishedNotification = onDocumentUpdated(
+  "news/{newsId}",
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+
+    // 비공개 → 공개로 변경된 경우에만 알림
+    if (!before.isPublished && after.isPublished) {
+      console.log("News published, sending notification");
+      await sendNewsNotificationToAllUsers(after, event.params.newsId);
+    }
+  }
+);
+
+/**
+ * 모든 사용자에게 뉴스 알림 전송 (관리자 제외)
+ */
+async function sendNewsNotificationToAllUsers(news, newsId) {
+  // role이 'admin'이 아닌 모든 사용자 조회
+  const usersSnapshot = await db.collection("users")
+    .where("role", "!=", "admin")
+    .get();
+
+  if (usersSnapshot.empty) {
+    console.log("No users found");
+    return;
+  }
+
+  const tokens = [];
+  usersSnapshot.forEach((doc) => {
+    const userData = doc.data();
+    // 알림 설정 확인 (기본값 true)
+    const notificationsEnabled = userData.notificationsEnabled !== false;
+    if (userData.fcmToken && notificationsEnabled) {
+      tokens.push(userData.fcmToken);
+    }
+  });
+
+  if (tokens.length === 0) {
+    console.log("No user FCM tokens found (or all disabled)");
+    return;
+  }
+
+  // 뉴스 제목 줄이기
+  const title = news.title.length > 50
+    ? news.title.substring(0, 50) + "..."
+    : news.title;
+
+  // 각 사용자에게 알림 전송
+  const notifications = tokens.map((token) => ({
+    token: token,
+    notification: {
+      title: "📰 새로운 난임&뉴스",
+      body: title,
+    },
+    data: {
+      newsId: newsId,
+      type: "new_news",
+    },
+    android: {
+      priority: "high",
+      notification: {
+        channelId: "news",
+        sound: "default",
+      },
+    },
+    apns: {
+      payload: {
+        aps: {
+          badge: 1,
+          sound: "default",
+        },
+      },
+    },
+  }));
+
+  // 병렬로 모든 알림 전송
+  const results = await Promise.allSettled(
+    notifications.map((n) => messaging.send(n))
+  );
+
+  const successCount = results.filter((r) => r.status === "fulfilled").length;
+  console.log(`Successfully sent news notifications to ${successCount}/${tokens.length} users`);
 }

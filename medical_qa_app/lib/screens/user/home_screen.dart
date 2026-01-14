@@ -1,10 +1,11 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
 import '../../utils/app_colors.dart';
 import 'chat_screen.dart';
+import 'encyclopedia_screen.dart';
+import 'news_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,11 +15,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ScrollController _scrollController = ScrollController();
-  Timer? _autoScrollTimer;
-  Timer? _resumeTimer;
   final NotificationService _notificationService = NotificationService();
   bool _notificationsEnabled = true;
+  int _currentIndex = 0;
 
   // 추천 전문의 리스트
   final List<Map<String, String>> _doctors = const [
@@ -59,7 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _startAutoScroll();
     _loadNotificationSetting();
   }
 
@@ -88,42 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-  }
-
-  @override
-  void dispose() {
-    _autoScrollTimer?.cancel();
-    _resumeTimer?.cancel();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _startAutoScroll() {
-    _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
-      if (_scrollController.hasClients) {
-        final maxScroll = _scrollController.position.maxScrollExtent;
-        final currentScroll = _scrollController.offset;
-
-        if (currentScroll >= maxScroll) {
-          // 끝에 도달하면 처음으로 (부드럽게)
-          _scrollController.jumpTo(0);
-        } else {
-          _scrollController.jumpTo(currentScroll + 0.5);
-        }
-      }
-    });
-  }
-
-  void _pauseAutoScroll() {
-    _autoScrollTimer?.cancel();
-    _resumeTimer?.cancel();
-  }
-
-  void _resumeAutoScroll() {
-    _resumeTimer?.cancel();
-    _resumeTimer = Timer(const Duration(seconds: 1), () {
-      _startAutoScroll();
-    });
   }
 
   void _showAboutSheet() {
@@ -158,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    '서비스 소개',
+                    '난임톡톡 소개',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -326,218 +288,434 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  void _showComingSoon(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature 기능이 곧 출시됩니다!'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: AppColors.textPrimary,
+      ),
+    );
+  }
+
+  Widget _buildHomeContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 서브타이틀
+          const Center(
+            child: Text(
+              '난임, 무엇이든 물어보세요',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 채팅하기 배너
+          _ChatBanner(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChatScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 32),
+
+          // 4개 메뉴 그리드
+          Row(
+            children: [
+              Expanded(
+                child: _MenuButton(
+                  title: '난임백과',
+                  color: const Color(0xFFE8A838),
+                  onTap: () {
+                    setState(() => _currentIndex = 1);
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MenuButton(
+                  title: '난임톡톡 소개',
+                  color: const Color(0xFFADD8E6),
+                  onTap: _showAboutSheet,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _MenuButton(
+                  title: '난임&뉴스',
+                  color: const Color(0xFFE8A838),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Scaffold(
+                          backgroundColor: AppColors.background,
+                          appBar: AppBar(
+                            backgroundColor: AppColors.background,
+                            elevation: 0,
+                            leading: IconButton(
+                              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            title: const Text(
+                              '난임&뉴스',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            centerTitle: true,
+                          ),
+                          body: const NewsScreen(),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MenuButton(
+                  title: '정회원 무제한채팅',
+                  subtitle: '6개월 1만원 / 1년 2만원',
+                  color: const Color(0xFFD3D3D3),
+                  onTap: () => _showComingSoon('정회원 무제한채팅'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEncyclopediaContent() {
+    return const EncyclopediaScreen();
+  }
+
+  Widget _buildMyPageContent() {
     final authProvider = Provider.of<AuthProvider>(context);
 
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 프로필 섹션
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.inputBackground,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6B4E71).withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    size: 32,
+                    color: Color(0xFF6B4E71),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        authProvider.currentUser?.name ?? '사용자',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        authProvider.currentUser?.email ?? '',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 설정 메뉴
+          _buildSettingItem(
+            icon: _notificationsEnabled
+                ? Icons.notifications_active
+                : Icons.notifications_off_outlined,
+            title: '알림 설정',
+            trailing: Switch(
+              value: _notificationsEnabled,
+              onChanged: (_) => _toggleNotification(),
+              activeColor: const Color(0xFF6B4E71),
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.divider),
+          _buildSettingItem(
+            icon: Icons.info_outline,
+            title: '난임톡톡 소개',
+            onTap: _showAboutSheet,
+          ),
+          const Divider(height: 1, color: AppColors.divider),
+          _buildSettingItem(
+            icon: Icons.logout,
+            title: '로그아웃',
+            onTap: () => authProvider.signOut(),
+            textColor: Colors.red,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingItem({
+    required IconData icon,
+    required String title,
+    VoidCallback? onTap,
+    Widget? trailing,
+    Color? textColor,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: textColor ?? AppColors.textSecondary),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 15,
+          color: textColor ?? AppColors.textPrimary,
+        ),
+      ),
+      trailing: trailing ?? (onTap != null
+          ? const Icon(Icons.chevron_right, color: AppColors.textSecondary)
+          : null),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () {
+        if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ChatScreen(),
+            ),
+          );
+        } else {
+          setState(() => _currentIndex = index);
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          isSelected ? activeIcon : icon,
+          color: isSelected ? const Color(0xFF2C2C2C) : Colors.white54,
+          size: 24,
+        ),
+      ),
+    );
+  }
+
+  String _getAppBarTitle() {
+    switch (_currentIndex) {
+      case 0:
+        return '난임상담톡';
+      case 1:
+        return '난임백과';
+      case 2:
+        return '채팅';
+      case 3:
+        return '마이페이지';
+      default:
+        return '난임상담톡';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.info_outline, color: AppColors.textSecondary),
-          onPressed: _showAboutSheet,
-        ),
-        title: const Text(
-          '난임&상담톡',
-          style: TextStyle(
+        title: Text(
+          _getAppBarTitle(),
+          style: const TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 1,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _notificationsEnabled
-                  ? Icons.notifications_active
-                  : Icons.notifications_off_outlined,
-              color: AppColors.textSecondary,
-            ),
-            onPressed: _toggleNotification,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.textSecondary),
-            onPressed: () => authProvider.signOut(),
-          ),
-        ],
       ),
       body: SafeArea(
-        child: Column(
+        child: IndexedStack(
+          index: _currentIndex == 2 ? 0 : _currentIndex, // 채팅은 별도 화면으로 이동
           children: [
-            const Spacer(flex: 2),
+            _buildHomeContent(),
+            _buildEncyclopediaContent(),
+            _buildHomeContent(), // placeholder (채팅은 Navigator로 이동)
+            _buildMyPageContent(),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+        ),
+        child: Container(
+          height: 64,
+          decoration: BoxDecoration(
+            color: const Color(0xFF2C2C2C),
+            borderRadius: BorderRadius.circular(32),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildNavItem(0, Icons.home_outlined, Icons.home),
+              _buildNavItem(1, Icons.grid_view_outlined, Icons.grid_view),
+              _buildNavItem(2, Icons.chat_bubble_outline, Icons.chat_bubble),
+              _buildNavItem(3, Icons.person_outline, Icons.person),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            // 메인 메시지
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
+// 채팅하기 배너 위젯
+class _ChatBanner extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ChatBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6B4E71), Color(0xFF8B6B8E)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6B4E71).withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 헤드라인
                   const Text(
-                    '난임시술을 앞두고 있는 당신에게',
-                    textAlign: TextAlign.center,
+                    '골통주부 이승주와',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                      height: 1.4,
+                      fontSize: 14,
+                      color: Colors.white70,
                     ),
                   ),
-                  const SizedBox(height: 28),
-
-                  // 공감 메시지
-                  Text(
-                    '의사의 어려운 설명,\n간호사의 어설픈 설명,\nAI의 교과서 같은 설명…\n그동안 답답하셨죠.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textSecondary.withValues(alpha: 0.9),
-                      height: 1.8,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 위로 메시지
+                  const SizedBox(height: 4),
                   const Text(
-                    '오늘의 채팅은\n조금 후련해지는 시간이 될 겁니다.\n난임시술,\n이제 혼자 고민하지 않아도 됩니다.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textPrimary,
-                      height: 1.8,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const Spacer(flex: 1),
-
-            // 화살표 아이콘 (본문과 버튼 중간)
-            const Icon(
-              Icons.arrow_downward,
-              size: 28,
-              color: AppColors.textSecondary,
-            ),
-
-            const Spacer(flex: 1),
-
-            // 채팅하기 버튼
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ChatScreen(),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(
-                      color: AppColors.buttonBorder,
-                      width: 1,
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
                     '채팅하기',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                ),
-              ),
-            ),
-
-            const Spacer(flex: 1),
-
-            // 추천 전문의 섹션
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: AppColors.divider, width: 1),
-                ),
-              ),
-              child: Column(
-                children: [
-                  // 헤더
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.verified,
-                          size: 16,
-                          color: AppColors.textSecondary.withValues(alpha: 0.7),
-                        ),
-                        const SizedBox(width: 6),
                         Text(
-                          '${_doctors.length}명의 전문의가 추천합니다',
+                          'start',
                           style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary.withValues(alpha: 0.8),
+                            fontSize: 14,
                             fontWeight: FontWeight.w500,
+                            color: Colors.white,
                           ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.play_arrow,
+                          size: 18,
+                          color: Colors.white,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // 자동 스크롤 캐러셀
-                  SizedBox(
-                    height: 70,
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification is ScrollStartNotification &&
-                            notification.dragDetails != null) {
-                          // 사용자가 직접 스크롤 시작
-                          _pauseAutoScroll();
-                        } else if (notification is ScrollEndNotification) {
-                          // 스크롤 끝나면 1초 후 자동 스크롤 재개
-                          _resumeAutoScroll();
-                        }
-                        return false;
-                      },
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _doctors.length * 3, // 무한 스크롤 효과
-                        itemBuilder: (context, index) {
-                          final doctor = _doctors[index % _doctors.length];
-                          return _DoctorCard(
-                            name: doctor['name']!,
-                            hospital: doctor['hospital']!,
-                            onTap: _showAboutSheet,
-                          );
-                        },
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 16),
+            // 이미지 영역 (나중에 실제 이미지로 교체)
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.chat_bubble_outline,
+                size: 48,
+                color: Colors.white54,
+              ),
+            ),
           ],
         ),
       ),
@@ -545,15 +723,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _DoctorCard extends StatelessWidget {
-  final String name;
-  final String hospital;
-  final VoidCallback? onTap;
+// 메뉴 버튼 위젯
+class _MenuButton extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final Color color;
+  final VoidCallback onTap;
 
-  const _DoctorCard({
-    required this.name,
-    required this.hospital,
-    this.onTap,
+  const _MenuButton({
+    required this.title,
+    this.subtitle,
+    required this.color,
+    required this.onTap,
   });
 
   @override
@@ -561,41 +742,34 @@ class _DoctorCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 100,
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        height: 100,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: AppColors.divider,
-            width: 1,
-          ),
+          color: color,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              '$name 원장',
+              title,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
-            Text(
-              hospital,
-              style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.textSecondary,
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle!,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textPrimary.withValues(alpha: 0.7),
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
+            ],
           ],
         ),
       ),

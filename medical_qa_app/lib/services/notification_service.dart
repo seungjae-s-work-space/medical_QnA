@@ -8,6 +8,9 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart'
     if (dart.library.io) 'package:firebase_messaging/firebase_messaging.dart';
 
+// 로컬 알림 (Android 채널 생성용)
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
 // Windows 전용
 import 'package:local_notifier/local_notifier.dart';
 
@@ -21,6 +24,7 @@ class NotificationService {
 
   // 모바일 전용
   FirebaseMessaging? _messaging;
+  FlutterLocalNotificationsPlugin? _localNotifications;
 
   // Windows 전용
   StreamSubscription? _conversationSubscription;
@@ -123,6 +127,9 @@ class NotificationService {
     // 알림 권한 요청
     await _requestPermission();
 
+    // Android 알림 채널 설정
+    await _setupAndroidNotificationChannels();
+
     // 토큰 가져오기 및 저장
     await _saveToken();
 
@@ -139,6 +146,44 @@ class NotificationService {
     final initialMessage = await _messaging!.getInitialMessage();
     if (initialMessage != null) {
       _handleMessageOpenedApp(initialMessage);
+    }
+  }
+
+  /// Android 알림 채널 설정
+  Future<void> _setupAndroidNotificationChannels() async {
+    if (!Platform.isAndroid) return;
+
+    _localNotifications = FlutterLocalNotificationsPlugin();
+
+    // 채팅 메시지 채널
+    const chatChannel = AndroidNotificationChannel(
+      'chat_messages',
+      '채팅 알림',
+      description: '새 메시지가 도착하면 알림을 받습니다',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    // 뉴스 채널
+    const newsChannel = AndroidNotificationChannel(
+      'news',
+      '뉴스 알림',
+      description: '새로운 뉴스가 등록되면 알림을 받습니다',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    final androidPlugin = _localNotifications!
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(chatChannel);
+      await androidPlugin.createNotificationChannel(newsChannel);
+      if (kDebugMode) {
+        print('Android 알림 채널 생성 완료');
+      }
     }
   }
 

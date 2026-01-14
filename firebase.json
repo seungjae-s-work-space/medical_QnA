@@ -1,6 +1,7 @@
 {
   "firestore": {
-    "rules": "medical_qa_app/firestore.rules"
+    "rules": "medical_qa_app/firestore.rules",
+    "indexes": "medical_qa_app/firestore.indexes.json"
   },
   "functions": {
     "source": "functions",
