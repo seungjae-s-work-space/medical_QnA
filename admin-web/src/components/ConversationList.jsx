@@ -9,9 +9,15 @@ import {
   ListItemButton,
   Typography,
   Box,
-  IconButton
+  IconButton,
+  BottomNavigation,
+  BottomNavigationAction,
+  Paper,
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ChatIcon from '@mui/icons-material/Chat';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
 import { colors } from '../theme';
 
 function ConversationList() {
@@ -84,7 +90,7 @@ function ConversationList() {
       </Box>
 
       {/* 대화 목록 */}
-      <Box sx={{ py: 1 }}>
+      <Box sx={{ py: 1, pb: 10 }}>
         {conversations.length === 0 ? (
           <Box
             sx={{
@@ -241,6 +247,40 @@ function ConversationList() {
           </List>
         )}
       </Box>
+
+      {/* Bottom Navigation */}
+      <Paper
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          borderTop: `1px solid ${colors.divider}`,
+          bgcolor: colors.inputBackground,
+        }}
+        elevation={0}
+      >
+        <BottomNavigation
+          value={0}
+          onChange={(_, newValue) => {
+            if (newValue === 1) navigate('/encyclopedia');
+            if (newValue === 2) navigate('/news');
+          }}
+          sx={{
+            bgcolor: 'transparent',
+            '& .MuiBottomNavigationAction-root': {
+              color: colors.textSecondary,
+              '&.Mui-selected': {
+                color: colors.textPrimary,
+              },
+            },
+          }}
+        >
+          <BottomNavigationAction label="채팅" icon={<ChatIcon />} />
+          <BottomNavigationAction label="난임백과" icon={<MenuBookIcon />} />
+          <BottomNavigationAction label="뉴스" icon={<NewspaperIcon />} />
+        </BottomNavigation>
+      </Paper>
     </Box>
   );
 }

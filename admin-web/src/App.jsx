@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -6,6 +6,8 @@ import { auth, db } from './firebase';
 import Login from './components/Login';
 import ConversationList from './components/ConversationList';
 import ChatWindow from './components/ChatWindow';
+import EncyclopediaManager from './components/EncyclopediaManager';
+import NewsManager from './components/NewsManager';
 import { Container, CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colors } from './theme';
@@ -73,6 +75,14 @@ function App() {
               <Route
                 path="/chat/:conversationId"
                 element={user && isAdmin ? <ChatWindow /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/encyclopedia"
+                element={user && isAdmin ? <EncyclopediaManager /> : <Navigate to="/login" />}
+              />
+              <Route
+                path="/news"
+                element={user && isAdmin ? <NewsManager /> : <Navigate to="/login" />}
               />
             </Routes>
           </Container>
