@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -18,6 +18,8 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Grid,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -25,9 +27,10 @@ import {
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  ArrowBack as ArrowBackIcon,
   Image as ImageIcon,
   Close as CloseIcon,
+  Search as SearchIcon,
+  RemoveRedEye as ViewIcon,
 } from '@mui/icons-material';
 import {
   collection,
@@ -43,17 +46,16 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
 import { colors } from '../theme';
-import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 
 function EncyclopediaManager() {
-  const navigate = useNavigate();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form state
   const [title, setTitle] = useState('');
@@ -213,6 +215,18 @@ function EncyclopediaManager() {
     return date.toLocaleDateString('ko-KR');
   };
 
+  const filteredArticles = articles.filter((article) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      (article.title || '').toLowerCase().includes(query) ||
+      (article.content || '').toLowerCase().includes(query)
+    );
+  });
+
+  const publishedCount = articles.filter((a) => a.isPublished).length;
+  const draftCount = articles.filter((a) => !a.isPublished).length;
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
@@ -222,133 +236,225 @@ function EncyclopediaManager() {
   }
 
   return (
-    <Box sx={{ pb: 4 }}>
+    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          py: 2,
-          mb: 2,
-          borderBottom: `1px solid ${colors.divider}`,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton onClick={() => navigate('/')} size="small">
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" fontWeight={600}>
-            난임백과 관리
-          </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Box>
+            <Typography variant="h5" fontWeight={700} color={colors.textPrimary}>
+              난임백과 관리
+            </Typography>
+            <Typography variant="body2" color={colors.textSecondary} sx={{ mt: 0.5 }}>
+              난임 관련 정보를 작성하고 관리하세요
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+            sx={{ borderRadius: 2, px: 3 }}
+          >
+            새 글 작성
+          </Button>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={{ borderRadius: 2 }}
-        >
-          새 글 작성
-        </Button>
       </Box>
 
-      {/* Article List */}
-      {articles.length === 0 ? (
-        <Box textAlign="center" py={8}>
-          <Typography color="textSecondary">등록된 글이 없습니다</Typography>
+      {/* Stats & Search */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            flex: 1,
+            minWidth: 200,
+          }}
+        >
+          <Chip
+            label={`전체 ${articles.length}`}
+            sx={{ bgcolor: colors.backgroundAlt, fontWeight: 500 }}
+          />
+          <Chip
+            label={`공개 ${publishedCount}`}
+            color="success"
+            variant="outlined"
+            sx={{ fontWeight: 500 }}
+          />
+          <Chip
+            label={`비공개 ${draftCount}`}
+            color="warning"
+            variant="outlined"
+            sx={{ fontWeight: 500 }}
+          />
+        </Box>
+        <TextField
+          placeholder="제목 또는 내용 검색..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          sx={{ minWidth: 280 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: colors.textSecondary, fontSize: 20 }} />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
+      {/* Article Grid */}
+      {filteredArticles.length === 0 ? (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 10,
+            bgcolor: colors.inputBackground,
+            borderRadius: 3,
+            border: `1px solid ${colors.divider}`,
+          }}
+        >
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: 3,
+              bgcolor: colors.backgroundAlt,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 2,
+            }}
+          >
+            <Typography sx={{ fontSize: 32, opacity: 0.5 }}>📚</Typography>
+          </Box>
+          <Typography sx={{ color: colors.textSecondary, fontSize: 15 }}>
+            {searchQuery ? '검색 결과가 없습니다' : '등록된 글이 없습니다'}
+          </Typography>
         </Box>
       ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {articles.map((article) => (
-            <Card
-              key={article.id}
-              sx={{
-                display: 'flex',
-                borderRadius: 3,
-                border: article.isPublished
-                  ? `1px solid ${colors.divider}`
-                  : `1px solid orange`,
-                bgcolor: colors.inputBackground,
-              }}
-            >
-              {article.imageUrl && (
-                <CardMedia
-                  component="img"
-                  sx={{ width: 120, height: 120, objectFit: 'cover' }}
-                  image={article.imageUrl}
-                  alt={article.title}
-                />
-              )}
-              <CardContent sx={{ flex: 1, py: 1.5 }}>
-                <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                  <Chip
-                    size="small"
-                    label={article.isPublished ? '공개' : '비공개'}
-                    color={article.isPublished ? 'success' : 'warning'}
-                    sx={{ height: 20, fontSize: 11 }}
-                  />
-                  <Typography variant="caption" color="textSecondary">
-                    {formatDate(article.createdAt)}
-                  </Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    · 조회 {article.viewCount || 0}
-                  </Typography>
-                </Box>
-                <Typography variant="subtitle1" fontWeight={600} noWrap>
-                  {article.title}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  sx={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                  }}
-                >
-                  {article.content}
-                </Typography>
-              </CardContent>
-              <Box
+        <Grid container spacing={2.5}>
+          {filteredArticles.map((article) => (
+            <Grid item xs={12} sm={6} md={4} key={article.id}>
+              <Card
                 sx={{
+                  height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'center',
-                  pr: 1,
+                  borderRadius: 3,
+                  border: article.isPublished
+                    ? `1px solid ${colors.divider}`
+                    : `2px solid orange`,
+                  bgcolor: colors.inputBackground,
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                  },
                 }}
               >
-                <IconButton size="small" onClick={() => handleOpenDialog(article)}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton size="small" onClick={() => handleTogglePublish(article)}>
-                  {article.isPublished ? (
-                    <VisibilityOffIcon fontSize="small" />
-                  ) : (
-                    <VisibilityIcon fontSize="small" />
-                  )}
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() => handleDelete(article)}
-                  sx={{ color: 'error.main' }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            </Card>
+                {article.imageUrl ? (
+                  <CardMedia
+                    component="img"
+                    sx={{ height: 160, objectFit: 'cover' }}
+                    image={article.imageUrl}
+                    alt={article.title}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      height: 160,
+                      bgcolor: colors.backgroundAlt,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 48, opacity: 0.3 }}>📖</Typography>
+                  </Box>
+                )}
+                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Box display="flex" alignItems="center" gap={1} mb={1}>
+                    <Chip
+                      size="small"
+                      label={article.isPublished ? '공개' : '비공개'}
+                      color={article.isPublished ? 'success' : 'warning'}
+                      sx={{ height: 22, fontSize: 11 }}
+                    />
+                    <Typography variant="caption" color="textSecondary">
+                      {formatDate(article.createdAt)}
+                    </Typography>
+                  </Box>
+                  <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }} noWrap>
+                    {article.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    sx={{
+                      flex: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      mb: 2,
+                    }}
+                  >
+                    {article.content}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderTop: `1px solid ${colors.divider}`,
+                      pt: 1.5,
+                      mt: 'auto',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <ViewIcon sx={{ fontSize: 16, color: colors.textTertiary }} />
+                      <Typography variant="caption" color="textSecondary">
+                        {article.viewCount || 0}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <IconButton size="small" onClick={() => handleOpenDialog(article)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" onClick={() => handleTogglePublish(article)}>
+                        {article.isPublished ? (
+                          <VisibilityOffIcon fontSize="small" />
+                        ) : (
+                          <VisibilityIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(article)}
+                        sx={{ color: 'error.main' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       )}
 
       {/* Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>
           {editingArticle ? '글 수정' : '새 글 작성'}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
             <TextField
               label="제목"
               value={title}
@@ -370,7 +476,7 @@ function EncyclopediaManager() {
                     style={{
                       maxWidth: '100%',
                       maxHeight: 200,
-                      borderRadius: 8,
+                      borderRadius: 12,
                       objectFit: 'cover',
                     }}
                   />
@@ -379,8 +485,8 @@ function EncyclopediaManager() {
                     onClick={handleRemoveImage}
                     sx={{
                       position: 'absolute',
-                      top: 4,
-                      right: 4,
+                      top: 8,
+                      right: 8,
                       bgcolor: 'rgba(0,0,0,0.5)',
                       color: 'white',
                       '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
@@ -394,7 +500,7 @@ function EncyclopediaManager() {
                   variant="outlined"
                   component="label"
                   startIcon={<ImageIcon />}
-                  sx={{ borderStyle: 'dashed' }}
+                  sx={{ borderStyle: 'dashed', py: 1.5, px: 3 }}
                 >
                   이미지 선택
                   <input
@@ -428,14 +534,15 @@ function EncyclopediaManager() {
             />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseDialog} disabled={saving}>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={handleCloseDialog} disabled={saving} sx={{ px: 3 }}>
             취소
           </Button>
           <Button
             variant="contained"
             onClick={handleSave}
             disabled={saving}
+            sx={{ px: 3 }}
           >
             {saving ? <CircularProgress size={20} /> : '저장'}
           </Button>

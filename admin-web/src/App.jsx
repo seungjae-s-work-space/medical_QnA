@@ -4,11 +4,12 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import Login from './components/Login';
+import Layout from './components/Layout';
 import ConversationList from './components/ConversationList';
 import ChatWindow from './components/ChatWindow';
 import EncyclopediaManager from './components/EncyclopediaManager';
 import NewsManager from './components/NewsManager';
-import { Container, CircularProgress, Box, CssBaseline } from '@mui/material';
+import { CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colors } from './theme';
 
@@ -20,7 +21,6 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        // 사용자 role 확인
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (userDoc.exists() && userDoc.data().role === 'admin') {
           setUser(currentUser);
@@ -60,34 +60,62 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ minHeight: '100vh', bgcolor: colors.background }}>
-        <HashRouter>
-          <Container maxWidth="md" sx={{ py: 0 }}>
-            <Routes>
-              <Route
-                path="/login"
-                element={user && isAdmin ? <Navigate to="/" /> : <Login />}
-              />
-              <Route
-                path="/"
-                element={user && isAdmin ? <ConversationList /> : <Navigate to="/login" />}
-              />
-              <Route
-                path="/chat/:conversationId"
-                element={user && isAdmin ? <ChatWindow /> : <Navigate to="/login" />}
-              />
-              <Route
-                path="/encyclopedia"
-                element={user && isAdmin ? <EncyclopediaManager /> : <Navigate to="/login" />}
-              />
-              <Route
-                path="/news"
-                element={user && isAdmin ? <NewsManager /> : <Navigate to="/login" />}
-              />
-            </Routes>
-          </Container>
-        </HashRouter>
-      </Box>
+      <HashRouter>
+        <Routes>
+          <Route
+            path="/login"
+            element={user && isAdmin ? <Navigate to="/" /> : <Login />}
+          />
+          <Route
+            path="/"
+            element={
+              user && isAdmin ? (
+                <Layout>
+                  <ConversationList />
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/chat/:conversationId"
+            element={
+              user && isAdmin ? (
+                <Layout>
+                  <ChatWindow />
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/encyclopedia"
+            element={
+              user && isAdmin ? (
+                <Layout>
+                  <EncyclopediaManager />
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/news"
+            element={
+              user && isAdmin ? (
+                <Layout>
+                  <NewsManager />
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+        </Routes>
+      </HashRouter>
     </ThemeProvider>
   );
 }

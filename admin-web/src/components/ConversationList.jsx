@@ -1,27 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { signOut } from 'firebase/auth';
-import { db, auth } from '../firebase';
+import { db } from '../firebase';
 import {
   List,
   ListItem,
   ListItemButton,
   Typography,
   Box,
-  IconButton,
-  BottomNavigation,
-  BottomNavigationAction,
-  Paper,
+  TextField,
+  InputAdornment,
+  Chip,
 } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
-import ChatIcon from '@mui/icons-material/Chat';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import NewspaperIcon from '@mui/icons-material/Newspaper';
+import SearchIcon from '@mui/icons-material/Search';
 import { colors } from '../theme';
 
 function ConversationList() {
   const [conversations, setConversations] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,10 +37,6 @@ function ConversationList() {
     return unsubscribe;
   }, []);
 
-  const handleLogout = async () => {
-    await signOut(auth);
-  };
-
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp.toDate();
@@ -57,128 +49,170 @@ function ConversationList() {
     return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
   };
 
+  const filteredConversations = conversations.filter((conv) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      (conv.userName || '').toLowerCase().includes(query) ||
+      (conv.lastMessage || '').toLowerCase().includes(query)
+    );
+  });
+
+  const unreadCount = conversations.filter((c) => c.unreadByAdmin > 0).length;
+
   return (
-    <Box sx={{ minHeight: '100vh' }}>
-      {/* 헤더 */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 2,
-          py: 2,
-          borderBottom: `1px solid ${colors.divider}`,
-          bgcolor: colors.inputBackground,
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 600,
-            color: colors.textPrimary,
-            letterSpacing: 0.5,
-          }}
-        >
-          난임&상담톡
+    <Box sx={{ p: 4, maxWidth: 900, mx: 'auto' }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+          <Typography variant="h5" fontWeight={700} color={colors.textPrimary}>
+            상담 채팅
+          </Typography>
+          {unreadCount > 0 && (
+            <Chip
+              label={`${unreadCount}개 읽지 않음`}
+              size="small"
+              sx={{
+                bgcolor: '#FFEBEE',
+                color: '#E57373',
+                fontWeight: 600,
+                fontSize: 12,
+              }}
+            />
+          )}
+        </Box>
+        <Typography variant="body2" color={colors.textSecondary}>
+          사용자의 상담 내역을 확인하고 답변하세요
         </Typography>
-        <IconButton
-          onClick={handleLogout}
-          sx={{ color: colors.textSecondary }}
-        >
-          <LogoutIcon fontSize="small" />
-        </IconButton>
       </Box>
 
-      {/* 대화 목록 */}
-      <Box sx={{ py: 1, pb: 10 }}>
-        {conversations.length === 0 ? (
+      {/* Search */}
+      <TextField
+        fullWidth
+        placeholder="사용자 이름 또는 메시지 검색..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon sx={{ color: colors.textSecondary }} />
+            </InputAdornment>
+          ),
+        }}
+        sx={{ mb: 3 }}
+      />
+
+      {/* Conversation List */}
+      {filteredConversations.length === 0 ? (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 10,
+            bgcolor: colors.inputBackground,
+            borderRadius: 3,
+            border: `1px solid ${colors.divider}`,
+          }}
+        >
           <Box
             sx={{
+              width: 72,
+              height: 72,
+              borderRadius: 3,
+              bgcolor: colors.backgroundAlt,
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              py: 8,
+              mb: 2,
             }}
           >
-            <Box
-              sx={{
-                width: 64,
-                height: 64,
-                borderRadius: 2,
-                bgcolor: colors.inputBackground,
-                border: `1px solid ${colors.divider}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 2,
-              }}
-            >
-              <Typography sx={{ fontSize: 28, opacity: 0.4 }}>💬</Typography>
-            </Box>
-            <Typography sx={{ color: colors.textSecondary, fontSize: 14 }}>
-              아직 질문이 없습니다
-            </Typography>
+            <Typography sx={{ fontSize: 32, opacity: 0.5 }}>💬</Typography>
           </Box>
-        ) : (
-          <List sx={{ px: 2, py: 1 }}>
-            {conversations.map((conv, index) => {
+          <Typography sx={{ color: colors.textSecondary, fontSize: 15 }}>
+            {searchQuery ? '검색 결과가 없습니다' : '아직 상담 내역이 없습니다'}
+          </Typography>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            bgcolor: colors.inputBackground,
+            borderRadius: 3,
+            border: `1px solid ${colors.divider}`,
+            overflow: 'hidden',
+          }}
+        >
+          <List sx={{ p: 0 }}>
+            {filteredConversations.map((conv, index) => {
               const userName = conv.userName || '익명';
               const initial = userName.charAt(0);
               const hasUnread = conv.unreadByAdmin > 0;
 
               return (
-                <ListItem key={conv.id} disablePadding sx={{ mb: 1.5 }}>
+                <ListItem
+                  key={conv.id}
+                  disablePadding
+                  sx={{
+                    borderBottom:
+                      index < filteredConversations.length - 1
+                        ? `1px solid ${colors.divider}`
+                        : 'none',
+                  }}
+                >
                   <ListItemButton
                     onClick={() => navigate(`/chat/${conv.id}`)}
                     sx={{
-                      borderRadius: 3,
-                      py: 2,
-                      px: 2,
-                      bgcolor: colors.inputBackground,
-                      border: `1px solid ${hasUnread ? colors.buttonBorder : colors.divider}`,
-                      boxShadow: hasUnread
-                        ? '0 2px 8px rgba(0,0,0,0.06)'
-                        : '0 1px 3px rgba(0,0,0,0.02)',
+                      py: 2.5,
+                      px: 3,
+                      bgcolor: hasUnread ? 'rgba(229, 115, 115, 0.04)' : 'transparent',
                       '&:hover': {
-                        bgcolor: colors.backgroundAlt,
-                        borderColor: colors.buttonBorder,
+                        bgcolor: hasUnread
+                          ? 'rgba(229, 115, 115, 0.08)'
+                          : colors.backgroundAlt,
                       },
                     }}
                   >
-                    {/* 프로필 아바타 */}
+                    {/* Avatar */}
                     <Box
                       sx={{
-                        width: 44,
-                        height: 44,
+                        width: 48,
+                        height: 48,
                         borderRadius: 2,
-                        bgcolor: hasUnread ? colors.adminMessage : colors.backgroundAlt,
-                        border: `1px solid ${colors.divider}`,
+                        bgcolor: hasUnread ? '#FFEBEE' : colors.backgroundAlt,
+                        border: `1px solid ${hasUnread ? '#FFCDD2' : colors.divider}`,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        mr: 2,
+                        mr: 2.5,
                         flexShrink: 0,
                       }}
                     >
                       <Typography
                         sx={{
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: 600,
-                          color: colors.textPrimary,
+                          color: hasUnread ? '#E57373' : colors.textPrimary,
                         }}
                       >
                         {initial}
                       </Typography>
                     </Box>
 
-                    {/* 내용 */}
+                    {/* Content */}
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          mb: 0.5,
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                           <Typography
                             sx={{
-                              fontWeight: hasUnread ? 600 : 500,
+                              fontWeight: hasUnread ? 700 : 600,
                               color: colors.textPrimary,
                               fontSize: 15,
                             }}
@@ -186,101 +220,50 @@ function ConversationList() {
                             {userName}
                           </Typography>
                           {hasUnread && (
-                            <Box
+                            <Chip
+                              label={conv.unreadByAdmin}
+                              size="small"
                               sx={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: '50%',
+                                height: 20,
+                                minWidth: 20,
                                 bgcolor: '#E57373',
+                                color: 'white',
+                                fontSize: 11,
+                                fontWeight: 700,
+                                '& .MuiChip-label': { px: 0.75 },
                               }}
                             />
                           )}
                         </Box>
                         <Typography
                           sx={{
-                            fontSize: 12,
+                            fontSize: 13,
                             color: colors.textTertiary,
                           }}
                         >
                           {formatTime(conv.lastMessageAt)}
                         </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography
-                          sx={{
-                            color: hasUnread ? colors.textPrimary : colors.textSecondary,
-                            fontSize: 13,
-                            fontWeight: hasUnread ? 500 : 400,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            flex: 1,
-                          }}
-                        >
-                          {conv.lastMessage}
-                        </Typography>
-                        {hasUnread && (
-                          <Box
-                            sx={{
-                              minWidth: 22,
-                              height: 22,
-                              borderRadius: 11,
-                              bgcolor: '#E57373',
-                              color: 'white',
-                              fontSize: 11,
-                              fontWeight: 600,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              px: 0.75,
-                            }}
-                          >
-                            {conv.unreadByAdmin}
-                          </Box>
-                        )}
-                      </Box>
+                      <Typography
+                        sx={{
+                          color: hasUnread ? colors.textPrimary : colors.textSecondary,
+                          fontSize: 14,
+                          fontWeight: hasUnread ? 500 : 400,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {conv.lastMessage}
+                      </Typography>
                     </Box>
                   </ListItemButton>
                 </ListItem>
               );
             })}
           </List>
-        )}
-      </Box>
-
-      {/* Bottom Navigation */}
-      <Paper
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          borderTop: `1px solid ${colors.divider}`,
-          bgcolor: colors.inputBackground,
-        }}
-        elevation={0}
-      >
-        <BottomNavigation
-          value={0}
-          onChange={(_, newValue) => {
-            if (newValue === 1) navigate('/encyclopedia');
-            if (newValue === 2) navigate('/news');
-          }}
-          sx={{
-            bgcolor: 'transparent',
-            '& .MuiBottomNavigationAction-root': {
-              color: colors.textSecondary,
-              '&.Mui-selected': {
-                color: colors.textPrimary,
-              },
-            },
-          }}
-        >
-          <BottomNavigationAction label="채팅" icon={<ChatIcon />} />
-          <BottomNavigationAction label="난임백과" icon={<MenuBookIcon />} />
-          <BottomNavigationAction label="뉴스" icon={<NewspaperIcon />} />
-        </BottomNavigation>
-      </Paper>
+        </Box>
+      )}
     </Box>
   );
 }
