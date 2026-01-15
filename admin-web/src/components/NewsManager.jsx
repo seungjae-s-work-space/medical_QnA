@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -30,6 +30,8 @@ import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import {
   collection,
   query,
@@ -45,6 +47,41 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
+
+// Quill 에디터 설정
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ color: [] }, { background: [] }],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    [{ indent: '-1' }, { indent: '+1' }],
+    ['blockquote'],
+    ['clean'],
+  ],
+};
+
+const quillFormats = [
+  'header',
+  'bold',
+  'italic',
+  'underline',
+  'strike',
+  'color',
+  'background',
+  'list',
+  'bullet',
+  'indent',
+  'blockquote',
+];
+
+// HTML에서 텍스트만 추출하는 함수 (카드 미리보기용)
+const stripHtml = (html) => {
+  if (!html) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+};
 
 function NewsManager() {
   const [articles, setArticles] = useState([]);
@@ -444,7 +481,7 @@ function NewsManager() {
                       lineHeight: 1.6,
                     }}
                   >
-                    {article.content}
+                    {stripHtml(article.content)}
                   </Typography>
                   <Box
                     onClick={(e) => e.stopPropagation()}
@@ -586,16 +623,55 @@ function NewsManager() {
               )}
             </Box>
 
-            <TextField
-              label="내용"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              multiline
-              rows={12}
-              fullWidth
-              required
-              placeholder="뉴스 내용을 입력하세요"
-            />
+            {/* Rich Text Editor */}
+            <Box>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: colors.textPrimary, mb: 1.5 }}
+              >
+                내용
+              </Typography>
+              <Box
+                sx={{
+                  '& .ql-container': {
+                    minHeight: 300,
+                    fontSize: 15,
+                    fontFamily: 'inherit',
+                    borderBottomLeftRadius: 10,
+                    borderBottomRightRadius: 10,
+                  },
+                  '& .ql-toolbar': {
+                    borderTopLeftRadius: 10,
+                    borderTopRightRadius: 10,
+                    bgcolor: colors.backgroundAlt,
+                  },
+                  '& .ql-editor': {
+                    minHeight: 300,
+                  },
+                  '& .ql-editor.ql-blank::before': {
+                    color: colors.textTertiary,
+                    fontStyle: 'normal',
+                  },
+                  // 강조 블록 스타일
+                  '& .ql-editor blockquote': {
+                    borderLeft: `4px solid ${colors.primary}`,
+                    backgroundColor: colors.primaryLight,
+                    padding: '12px 16px',
+                    margin: '16px 0',
+                    borderRadius: '0 8px 8px 0',
+                  },
+                }}
+              >
+                <ReactQuill
+                  theme="snow"
+                  value={content}
+                  onChange={setContent}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  placeholder="뉴스 내용을 입력하세요"
+                />
+              </Box>
+            </Box>
 
             <FormControlLabel
               control={
@@ -687,17 +763,32 @@ function NewsManager() {
                   />
                 </Box>
               )}
-              <Typography
-                variant="body1"
+              <Box
                 sx={{
-                  whiteSpace: 'pre-wrap',
                   lineHeight: 1.9,
                   color: colors.textPrimary,
                   fontSize: 15,
+                  '& p': { margin: '0 0 1em 0' },
+                  '& h1, & h2, & h3': {
+                    fontWeight: 700,
+                    margin: '1.5em 0 0.5em 0',
+                    color: colors.textPrimary,
+                  },
+                  '& h1': { fontSize: '1.75em' },
+                  '& h2': { fontSize: '1.5em' },
+                  '& h3': { fontSize: '1.25em' },
+                  '& blockquote': {
+                    borderLeft: `4px solid ${colors.primary}`,
+                    backgroundColor: colors.primaryLight,
+                    padding: '12px 16px',
+                    margin: '16px 0',
+                    borderRadius: '0 8px 8px 0',
+                  },
+                  '& ul, & ol': { paddingLeft: '1.5em', margin: '0.5em 0' },
+                  '& li': { marginBottom: '0.25em' },
                 }}
-              >
-                {viewArticle.content}
-              </Typography>
+                dangerouslySetInnerHTML={{ __html: viewArticle.content }}
+              />
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
               <Button
