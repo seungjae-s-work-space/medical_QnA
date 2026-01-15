@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -26,10 +26,10 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
-import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import {
@@ -48,19 +48,6 @@ import { db, storage, auth } from '../firebase';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 
-// Quill 에디터 설정
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ color: [] }, { background: [] }],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    [{ indent: '-1' }, { indent: '+1' }],
-    ['blockquote'],
-    ['clean'],
-  ],
-};
-
 const quillFormats = [
   'header',
   'bold',
@@ -73,7 +60,20 @@ const quillFormats = [
   'bullet',
   'indent',
   'blockquote',
+  'image',
 ];
+
+// HTML에서 이미지 URL 추출하는 함수
+const extractImagesFromContent = (html) => {
+  if (!html) return [];
+  const imgRegex = /<img[^>]+src="([^">]+)"/g;
+  const images = [];
+  let match;
+  while ((match = imgRegex.exec(html)) !== null) {
+    images.push(match[1]);
+  }
+  return images;
+};
 
 // HTML에서 텍스트만 추출하는 함수 (카드 미리보기용)
 const stripHtml = (html) => {
@@ -97,9 +97,60 @@ function NewsManager() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPublished, setIsPublished] = useState(true);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [existingImageUrl, setExistingImageUrl] = useState(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState(null);
+  const quillRef = useRef(null);
+
+  // 본문 내 이미지 목록
+  const contentImages = useMemo(() => extractImagesFromContent(content), [content]);
+
+  // 이미지 업로드 핸들러 (Quill 에디터용)
+  const imageHandler = async () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (!file) return;
+
+      try {
+        const fileName = `${uuidv4()}.jpg`;
+        const storageRef = ref(storage, `news_images/${fileName}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+
+        const quill = quillRef.current?.getEditor();
+        if (quill) {
+          const range = quill.getSelection(true);
+          quill.insertEmbed(range.index, 'image', url);
+          quill.setSelection(range.index + 1);
+        }
+      } catch (error) {
+        console.error('Image upload error:', error);
+        setSnackbar({ open: true, message: '이미지 업로드 실패', severity: 'error' });
+      }
+    };
+  };
+
+  // Quill 모듈 설정 (imageHandler 포함)
+  const quillModules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ color: [] }, { background: [] }],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ indent: '-1' }, { indent: '+1' }],
+        ['blockquote'],
+        ['image'],
+        ['clean'],
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
+  }), []);
 
   useEffect(() => {
     const q = query(
@@ -123,9 +174,7 @@ function NewsManager() {
     setTitle('');
     setContent('');
     setIsPublished(true);
-    setImageFile(null);
-    setImagePreview(null);
-    setExistingImageUrl(null);
+    setSelectedImageUrl(null);
     setEditingArticle(null);
   };
 
@@ -135,8 +184,7 @@ function NewsManager() {
       setTitle(article.title || '');
       setContent(article.content || '');
       setIsPublished(article.isPublished !== false);
-      setExistingImageUrl(article.imageUrl || null);
-      setImagePreview(article.imageUrl || null);
+      setSelectedImageUrl(article.imageUrl || null);
     } else {
       resetForm();
     }
@@ -148,29 +196,12 @@ function NewsManager() {
     resetForm();
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
+  // 대표 이미지 결정 로직: 선택된 이미지 > 첫 번째 이미지 > null
+  const getRepresentativeImageUrl = () => {
+    if (selectedImageUrl && contentImages.includes(selectedImageUrl)) {
+      return selectedImageUrl;
     }
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setExistingImageUrl(null);
-  };
-
-  const uploadImage = async () => {
-    if (!imageFile) return existingImageUrl;
-
-    const fileName = `${uuidv4()}.jpg`;
-    const storageRef = ref(storage, `news_images/${fileName}`);
-    await uploadBytes(storageRef, imageFile);
-    return await getDownloadURL(storageRef);
+    return contentImages.length > 0 ? contentImages[0] : null;
   };
 
   const handleSave = async () => {
@@ -182,7 +213,7 @@ function NewsManager() {
     setSaving(true);
 
     try {
-      const imageUrl = await uploadImage();
+      const imageUrl = getRepresentativeImageUrl();
       const user = auth.currentUser;
 
       if (editingArticle) {
@@ -560,69 +591,6 @@ function NewsManager() {
               placeholder="뉴스 제목을 입력하세요"
             />
 
-            {/* Image Upload */}
-            <Box>
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 600, color: colors.textPrimary, mb: 1.5 }}
-              >
-                대표 이미지
-              </Typography>
-              {imagePreview ? (
-                <Box position="relative" display="inline-block">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: 240,
-                      borderRadius: 12,
-                      objectFit: 'cover',
-                    }}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={handleRemoveImage}
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      bgcolor: 'rgba(0,0,0,0.6)',
-                      color: 'white',
-                      '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
-                    }}
-                  >
-                    <CloseRoundedIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              ) : (
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<ImageRoundedIcon />}
-                  sx={{
-                    borderStyle: 'dashed',
-                    py: 2,
-                    px: 4,
-                    borderColor: colors.border,
-                    color: colors.textSecondary,
-                    '&:hover': {
-                      borderColor: colors.primary,
-                      bgcolor: colors.primaryLight,
-                    },
-                  }}
-                >
-                  이미지 선택
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleImageChange}
-                  />
-                </Button>
-              )}
-            </Box>
-
             {/* Rich Text Editor */}
             <Box>
               <Typography
@@ -663,15 +631,79 @@ function NewsManager() {
                 }}
               >
                 <ReactQuill
+                  ref={quillRef}
                   theme="snow"
                   value={content}
                   onChange={setContent}
                   modules={quillModules}
                   formats={quillFormats}
-                  placeholder="뉴스 내용을 입력하세요"
+                  placeholder="뉴스 내용을 입력하세요 (툴바의 이미지 버튼으로 사진 추가)"
                 />
               </Box>
             </Box>
+
+            {/* 대표 이미지 선택 */}
+            {contentImages.length > 0 && (
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: colors.textPrimary, mb: 1.5 }}
+                >
+                  대표 이미지 선택 (기본: 첫 번째 이미지)
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                  {contentImages.map((imgUrl, index) => {
+                    const isSelected = selectedImageUrl === imgUrl || (!selectedImageUrl && index === 0);
+                    return (
+                      <Box
+                        key={imgUrl}
+                        onClick={() => setSelectedImageUrl(imgUrl)}
+                        sx={{
+                          position: 'relative',
+                          width: 100,
+                          height: 100,
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          border: isSelected ? `3px solid ${colors.primary}` : `2px solid ${colors.border}`,
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            borderColor: colors.primary,
+                            transform: 'scale(1.05)',
+                          },
+                        }}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`이미지 ${index + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                        {isSelected && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              bgcolor: colors.primary,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <CheckCircleRoundedIcon sx={{ fontSize: 20, color: 'white' }} />
+                          </Box>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+            )}
 
             <FormControlLabel
               control={
@@ -765,13 +797,13 @@ function NewsManager() {
               )}
               <Box
                 sx={{
-                  lineHeight: 1.9,
+                  lineHeight: 1.6,
                   color: colors.textPrimary,
                   fontSize: 15,
-                  '& p': { margin: '0 0 1em 0' },
+                  '& p': { margin: 0 },
                   '& h1, & h2, & h3': {
                     fontWeight: 700,
-                    margin: '1.5em 0 0.5em 0',
+                    margin: '1em 0 0.3em 0',
                     color: colors.textPrimary,
                   },
                   '& h1': { fontSize: '1.75em' },
@@ -780,12 +812,12 @@ function NewsManager() {
                   '& blockquote': {
                     borderLeft: `4px solid ${colors.primary}`,
                     backgroundColor: colors.primaryLight,
-                    padding: '12px 16px',
-                    margin: '16px 0',
+                    padding: '8px 16px',
+                    margin: '8px 0',
                     borderRadius: '0 8px 8px 0',
                   },
-                  '& ul, & ol': { paddingLeft: '1.5em', margin: '0.5em 0' },
-                  '& li': { marginBottom: '0.25em' },
+                  '& ul, & ol': { paddingLeft: '1.5em', margin: '0.3em 0' },
+                  '& li': { marginBottom: '0.15em' },
                 }}
                 dangerouslySetInnerHTML={{ __html: viewArticle.content }}
               />

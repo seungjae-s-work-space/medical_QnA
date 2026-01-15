@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import '../../models/encyclopedia_model.dart';
 import '../../services/encyclopedia_service.dart';
 import '../../utils/app_colors.dart';
@@ -445,6 +446,33 @@ class _ArticleCard extends StatelessWidget {
   }
 }
 
+// HTML 정리 함수 - 빈 태그 제거 및 연속 blockquote 병합
+String _cleanHtmlContent(String html) {
+  if (html.isEmpty) return html;
+
+  String cleaned = html;
+
+  // 빈 p 태그 제거 (공백, <br>, &nbsp; 만 있는 경우)
+  cleaned = cleaned.replaceAllMapped(
+    RegExp(r'<p[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</p>', caseSensitive: false),
+    (match) => '',
+  );
+
+  // 빈 blockquote 제거
+  cleaned = cleaned.replaceAllMapped(
+    RegExp(r'<blockquote[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</blockquote>', caseSensitive: false),
+    (match) => '',
+  );
+
+  // 연속된 blockquote 병합 (</blockquote><blockquote> -> <br>)
+  cleaned = cleaned.replaceAllMapped(
+    RegExp(r'</blockquote>\s*<blockquote[^>]*>', caseSensitive: false),
+    (match) => '<br>',
+  );
+
+  return cleaned;
+}
+
 // 상세 화면
 class EncyclopediaDetailScreen extends StatelessWidget {
   final EncyclopediaModel article;
@@ -541,14 +569,62 @@ class EncyclopediaDetailScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   const Divider(color: AppColors.divider),
                   const SizedBox(height: 24),
-                  // 본문
-                  Text(
-                    article.content,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textPrimary,
-                      height: 1.8,
-                    ),
+                  // 본문 (HTML 렌더링)
+                  Html(
+                    data: _cleanHtmlContent(article.content),
+                    style: {
+                      "body": Style(
+                        fontSize: FontSize(16),
+                        color: AppColors.textPrimary,
+                        lineHeight: const LineHeight(1.6),
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                      ),
+                      "p": Style(
+                        margin: Margins.only(bottom: 12),
+                      ),
+                      "blockquote": Style(
+                        backgroundColor: const Color(0xFFEEF2FF),
+                        border: const Border(
+                          left: BorderSide(
+                            color: Color(0xFF6366F1),
+                            width: 4,
+                          ),
+                        ),
+                        padding: HtmlPaddings.symmetric(horizontal: 16, vertical: 8),
+                        margin: Margins.symmetric(vertical: 8),
+                      ),
+                      "strong": Style(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      "em": Style(
+                        fontStyle: FontStyle.italic,
+                      ),
+                      "h1": Style(
+                        fontSize: FontSize(24),
+                        fontWeight: FontWeight.bold,
+                        margin: Margins.only(top: 24, bottom: 12),
+                      ),
+                      "h2": Style(
+                        fontSize: FontSize(20),
+                        fontWeight: FontWeight.bold,
+                        margin: Margins.only(top: 20, bottom: 10),
+                      ),
+                      "h3": Style(
+                        fontSize: FontSize(18),
+                        fontWeight: FontWeight.w600,
+                        margin: Margins.only(top: 16, bottom: 8),
+                      ),
+                      "ul": Style(
+                        margin: Margins.only(left: 16, bottom: 16),
+                      ),
+                      "ol": Style(
+                        margin: Margins.only(left: 16, bottom: 16),
+                      ),
+                      "li": Style(
+                        margin: Margins.only(bottom: 4),
+                      ),
+                    },
                   ),
                   const SizedBox(height: 40),
                 ],

@@ -32,6 +32,9 @@ dependencies:
   uuid: ^4.2.1
   shared_preferences: ^2.2.2
 
+  # HTML 렌더링
+  flutter_html: ^3.0.0-beta.2
+
   # 로컬 알림 (Android 채널 생성용)
   flutter_local_notifications: ^18.0.1
 
