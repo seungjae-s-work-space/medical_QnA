@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -9,6 +10,24 @@ import '../../services/news_service.dart';
 import '../../utils/app_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+
+// HTML 태그 제거 함수
+String _stripHtml(String html) {
+  if (html.isEmpty) return html;
+  // HTML 태그 제거
+  String stripped = html.replaceAll(RegExp(r'<[^>]*>'), '');
+  // HTML 엔티티 변환
+  stripped = stripped
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&amp;', '&')
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&#39;', "'");
+  // 연속 공백 정리
+  stripped = stripped.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return stripped;
+}
 
 class AdminNewsScreen extends StatefulWidget {
   const AdminNewsScreen({super.key});
@@ -72,6 +91,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                 final news = newsList[index];
                 return _AdminNewsCard(
                   news: news,
+                  onTap: () => _viewNews(news),
                   onEdit: () => _editNews(news),
                   onDelete: () => _confirmDelete(news),
                   onTogglePublish: () => _togglePublish(news),
@@ -98,6 +118,18 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => const NewsEditScreen(),
+      ),
+    );
+  }
+
+  void _viewNews(NewsModel news) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdminNewsDetailScreen(
+          news: news,
+          onEdit: () => _editNews(news),
+        ),
       ),
     );
   }
@@ -185,12 +217,14 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
 
 class _AdminNewsCard extends StatelessWidget {
   final NewsModel news;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onTogglePublish;
 
   const _AdminNewsCard({
     required this.news,
+    required this.onTap,
     required this.onEdit,
     required this.onDelete,
     required this.onTogglePublish,
@@ -198,18 +232,20 @@ class _AdminNewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: news.isPublished
-              ? AppColors.divider
-              : Colors.orange.withValues(alpha: 0.5),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.inputBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: news.isPublished
+                ? AppColors.divider
+                : Colors.orange.withValues(alpha: 0.5),
+          ),
         ),
-      ),
-      child: Column(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -302,7 +338,7 @@ class _AdminNewsCard extends StatelessWidget {
           const SizedBox(height: 8),
           // 내용 미리보기
           Text(
-            news.content,
+            _stripHtml(news.content),
             style: const TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
@@ -321,6 +357,159 @@ class _AdminNewsCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      ),
+    );
+  }
+}
+
+// HTML 내용 정리 함수
+String _cleanHtmlContent(String html) {
+  if (html.isEmpty) return html;
+  // 빈 태그 제거
+  String cleaned = html.replaceAll(RegExp(r'<p><br\s*/?></p>'), '');
+  cleaned = cleaned.replaceAll(RegExp(r'<p>\s*</p>'), '');
+  // 연속된 blockquote 병합
+  cleaned = cleaned.replaceAll(RegExp(r'</blockquote>\s*<blockquote>'), '\n');
+  return cleaned;
+}
+
+// 뉴스 상세 보기 화면
+class AdminNewsDetailScreen extends StatelessWidget {
+  final NewsModel news;
+  final VoidCallback onEdit;
+
+  const AdminNewsDetailScreen({
+    super.key,
+    required this.news,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          '뉴스 상세',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: AppColors.textPrimary),
+            onPressed: () {
+              Navigator.pop(context);
+              onEdit();
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 공개 상태
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: news.isPublished
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                news.isPublished ? '공개' : '비공개',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: news.isPublished ? Colors.green : Colors.orange,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // 제목
+            Text(
+              news.title,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // 메타 정보
+            Text(
+              '${news.authorName} · ${DateFormat('yyyy.MM.dd HH:mm').format(news.createdAt)}',
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textTertiary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            // 대표 이미지
+            if (news.imageUrl != null && news.imageUrl!.isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  news.imageUrl!,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 200,
+                    color: AppColors.divider,
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported, size: 48),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+            // 본문 내용
+            Html(
+              data: _cleanHtmlContent(news.content),
+              style: {
+                "body": Style(
+                  fontSize: FontSize(15),
+                  lineHeight: const LineHeight(1.7),
+                  color: AppColors.textPrimary,
+                  margin: Margins.zero,
+                  padding: HtmlPaddings.zero,
+                ),
+                "p": Style(
+                  margin: Margins.only(bottom: 12),
+                ),
+                "blockquote": Style(
+                  backgroundColor: AppColors.inputBackground,
+                  padding: HtmlPaddings.all(16),
+                  margin: Margins.only(bottom: 16, left: 0, right: 0),
+                  border: const Border(
+                    left: BorderSide(
+                      color: Color(0xFF6B4E71),
+                      width: 4,
+                    ),
+                  ),
+                ),
+                "img": Style(
+                  width: Width(100, Unit.percent),
+                  margin: Margins.only(top: 8, bottom: 8),
+                ),
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

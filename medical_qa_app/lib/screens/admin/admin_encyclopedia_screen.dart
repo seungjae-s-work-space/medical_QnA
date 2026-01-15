@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -9,6 +10,24 @@ import '../../services/encyclopedia_service.dart';
 import '../../utils/app_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+
+// HTML 태그 제거 함수
+String _stripHtml(String html) {
+  if (html.isEmpty) return html;
+  // HTML 태그 제거
+  String stripped = html.replaceAll(RegExp(r'<[^>]*>'), '');
+  // HTML 엔티티 변환
+  stripped = stripped
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&amp;', '&')
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&#39;', "'");
+  // 연속 공백 정리
+  stripped = stripped.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return stripped;
+}
 
 class AdminEncyclopediaScreen extends StatefulWidget {
   const AdminEncyclopediaScreen({super.key});
@@ -72,6 +91,7 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
               final article = articles[index];
               return _AdminArticleCard(
                 article: article,
+                onTap: () => _viewArticle(article),
                 onEdit: () => _editArticle(article),
                 onDelete: () => _confirmDelete(article),
                 onTogglePublish: () => _togglePublish(article),
@@ -98,6 +118,18 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => const ArticleEditScreen(),
+      ),
+    );
+  }
+
+  void _viewArticle(EncyclopediaModel article) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdminArticleDetailScreen(
+          article: article,
+          onEdit: () => _editArticle(article),
+        ),
       ),
     );
   }
@@ -185,12 +217,14 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
 
 class _AdminArticleCard extends StatelessWidget {
   final EncyclopediaModel article;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onTogglePublish;
 
   const _AdminArticleCard({
     required this.article,
+    required this.onTap,
     required this.onEdit,
     required this.onDelete,
     required this.onTogglePublish,
@@ -198,7 +232,9 @@ class _AdminArticleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.inputBackground,
@@ -300,7 +336,7 @@ class _AdminArticleCard extends StatelessWidget {
           const SizedBox(height: 8),
           // 내용 미리보기
           Text(
-            article.content,
+            _stripHtml(article.content),
             style: const TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
@@ -337,6 +373,249 @@ class _AdminArticleCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    ),
+    );
+  }
+}
+
+// HTML 정리 함수 - 빈 태그 제거 및 연속 blockquote 병합
+String _cleanHtmlContent(String html) {
+  if (html.isEmpty) return html;
+
+  String cleaned = html;
+
+  // 빈 p 태그 제거 (공백, <br>, &nbsp; 만 있는 경우)
+  cleaned = cleaned.replaceAllMapped(
+    RegExp(r'<p[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</p>', caseSensitive: false),
+    (match) => '',
+  );
+
+  // 빈 blockquote 제거
+  cleaned = cleaned.replaceAllMapped(
+    RegExp(r'<blockquote[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</blockquote>', caseSensitive: false),
+    (match) => '',
+  );
+
+  // 연속된 blockquote 병합 (</blockquote><blockquote> -> <br>)
+  cleaned = cleaned.replaceAllMapped(
+    RegExp(r'</blockquote>\s*<blockquote[^>]*>', caseSensitive: false),
+    (match) => '<br>',
+  );
+
+  return cleaned;
+}
+
+// 글 상세 보기 화면
+class AdminArticleDetailScreen extends StatelessWidget {
+  final EncyclopediaModel article;
+  final VoidCallback onEdit;
+
+  const AdminArticleDetailScreen({
+    super.key,
+    required this.article,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          '난임백과',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: AppColors.textSecondary),
+            onPressed: () {
+              Navigator.pop(context);
+              onEdit();
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 헤더 이미지
+            if (article.imageUrl != null)
+              Image.network(
+                article.imageUrl!,
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 200,
+                  color: AppColors.divider,
+                  child: const Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      size: 48,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 공개 상태
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: article.isPublished
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      article.isPublished ? '공개' : '비공개',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: article.isPublished ? Colors.green : Colors.orange,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // 제목
+                  Text(
+                    article.title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // 작성자 및 날짜
+                  Row(
+                    children: [
+                      Text(
+                        article.authorName,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '·',
+                        style: TextStyle(
+                          color: AppColors.textSecondary.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat('yyyy년 M월 d일').format(article.createdAt),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.visibility_outlined,
+                        size: 14,
+                        color: AppColors.textTertiary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${article.viewCount}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(color: AppColors.divider),
+                  const SizedBox(height: 24),
+                  // 본문 (HTML 렌더링)
+                  Html(
+                    data: _cleanHtmlContent(article.content),
+                    style: {
+                      "body": Style(
+                        fontSize: FontSize(16),
+                        color: AppColors.textPrimary,
+                        lineHeight: const LineHeight(1.6),
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                      ),
+                      "p": Style(
+                        margin: Margins.only(bottom: 12),
+                      ),
+                      "blockquote": Style(
+                        backgroundColor: const Color(0xFFEEF2FF),
+                        border: const Border(
+                          left: BorderSide(
+                            color: Color(0xFF6366F1),
+                            width: 4,
+                          ),
+                        ),
+                        padding: HtmlPaddings.symmetric(horizontal: 16, vertical: 8),
+                        margin: Margins.symmetric(vertical: 8),
+                      ),
+                      "strong": Style(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      "em": Style(
+                        fontStyle: FontStyle.italic,
+                      ),
+                      "h1": Style(
+                        fontSize: FontSize(24),
+                        fontWeight: FontWeight.bold,
+                        margin: Margins.only(top: 24, bottom: 12),
+                      ),
+                      "h2": Style(
+                        fontSize: FontSize(20),
+                        fontWeight: FontWeight.bold,
+                        margin: Margins.only(top: 20, bottom: 10),
+                      ),
+                      "h3": Style(
+                        fontSize: FontSize(18),
+                        fontWeight: FontWeight.w600,
+                        margin: Margins.only(top: 16, bottom: 8),
+                      ),
+                      "ul": Style(
+                        margin: Margins.only(left: 16, bottom: 16),
+                      ),
+                      "ol": Style(
+                        margin: Margins.only(left: 16, bottom: 16),
+                      ),
+                      "li": Style(
+                        margin: Margins.only(bottom: 4),
+                      ),
+                      "img": Style(
+                        width: Width(100, Unit.percent),
+                        margin: Margins.symmetric(vertical: 12),
+                      ),
+                    },
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
