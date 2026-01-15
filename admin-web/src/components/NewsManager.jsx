@@ -55,6 +55,7 @@ function NewsManager() {
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewArticle, setViewArticle] = useState(null);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -337,6 +338,7 @@ function NewsManager() {
           {filteredArticles.map((article) => (
             <Grid item xs={12} sm={6} md={4} key={article.id}>
               <Card
+                onClick={() => setViewArticle(article)}
                 sx={{
                   height: '100%',
                   display: 'flex',
@@ -346,6 +348,7 @@ function NewsManager() {
                     ? `1px solid ${colors.divider}`
                     : `2px solid orange`,
                   bgcolor: colors.inputBackground,
+                  cursor: 'pointer',
                   transition: 'transform 0.2s, box-shadow 0.2s',
                   '&:hover': {
                     transform: 'translateY(-2px)',
@@ -404,6 +407,7 @@ function NewsManager() {
                     {article.content}
                   </Typography>
                   <Box
+                    onClick={(e) => e.stopPropagation()}
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
@@ -537,6 +541,79 @@ function NewsManager() {
             {saving ? <CircularProgress size={20} /> : '저장'}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog
+        open={!!viewArticle}
+        onClose={() => setViewArticle(null)}
+        maxWidth="md"
+        fullWidth
+      >
+        {viewArticle && (
+          <>
+            <DialogTitle sx={{ pb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Chip
+                    size="small"
+                    label={viewArticle.isPublished ? '공개' : '비공개'}
+                    color={viewArticle.isPublished ? 'success' : 'warning'}
+                  />
+                  <Typography variant="caption" color="textSecondary">
+                    {formatDate(viewArticle.createdAt)}
+                  </Typography>
+                </Box>
+                <IconButton size="small" onClick={() => setViewArticle(null)}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent>
+              <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
+                {viewArticle.title}
+              </Typography>
+              {viewArticle.imageUrl && (
+                <Box sx={{ mb: 3 }}>
+                  <img
+                    src={viewArticle.imageUrl}
+                    alt={viewArticle.title}
+                    style={{
+                      width: '100%',
+                      maxHeight: 400,
+                      objectFit: 'cover',
+                      borderRadius: 12,
+                    }}
+                  />
+                </Box>
+              )}
+              <Typography
+                variant="body1"
+                sx={{
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.8,
+                  color: colors.textPrimary,
+                }}
+              >
+                {viewArticle.content}
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 3 }}>
+              <Button
+                onClick={() => {
+                  setViewArticle(null);
+                  handleOpenDialog(viewArticle);
+                }}
+                startIcon={<EditIcon />}
+              >
+                수정
+              </Button>
+              <Button onClick={() => setViewArticle(null)} variant="contained">
+                닫기
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
 
       {/* Snackbar */}
