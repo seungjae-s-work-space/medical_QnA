@@ -603,6 +603,14 @@ function EncyclopediaManager() {
                     margin: '16px 0',
                     borderRadius: '0 8px 8px 0',
                   },
+                  // 이미지 크기 제한
+                  '& .ql-editor img': {
+                    maxWidth: '100%',
+                    height: 'auto',
+                    maxHeight: 400,
+                    objectFit: 'contain',
+                    borderRadius: 8,
+                  },
                 }}
               >
                 <ReactQuill
