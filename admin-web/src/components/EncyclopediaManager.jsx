@@ -104,6 +104,44 @@ function EncyclopediaManager() {
   // 본문 내 이미지 목록
   const contentImages = useMemo(() => extractImagesFromContent(content), [content]);
 
+  // base64 이미지를 Storage에 업로드하고 URL 반환
+  const uploadBase64Image = async (base64String) => {
+    try {
+      // base64에서 blob 생성
+      const response = await fetch(base64String);
+      const blob = await response.blob();
+
+      const fileName = `${uuidv4()}.jpg`;
+      const storageRef = ref(storage, `encyclopedia_images/${fileName}`);
+      await uploadBytes(storageRef, blob);
+      return await getDownloadURL(storageRef);
+    } catch (error) {
+      console.error('Base64 upload error:', error);
+      return null;
+    }
+  };
+
+  // 콘텐츠 내 base64 이미지들을 Storage URL로 변환
+  const convertBase64ImagesToUrls = async (htmlContent) => {
+    const base64Regex = /<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"/g;
+    let match;
+    let result = htmlContent;
+    const matches = [];
+
+    while ((match = base64Regex.exec(htmlContent)) !== null) {
+      matches.push(match[1]);
+    }
+
+    for (const base64 of matches) {
+      const url = await uploadBase64Image(base64);
+      if (url) {
+        result = result.replace(base64, url);
+      }
+    }
+
+    return result;
+  };
+
   // 이미지 업로드 핸들러 (Quill 에디터용)
   const imageHandler = async () => {
     const input = document.createElement('input');
@@ -197,14 +235,6 @@ function EncyclopediaManager() {
     resetForm();
   };
 
-  // 대표 이미지 결정 로직: 선택된 이미지 > 첫 번째 이미지 > null
-  const getRepresentativeImageUrl = () => {
-    if (selectedImageUrl && contentImages.includes(selectedImageUrl)) {
-      return selectedImageUrl;
-    }
-    return contentImages.length > 0 ? contentImages[0] : null;
-  };
-
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) {
       setSnackbar({ open: true, message: '제목과 내용을 입력해주세요', severity: 'error' });
@@ -214,13 +244,21 @@ function EncyclopediaManager() {
     setSaving(true);
 
     try {
-      const imageUrl = getRepresentativeImageUrl();
+      // base64 이미지를 Storage URL로 변환
+      const convertedContent = await convertBase64ImagesToUrls(content.trim());
+
+      // 변환된 콘텐츠에서 이미지 추출
+      const updatedImages = extractImagesFromContent(convertedContent);
+      const imageUrl = selectedImageUrl && updatedImages.includes(selectedImageUrl)
+        ? selectedImageUrl
+        : (updatedImages.length > 0 ? updatedImages[0] : null);
+
       const user = auth.currentUser;
 
       if (editingArticle) {
         await updateDoc(doc(db, 'encyclopedia', editingArticle.id), {
           title: title.trim(),
-          content: content.trim(),
+          content: convertedContent,
           imageUrl,
           isPublished,
           updatedAt: serverTimestamp(),
@@ -229,7 +267,7 @@ function EncyclopediaManager() {
       } else {
         await addDoc(collection(db, 'encyclopedia'), {
           title: title.trim(),
-          content: content.trim(),
+          content: convertedContent,
           imageUrl,
           isPublished,
           authorId: user?.uid || '',
