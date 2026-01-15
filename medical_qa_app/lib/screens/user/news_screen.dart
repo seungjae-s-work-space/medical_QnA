@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/news_model.dart';
 import '../../services/news_service.dart';
 import '../../utils/app_colors.dart';
@@ -114,12 +115,26 @@ class _NewsCard extends StatelessWidget {
             if (news.imageUrl != null) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  news.imageUrl!,
+                child: CachedNetworkImage(
+                  imageUrl: news.imageUrl!,
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  memCacheHeight: 160,
+                  memCacheWidth: 160,
+                  placeholder: (context, url) => Container(
+                    width: 80,
+                    height: 80,
+                    color: AppColors.divider,
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     width: 80,
                     height: 80,
                     color: AppColors.divider,
@@ -231,12 +246,19 @@ class NewsDetailScreen extends StatelessWidget {
           children: [
             // 헤더 이미지
             if (news.imageUrl != null)
-              Image.network(
-                news.imageUrl!,
+              CachedNetworkImage(
+                imageUrl: news.imageUrl!,
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                placeholder: (context, url) => Container(
+                  height: 200,
+                  color: AppColors.divider,
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
                   height: 200,
                   color: AppColors.divider,
                   child: const Center(

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -453,12 +454,19 @@ class AdminArticleDetailScreen extends StatelessWidget {
           children: [
             // 헤더 이미지
             if (article.imageUrl != null)
-              Image.network(
-                article.imageUrl!,
+              CachedNetworkImage(
+                imageUrl: article.imageUrl!,
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                placeholder: (context, url) => Container(
+                  height: 200,
+                  color: AppColors.divider,
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
                   height: 200,
                   color: AppColors.divider,
                   child: const Center(
@@ -772,12 +780,19 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  _existingImageUrl!,
+                child: CachedNetworkImage(
+                  imageUrl: _existingImageUrl!,
                   width: double.infinity,
                   height: 200,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  placeholder: (context, url) => Container(
+                    height: 200,
+                    color: AppColors.divider,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     height: 200,
                     color: AppColors.divider,
                     child: const Center(

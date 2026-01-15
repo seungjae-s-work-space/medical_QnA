@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -462,11 +463,18 @@ class AdminNewsDetailScreen extends StatelessWidget {
             if (news.imageUrl != null && news.imageUrl!.isNotEmpty) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  news.imageUrl!,
+                child: CachedNetworkImage(
+                  imageUrl: news.imageUrl!,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  placeholder: (context, url) => Container(
+                    height: 200,
+                    color: AppColors.divider,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     height: 200,
                     color: AppColors.divider,
                     child: const Center(
@@ -666,12 +674,19 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  _existingImageUrl!,
+                child: CachedNetworkImage(
+                  imageUrl: _existingImageUrl!,
                   width: double.infinity,
                   height: 200,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  placeholder: (context, url) => Container(
+                    height: 200,
+                    color: AppColors.divider,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     height: 200,
                     color: AppColors.divider,
                     child: const Center(

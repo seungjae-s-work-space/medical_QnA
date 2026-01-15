@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/encyclopedia_model.dart';
 import '../../services/encyclopedia_service.dart';
 import '../../utils/app_colors.dart';
@@ -333,12 +334,26 @@ class _ArticleCard extends StatelessWidget {
             if (article.imageUrl != null) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  article.imageUrl!,
+                child: CachedNetworkImage(
+                  imageUrl: article.imageUrl!,
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  memCacheHeight: 160,
+                  memCacheWidth: 160,
+                  placeholder: (context, url) => Container(
+                    width: 80,
+                    height: 80,
+                    color: AppColors.divider,
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     width: 80,
                     height: 80,
                     color: AppColors.divider,
@@ -506,12 +521,19 @@ class EncyclopediaDetailScreen extends StatelessWidget {
           children: [
             // 헤더 이미지
             if (article.imageUrl != null)
-              Image.network(
-                article.imageUrl!,
+              CachedNetworkImage(
+                imageUrl: article.imageUrl!,
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                placeholder: (context, url) => Container(
+                  height: 200,
+                  color: AppColors.divider,
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
                   height: 200,
                   color: AppColors.divider,
                   child: const Center(
