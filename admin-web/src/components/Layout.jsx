@@ -13,18 +13,18 @@ import {
   Avatar,
   Divider,
 } from '@mui/material';
-import ChatIcon from '@mui/icons-material/Chat';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import NewspaperIcon from '@mui/icons-material/Newspaper';
-import LogoutIcon from '@mui/icons-material/Logout';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
+import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import { colors } from '../theme';
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 280;
 
 const menuItems = [
-  { path: '/', label: '상담 채팅', icon: <ChatIcon /> },
-  { path: '/encyclopedia', label: '난임백과 관리', icon: <MenuBookIcon /> },
-  { path: '/news', label: '뉴스 관리', icon: <NewspaperIcon /> },
+  { path: '/', label: '상담 채팅', icon: <ChatBubbleOutlineRoundedIcon />, description: '사용자 문의 관리' },
+  { path: '/encyclopedia', label: '난임백과', icon: <AutoStoriesRoundedIcon />, description: '정보 콘텐츠 관리' },
+  { path: '/news', label: '뉴스', icon: <ArticleRoundedIcon />, description: '뉴스 콘텐츠 관리' },
 ];
 
 function Layout({ children }) {
@@ -36,7 +36,7 @@ function Layout({ children }) {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: colors.background }}>
       {/* Sidebar */}
       <Drawer
         variant="permanent"
@@ -46,8 +46,9 @@ function Layout({ children }) {
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
             boxSizing: 'border-box',
-            bgcolor: colors.inputBackground,
-            borderRight: `1px solid ${colors.divider}`,
+            bgcolor: colors.sidebar,
+            borderRight: 'none',
+            boxShadow: '1px 0 10px rgba(0,0,0,0.03)',
           },
         }}
       >
@@ -57,37 +58,64 @@ function Layout({ children }) {
             p: 3,
             display: 'flex',
             alignItems: 'center',
-            gap: 1.5,
+            gap: 2,
           }}
         >
           <Avatar
             sx={{
-              width: 40,
-              height: 40,
-              bgcolor: colors.textPrimary,
+              width: 44,
+              height: 44,
+              bgcolor: colors.primary,
               fontSize: 18,
-              fontWeight: 600,
+              fontWeight: 700,
+              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.3)',
             }}
           >
             Q
           </Avatar>
           <Box>
             <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 700, color: colors.textPrimary, lineHeight: 1.2 }}
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                color: colors.textPrimary,
+                lineHeight: 1.2,
+                fontSize: 18,
+              }}
             >
               난임상담톡
             </Typography>
-            <Typography variant="caption" sx={{ color: colors.textSecondary }}>
-              Admin Panel
+            <Typography
+              variant="caption"
+              sx={{
+                color: colors.textTertiary,
+                fontSize: 12,
+              }}
+            >
+              관리자 대시보드
             </Typography>
           </Box>
         </Box>
 
-        <Divider sx={{ mx: 2 }} />
+        <Divider sx={{ mx: 2.5, mb: 1 }} />
 
         {/* Navigation */}
-        <List sx={{ px: 1.5, py: 2, flex: 1 }}>
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: colors.textTertiary,
+              fontWeight: 600,
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              px: 1.5,
+            }}
+          >
+            메뉴
+          </Typography>
+        </Box>
+        <List sx={{ px: 2, flex: 1 }}>
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -95,29 +123,35 @@ function Layout({ children }) {
                 <ListItemButton
                   onClick={() => navigate(item.path)}
                   sx={{
-                    borderRadius: 2,
+                    borderRadius: 2.5,
                     py: 1.5,
-                    bgcolor: isActive ? colors.backgroundAlt : 'transparent',
-                    border: isActive ? `1px solid ${colors.divider}` : '1px solid transparent',
+                    px: 2,
+                    bgcolor: isActive ? colors.primaryLight : 'transparent',
                     '&:hover': {
-                      bgcolor: colors.backgroundAlt,
+                      bgcolor: isActive ? colors.primaryLight : colors.backgroundAlt,
                     },
                   }}
                 >
                   <ListItemIcon
                     sx={{
-                      minWidth: 40,
-                      color: isActive ? colors.textPrimary : colors.textSecondary,
+                      minWidth: 44,
+                      color: isActive ? colors.primary : colors.textSecondary,
                     }}
                   >
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText
                     primary={item.label}
+                    secondary={item.description}
                     primaryTypographyProps={{
                       fontSize: 14,
                       fontWeight: isActive ? 600 : 500,
-                      color: isActive ? colors.textPrimary : colors.textSecondary,
+                      color: isActive ? colors.primary : colors.textPrimary,
+                    }}
+                    secondaryTypographyProps={{
+                      fontSize: 11,
+                      color: colors.textTertiary,
+                      mt: 0.25,
                     }}
                   />
                 </ListItemButton>
@@ -127,19 +161,27 @@ function Layout({ children }) {
         </List>
 
         {/* Logout */}
-        <Box sx={{ p: 2, borderTop: `1px solid ${colors.divider}` }}>
+        <Box sx={{ p: 2 }}>
+          <Divider sx={{ mb: 2 }} />
           <ListItemButton
             onClick={handleLogout}
             sx={{
-              borderRadius: 2,
+              borderRadius: 2.5,
               py: 1.5,
+              px: 2,
               '&:hover': {
-                bgcolor: colors.backgroundAlt,
+                bgcolor: colors.errorLight,
+                '& .MuiListItemIcon-root': {
+                  color: colors.error,
+                },
+                '& .MuiListItemText-primary': {
+                  color: colors.error,
+                },
               },
             }}
           >
-            <ListItemIcon sx={{ minWidth: 40, color: colors.textSecondary }}>
-              <LogoutIcon />
+            <ListItemIcon sx={{ minWidth: 44, color: colors.textSecondary }}>
+              <LogoutRoundedIcon />
             </ListItemIcon>
             <ListItemText
               primary="로그아웃"
@@ -158,7 +200,6 @@ function Layout({ children }) {
         component="main"
         sx={{
           flexGrow: 1,
-          bgcolor: colors.background,
           minHeight: '100vh',
           overflow: 'auto',
         }}

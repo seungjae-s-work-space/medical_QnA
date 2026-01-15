@@ -11,8 +11,10 @@ import {
   TextField,
   InputAdornment,
   Chip,
+  Avatar,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import { colors } from '../theme';
 
 function ConversationList() {
@@ -51,39 +53,68 @@ function ConversationList() {
 
   const filteredConversations = conversations.filter((conv) => {
     if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase();
     return (
-      (conv.userName || '').toLowerCase().includes(query) ||
-      (conv.lastMessage || '').toLowerCase().includes(query)
+      (conv.userName || '').toLowerCase().includes(q) ||
+      (conv.lastMessage || '').toLowerCase().includes(q)
     );
   });
 
   const unreadCount = conversations.filter((c) => c.unreadByAdmin > 0).length;
+  const totalCount = conversations.length;
 
   return (
-    <Box sx={{ p: 4, maxWidth: 900, mx: 'auto' }}>
+    <Box sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          <Typography variant="h5" fontWeight={700} color={colors.textPrimary}>
-            상담 채팅
-          </Typography>
-          {unreadCount > 0 && (
-            <Chip
-              label={`${unreadCount}개 읽지 않음`}
-              size="small"
-              sx={{
-                bgcolor: '#FFEBEE',
-                color: '#E57373',
-                fontWeight: 600,
-                fontSize: 12,
-              }}
-            />
-          )}
-        </Box>
-        <Typography variant="body2" color={colors.textSecondary}>
+        <Typography variant="h4" sx={{ color: colors.textPrimary, mb: 1 }}>
+          상담 채팅
+        </Typography>
+        <Typography variant="body1" sx={{ color: colors.textSecondary }}>
           사용자의 상담 내역을 확인하고 답변하세요
         </Typography>
+      </Box>
+
+      {/* Stats Cards */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+        <Box
+          sx={{
+            flex: 1,
+            p: 3,
+            bgcolor: colors.card,
+            borderRadius: 3,
+            border: `1px solid ${colors.border}`,
+          }}
+        >
+          <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+            전체 대화
+          </Typography>
+          <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
+            {totalCount}
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            flex: 1,
+            p: 3,
+            bgcolor: unreadCount > 0 ? colors.errorLight : colors.card,
+            borderRadius: 3,
+            border: `1px solid ${unreadCount > 0 ? colors.error : colors.border}`,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: unreadCount > 0 ? colors.error : colors.textSecondary, mb: 0.5 }}
+          >
+            읽지 않음
+          </Typography>
+          <Typography
+            variant="h4"
+            sx={{ color: unreadCount > 0 ? colors.error : colors.textPrimary, fontWeight: 700 }}
+          >
+            {unreadCount}
+          </Typography>
+        </Box>
       </Box>
 
       {/* Search */}
@@ -95,7 +126,7 @@ function ConversationList() {
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <SearchIcon sx={{ color: colors.textSecondary }} />
+              <SearchRoundedIcon sx={{ color: colors.textTertiary }} />
             </InputAdornment>
           ),
         }}
@@ -111,16 +142,16 @@ function ConversationList() {
             alignItems: 'center',
             justifyContent: 'center',
             py: 10,
-            bgcolor: colors.inputBackground,
+            bgcolor: colors.card,
             borderRadius: 3,
-            border: `1px solid ${colors.divider}`,
+            border: `1px solid ${colors.border}`,
           }}
         >
           <Box
             sx={{
-              width: 72,
-              height: 72,
-              borderRadius: 3,
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
               bgcolor: colors.backgroundAlt,
               display: 'flex',
               alignItems: 'center',
@@ -128,18 +159,18 @@ function ConversationList() {
               mb: 2,
             }}
           >
-            <Typography sx={{ fontSize: 32, opacity: 0.5 }}>💬</Typography>
+            <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 36, color: colors.textTertiary }} />
           </Box>
-          <Typography sx={{ color: colors.textSecondary, fontSize: 15 }}>
+          <Typography sx={{ color: colors.textSecondary, fontSize: 15, fontWeight: 500 }}>
             {searchQuery ? '검색 결과가 없습니다' : '아직 상담 내역이 없습니다'}
           </Typography>
         </Box>
       ) : (
         <Box
           sx={{
-            bgcolor: colors.inputBackground,
+            bgcolor: colors.card,
             borderRadius: 3,
-            border: `1px solid ${colors.divider}`,
+            border: `1px solid ${colors.border}`,
             overflow: 'hidden',
           }}
         >
@@ -165,39 +196,26 @@ function ConversationList() {
                     sx={{
                       py: 2.5,
                       px: 3,
-                      bgcolor: hasUnread ? 'rgba(229, 115, 115, 0.04)' : 'transparent',
+                      bgcolor: hasUnread ? colors.primaryLight : 'transparent',
                       '&:hover': {
-                        bgcolor: hasUnread
-                          ? 'rgba(229, 115, 115, 0.08)'
-                          : colors.backgroundAlt,
+                        bgcolor: hasUnread ? colors.primaryLight : colors.backgroundAlt,
                       },
                     }}
                   >
                     {/* Avatar */}
-                    <Box
+                    <Avatar
                       sx={{
                         width: 48,
                         height: 48,
-                        borderRadius: 2,
-                        bgcolor: hasUnread ? '#FFEBEE' : colors.backgroundAlt,
-                        border: `1px solid ${hasUnread ? '#FFCDD2' : colors.divider}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        bgcolor: hasUnread ? colors.primary : colors.backgroundAlt,
+                        color: hasUnread ? '#fff' : colors.textPrimary,
                         mr: 2.5,
-                        flexShrink: 0,
+                        fontWeight: 600,
+                        fontSize: 18,
                       }}
                     >
-                      <Typography
-                        sx={{
-                          fontSize: 18,
-                          fontWeight: 600,
-                          color: hasUnread ? '#E57373' : colors.textPrimary,
-                        }}
-                      >
-                        {initial}
-                      </Typography>
-                    </Box>
+                      {initial}
+                    </Avatar>
 
                     {/* Content */}
                     <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -224,13 +242,13 @@ function ConversationList() {
                               label={conv.unreadByAdmin}
                               size="small"
                               sx={{
-                                height: 20,
-                                minWidth: 20,
-                                bgcolor: '#E57373',
+                                height: 22,
+                                minWidth: 22,
+                                bgcolor: colors.primary,
                                 color: 'white',
                                 fontSize: 11,
                                 fontWeight: 700,
-                                '& .MuiChip-label': { px: 0.75 },
+                                '& .MuiChip-label': { px: 1 },
                               }}
                             />
                           )}
@@ -239,6 +257,7 @@ function ConversationList() {
                           sx={{
                             fontSize: 13,
                             color: colors.textTertiary,
+                            fontWeight: 500,
                           }}
                         >
                           {formatTime(conv.lastMessageAt)}

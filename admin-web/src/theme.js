@@ -1,19 +1,40 @@
 import { createTheme } from '@mui/material/styles';
 
-// 웜그레이/아이보리 톤 - Flutter 앱과 동일
+// 모던 클린 디자인 - 화이트/블루 톤
 const colors = {
-  background: '#F4F3F1',
-  backgroundAlt: '#EFEDE9',
-  userMessage: '#E8E6E2',
-  adminMessage: '#DCD9D4',
-  textPrimary: '#3C3C3C',
-  textSecondary: '#8A8A8A',
-  textTertiary: '#B0B0B0',
-  buttonBorder: '#D0CEC9',
-  buttonText: '#5A5A5A',
-  divider: '#E0DED9',
-  inputBorder: '#D8D6D1',
-  inputBackground: '#FAF9F7',
+  // 배경
+  background: '#F8FAFC',
+  backgroundAlt: '#F1F5F9',
+  sidebar: '#FFFFFF',
+  card: '#FFFFFF',
+
+  // 텍스트
+  textPrimary: '#1E293B',
+  textSecondary: '#64748B',
+  textTertiary: '#94A3B8',
+
+  // 포인트 컬러
+  primary: '#6366F1',
+  primaryLight: '#EEF2FF',
+  primaryDark: '#4F46E5',
+
+  // 상태 컬러
+  success: '#10B981',
+  successLight: '#D1FAE5',
+  warning: '#F59E0B',
+  warningLight: '#FEF3C7',
+  error: '#EF4444',
+  errorLight: '#FEE2E2',
+
+  // 기타
+  divider: '#E2E8F0',
+  border: '#E2E8F0',
+  inputBorder: '#CBD5E1',
+  inputBackground: '#FFFFFF',
+
+  // 메시지 (채팅용)
+  userMessage: '#F1F5F9',
+  adminMessage: '#EEF2FF',
 };
 
 const theme = createTheme({
@@ -21,14 +42,28 @@ const theme = createTheme({
     mode: 'light',
     background: {
       default: colors.background,
-      paper: colors.inputBackground,
+      paper: colors.card,
     },
     primary: {
-      main: colors.textPrimary,
-      contrastText: colors.background,
+      main: colors.primary,
+      light: colors.primaryLight,
+      dark: colors.primaryDark,
+      contrastText: '#FFFFFF',
     },
     secondary: {
       main: colors.textSecondary,
+    },
+    success: {
+      main: colors.success,
+      light: colors.successLight,
+    },
+    warning: {
+      main: colors.warning,
+      light: colors.warningLight,
+    },
+    error: {
+      main: colors.error,
+      light: colors.errorLight,
     },
     text: {
       primary: colors.textPrimary,
@@ -38,6 +73,7 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: [
+      'Inter',
       '-apple-system',
       'BlinkMacSystemFont',
       '"Segoe UI"',
@@ -46,6 +82,26 @@ const theme = createTheme({
       'Arial',
       'sans-serif',
     ].join(','),
+    h4: {
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
+    },
+    h5: {
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+    },
+    h6: {
+      fontWeight: 600,
+    },
+    subtitle1: {
+      fontWeight: 600,
+    },
+    body2: {
+      color: colors.textSecondary,
+    },
+  },
+  shape: {
+    borderRadius: 12,
   },
   components: {
     MuiCssBaseline: {
@@ -59,24 +115,22 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 8,
-          fontWeight: 500,
+          borderRadius: 10,
+          fontWeight: 600,
+          padding: '10px 20px',
         },
         contained: {
-          backgroundColor: colors.textPrimary,
-          color: colors.background,
           boxShadow: 'none',
           '&:hover': {
-            backgroundColor: '#2C2C2C',
-            boxShadow: 'none',
+            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
           },
         },
         outlined: {
-          borderColor: colors.buttonBorder,
+          borderColor: colors.border,
           color: colors.textPrimary,
           '&:hover': {
-            borderColor: colors.textSecondary,
-            backgroundColor: 'transparent',
+            borderColor: colors.primary,
+            backgroundColor: colors.primaryLight,
           },
         },
       },
@@ -85,48 +139,75 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            backgroundColor: colors.background,
-            borderRadius: 12,
+            backgroundColor: colors.inputBackground,
+            borderRadius: 10,
             '& fieldset': {
               borderColor: colors.inputBorder,
             },
             '&:hover fieldset': {
-              borderColor: colors.textSecondary,
+              borderColor: colors.primary,
             },
             '&.Mui-focused fieldset': {
-              borderColor: colors.textPrimary,
-              borderWidth: 1,
+              borderColor: colors.primary,
+              borderWidth: 2,
             },
           },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)',
+          border: `1px solid ${colors.border}`,
+          borderRadius: 16,
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow: 'none',
-          border: `1px solid ${colors.divider}`,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          border: `1px solid ${colors.border}`,
         },
       },
     },
-    MuiAppBar: {
+    MuiChip: {
       styleOverrides: {
         root: {
-          backgroundColor: colors.inputBackground,
-          color: colors.textPrimary,
-          boxShadow: 'none',
-          borderBottom: `1px solid ${colors.divider}`,
+          fontWeight: 500,
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 16,
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         },
       },
     },
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
-          margin: '4px 8px',
+          borderRadius: 10,
           '&:hover': {
             backgroundColor: colors.backgroundAlt,
           },
+          '&.Mui-selected': {
+            backgroundColor: colors.primaryLight,
+            '&:hover': {
+              backgroundColor: colors.primaryLight,
+            },
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
         },
       },
     },
