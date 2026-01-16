@@ -31,8 +31,9 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import RemoveRedEyeRoundedIcon from '@mui/icons-material/RemoveRedEyeRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import ReactQuill from 'react-quill';
+import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import ImageResize from 'quill-image-resize-module-react';
 import {
   collection,
   query,
@@ -49,6 +50,9 @@ import { db, storage, auth } from '../firebase';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 
+// 이미지 리사이즈 모듈 등록
+Quill.register('modules/imageResize', ImageResize);
+
 const quillFormats = [
   'header',
   'bold',
@@ -62,6 +66,9 @@ const quillFormats = [
   'indent',
   'blockquote',
   'image',
+  'width',
+  'height',
+  'style',
 ];
 
 // HTML에서 이미지 URL 추출하는 함수
@@ -183,7 +190,7 @@ function EncyclopediaManager() {
     };
   };
 
-  // Quill 모듈 설정 (imageHandler 포함)
+  // Quill 모듈 설정 (imageHandler + imageResize 포함)
   const quillModules = useMemo(() => ({
     toolbar: {
       container: [
@@ -199,6 +206,10 @@ function EncyclopediaManager() {
       handlers: {
         image: imageHandler,
       },
+    },
+    imageResize: {
+      parchment: Quill.import('parchment'),
+      modules: ['Resize', 'DisplaySize'],
     },
   }), []);
 
