@@ -5,7 +5,6 @@ import '../../services/firestore_service.dart';
 import '../../models/message_model.dart';
 import '../../widgets/message_record.dart';
 import '../../widgets/date_divider.dart';
-import '../../utils/app_colors.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -88,17 +87,24 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
+    // 채팅 화면 전용 색상
+    const backgroundColor = Colors.white;
+    const textPrimary = Color(0xFF333333);
+    const textSecondary = Color(0xFF888888);
+    const textTertiary = Color(0xFFAAAAAA);
+    const accentColor = Color(0xFF5B8BA8);
+
     if (_conversationId == null) {
       return const Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: backgroundColor,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: backgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: GestureDetector(
@@ -106,12 +112,12 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
+              color: const Color(0xFFF0F0F0),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textSecondary,
+              color: textSecondary,
               size: 18,
             ),
           ),
@@ -119,7 +125,7 @@ class _ChatScreenState extends State<ChatScreen> {
         title: const Text(
           '상담',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimary,
             fontSize: 17,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
@@ -164,7 +170,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.textPrimary,
+                              color: textPrimary,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -173,7 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppColors.textSecondary.withValues(alpha: 0.8),
+                              color: textSecondary.withValues(alpha: 0.8),
                               height: 1.5,
                             ),
                           ),
@@ -209,7 +215,7 @@ class _ChatScreenState extends State<ChatScreen> {
               bottom: MediaQuery.of(context).padding.bottom + 12,
             ),
             decoration: const BoxDecoration(
-              color: AppColors.background,
+              color: backgroundColor,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -217,7 +223,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
+                      color: const Color(0xFFF0F0F0),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: TextField(
@@ -226,13 +232,13 @@ class _ChatScreenState extends State<ChatScreen> {
                       minLines: 1,
                       style: const TextStyle(
                         fontSize: 15,
-                        color: AppColors.textPrimary,
+                        color: textPrimary,
                         height: 1.4,
                       ),
                       decoration: const InputDecoration(
                         hintText: '메시지를 입력하세요',
                         hintStyle: TextStyle(
-                          color: AppColors.textTertiary,
+                          color: textTertiary,
                           fontSize: 14,
                         ),
                         contentPadding: EdgeInsets.symmetric(
@@ -254,7 +260,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   decoration: BoxDecoration(
                     color: _isSending
                         ? const Color(0xFFE0E0E0)
-                        : const Color(0xFF5B8BA8),
+                        : accentColor,
                     borderRadius: BorderRadius.circular(23),
                   ),
                   child: IconButton(
@@ -265,7 +271,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: AppColors.background,
+                              color: Colors.white,
                             ),
                           )
                         : const Icon(

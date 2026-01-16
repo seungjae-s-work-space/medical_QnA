@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/message_model.dart';
-import '../utils/app_colors.dart';
 
-/// 메시지 버블 - 따뜻하고 세련된 디자인
+/// 메시지 버블 - 모던하고 깔끔한 디자인
 class MessageRecord extends StatelessWidget {
   final MessageModel message;
   final bool isUser;
+
+  // 채팅 전용 색상
+  static const Color _userBubbleColor = Color(0xFF5B8BA8);  // 파란색 (사용자)
+  static const Color _adminBubbleColor = Color(0xFFF0F0F0); // 밝은 회색 (관리자)
+  static const Color _adminIconBg = Color(0xFFE8F4FC);      // 아이콘 배경
+  static const Color _adminIconColor = Color(0xFF5B8BA8);   // 아이콘 색상
 
   const MessageRecord({
     super.key,
@@ -19,7 +24,7 @@ class MessageRecord extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -27,21 +32,17 @@ class MessageRecord extends StatelessWidget {
           if (!isUser) ...[
             // 상담사 아이콘
             Container(
-              width: 30,
-              height: 30,
+              width: 32,
+              height: 32,
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: AppColors.adminMessage,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: AppColors.divider,
-                  width: 1,
-                ),
+                color: _adminIconBg,
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.support_agent,
-                size: 16,
-                color: AppColors.textSecondary.withValues(alpha: 0.8),
+                size: 18,
+                color: _adminIconColor,
               ),
             ),
           ],
@@ -51,16 +52,13 @@ class MessageRecord extends StatelessWidget {
               constraints: BoxConstraints(maxWidth: screenWidth * 0.7),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isUser ? AppColors.userMessage : AppColors.inputBackground,
+                color: isUser ? _userBubbleColor : _adminBubbleColor,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
                   bottomLeft: Radius.circular(isUser ? 18 : 4),
                   bottomRight: Radius.circular(isUser ? 4 : 18),
                 ),
-                border: isUser
-                    ? null
-                    : Border.all(color: AppColors.divider, width: 1),
               ),
               child: IntrinsicWidth(
                 child: Column(
@@ -70,10 +68,10 @@ class MessageRecord extends StatelessWidget {
                     // 텍스트
                     Text(
                       message.text,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         height: 1.5,
-                        color: AppColors.textPrimary,
+                        color: isUser ? Colors.white : const Color(0xFF333333),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -98,7 +96,9 @@ class MessageRecord extends StatelessWidget {
                         DateFormat('HH:mm').format(message.createdAt),
                         style: TextStyle(
                           fontSize: 10,
-                          color: AppColors.textTertiary.withValues(alpha: 0.7),
+                          color: isUser
+                              ? Colors.white.withValues(alpha: 0.7)
+                              : const Color(0xFF999999),
                         ),
                       ),
                     ),

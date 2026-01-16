@@ -74,12 +74,17 @@ const quillFormats = [
 // HTML에서 이미지 URL 추출하는 함수
 const extractImagesFromContent = (html) => {
   if (!html) return [];
-  const imgRegex = /<img[^>]+src="([^">]+)"/g;
+  // DOM 파서를 사용하여 더 정확하게 이미지 URL 추출
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const imgElements = doc.querySelectorAll('img');
   const images = [];
-  let match;
-  while ((match = imgRegex.exec(html)) !== null) {
-    images.push(match[1]);
-  }
+  imgElements.forEach((img) => {
+    const src = img.getAttribute('src');
+    if (src && !src.startsWith('data:')) {
+      images.push(src);
+    }
+  });
   return images;
 };
 

@@ -91,10 +91,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showAboutSheet() {
+    // 바텀시트 전용 색상
+    const sheetBg = Colors.white;
+    const textPrimary = Color(0xFF333333);
+    const textSecondary = Color(0xFF888888);
+    const dividerColor = Color(0xFFE8E8E8);
+    const accentColor = Color(0xFF5B8BA8);
+    const cardBg = Color(0xFFF8F8F8);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -111,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.divider,
+                color: dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -126,17 +134,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: textPrimary,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                    icon: const Icon(Icons.close, color: textSecondary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppColors.divider),
+            const Divider(height: 1, color: dividerColor),
             // 내용
             Expanded(
               child: SingleChildScrollView(
@@ -150,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       '〈골통주부의 난임&상담톡〉은 『임신의 기술』, 『난임의사에게 속지 않는 법』의 저자이자 난임 전문 기자인 이승주가, 국내 난임 분야에서 임상 경험과 전문성을 인정받은 26인의 의료진의 자문과 협력을 바탕으로 개설한 난임 정보·상담 중심의 채팅 플랫폼입니다.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textPrimary,
+                        color: textPrimary,
                         height: 1.7,
                       ),
                     ),
@@ -161,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       '본 플랫폼을 통한 채팅 내용은 정보통신망 이용촉진 및 정보보호 등에 관한 법률 및 관련 개인정보 보호 법령에 따라 이용자와 상담자 간의 비공개를 원칙으로 하며, 운영자 또는 제3자에게 임의로 공개되지 않습니다.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textPrimary,
+                        color: textPrimary,
                         height: 1.7,
                       ),
                     ),
@@ -172,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       '채팅에서는 난임시술(인공수정, 체외수정시술 등)에 관한 의학적 정보 제공, 치료 과정 전반에 대한 이해를 돕기 위한 설명, 그리고 난임 과정에서 발생하는 일상적 고민과 감정에 대한 소통이 가능합니다.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textPrimary,
+                        color: textPrimary,
                         height: 1.7,
                       ),
                     ),
@@ -183,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       '다만, 관련 법령에 위배되거나 공서양속을 해치는 내용, 성적·폭력적·모욕적 표현 등 플랫폼 운영 원칙에 반하는 대화는 사전 고지 없이 이용 제한 또는 강제 퇴장 조치가 이루어질 수 있습니다.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary.withValues(alpha: 0.9),
+                        color: textSecondary.withValues(alpha: 0.9),
                         height: 1.7,
                       ),
                     ),
@@ -194,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       '아울러 본 플랫폼은 의료법상 의료행위 또는 진료를 제공하는 공간이 아니며, 특정 의료기관이나 특정 의료인을 소개·알선·유인하거나 이를 목적으로 하지 않습니다. 전국 각 지역의 난임 의료 환경과 제도, 진료 구조에 대한 일반적 정보 제공은 가능하나, 개별 병원이나 의료인에 대한 선택은 전적으로 이용자의 자율적 판단에 따릅니다.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary.withValues(alpha: 0.9),
+                        color: textSecondary.withValues(alpha: 0.9),
                         height: 1.7,
                       ),
                     ),
@@ -204,9 +212,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.inputBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.divider),
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Icon(
                                 Icons.verified,
                                 size: 18,
-                                color: AppColors.textSecondary.withValues(alpha: 0.8),
+                                color: accentColor,
                               ),
                               const SizedBox(width: 8),
                               const Text(
@@ -224,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
+                                  color: textPrimary,
                                 ),
                               ),
                             ],
@@ -234,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             '본 자문위원단은 난임 진료 및 생식의학 분야에서의 임상 경험과 전문성을 바탕으로, 본 플랫폼이 제공하는 정보의 의학적 정확성·공익성·중립성을 확보하기 위한 자문 및 검토 역할을 수행합니다.',
                             style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSecondary.withValues(alpha: 0.9),
+                              color: textSecondary.withValues(alpha: 0.9),
                               height: 1.6,
                             ),
                           ),
@@ -243,39 +250,39 @@ class _HomeScreenState extends State<HomeScreen> {
                             '다만, 자문위원의 참여는 개별 이용자에 대한 진료, 처방 또는 의료행위를 의미하지 않으며, 특정 의료기관이나 의료인을 추천·알선·유인하는 행위와는 무관함을 명확히 합니다.',
                             style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSecondary.withValues(alpha: 0.9),
+                              color: textSecondary.withValues(alpha: 0.9),
                               height: 1.6,
                             ),
                           ),
                           const SizedBox(height: 16),
-                          const Divider(color: AppColors.divider),
+                          const Divider(color: dividerColor),
                           const SizedBox(height: 12),
                           // 의사 목록
                           ..._doctors.map((doctor) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              children: [
-                                Text(
-                                  '${doctor['name']} 원장',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    doctor['hospital']!,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.textSecondary,
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      '${doctor['name']} 원장',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: textPrimary,
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        doctor['hospital']!,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          )),
+                              )),
                         ],
                       ),
                     ),
@@ -292,7 +299,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openSubscriptionScreen() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+    final subscriptionProvider =
+        Provider.of<SubscriptionProvider>(context, listen: false);
 
     // 구독 프로바이더 초기화
     if (authProvider.currentUser != null) {
@@ -371,8 +379,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _SmallMenuCard(
                   title: '난임뉴스',
                   icon: Icons.public,
-                  color: const Color(0xFFD4E8F0),
-                  iconColor: const Color(0xFF5B8BA8),
+                  color: const Color(0x8087C5FF),
+                  iconColor: const Color(0xFF759BBE),
+                  textColor: const Color(0xFF577DA1),
+                  arrowColor: Colors.white,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -383,7 +393,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             backgroundColor: AppColors.background,
                             elevation: 0,
                             leading: IconButton(
-                              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                              icon: const Icon(Icons.arrow_back,
+                                  color: AppColors.textPrimary),
                               onPressed: () => Navigator.pop(context),
                             ),
                             title: const Text(
@@ -554,7 +565,8 @@ class _HomeScreenState extends State<HomeScreen> {
           color: (iconColor ?? AppColors.textSecondary).withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 22),
+        child:
+            Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 22),
       ),
       title: Text(
         title,
@@ -564,17 +576,19 @@ class _HomeScreenState extends State<HomeScreen> {
           color: textColor ?? AppColors.textPrimary,
         ),
       ),
-      trailing: trailing ?? (onTap != null
-          ? Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8E8E8),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
-            )
-          : null),
+      trailing: trailing ??
+          (onTap != null
+              ? Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8E8E8),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.chevron_right,
+                      color: AppColors.textSecondary, size: 20),
+                )
+              : null),
       onTap: onTap,
     );
   }
@@ -748,7 +762,7 @@ class _NewMenuCard extends StatelessWidget {
               title,
               style: const TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w900,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -783,6 +797,8 @@ class _SmallMenuCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final Color iconColor;
+  final Color? textColor;
+  final Color? arrowColor;
   final VoidCallback onTap;
 
   const _SmallMenuCard({
@@ -790,6 +806,8 @@ class _SmallMenuCard extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.iconColor,
+    this.textColor,
+    this.arrowColor,
     required this.onTap,
   });
 
@@ -804,32 +822,47 @@ class _SmallMenuCard extends StatelessWidget {
           color: color,
           borderRadius: BorderRadius.circular(24),
         ),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(
-                  icon,
-                  size: 24,
-                  color: iconColor,
-                ),
-                Icon(
-                  Icons.chevron_right,
-                  color: iconColor,
-                  size: 22,
-                ),
-              ],
-            ),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(
+                    icon,
+                    size: 24,
+                    color: iconColor,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: textColor ?? iconColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        ' ',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: arrowColor ?? iconColor,
+              size: 24,
             ),
           ],
         ),
@@ -852,30 +885,31 @@ class _SubscriptionMenuCard extends StatelessWidget {
         height: 100,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFFF0D8E8),
+          color: const Color(0xFFECC2E3),
           borderRadius: BorderRadius.circular(24),
         ),
-        child: Row(
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.coffee_outlined,
                     size: 24,
-                    color: Color(0xFFB87BA8),
+                    color: Color(0xFF9F7395),
                   ),
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         '정회원 무제한채팅',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF8A5B80),
                         ),
                       ),
                       SizedBox(height: 2),
@@ -883,8 +917,8 @@ class _SubscriptionMenuCard extends StatelessWidget {
                         '6개월 - 1만원  /  1년 - 2만원',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Color(0xFFB87BA8),
-                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -892,9 +926,9 @@ class _SubscriptionMenuCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
-              color: Color(0xFFB87BA8),
+              color: Colors.white,
               size: 24,
             ),
           ],
