@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// 웜그레이/아이보리 톤 - "말해도 되는 공간"
 class AppColors {
-  // 배경색 - 웜그레이/아이보리
-  static const Color background = Color(0xFFF4F3F1);
-  static const Color backgroundAlt = Color(0xFFEFEDE9);
+  // 배경색 - 흰색
+  static const Color background = Color(0xFFFFFFFF);
+  static const Color backgroundAlt = Color(0xFFF8F8F8);
 
   // 메시지 배경 - 같은 계열, 명도만 다름
   static const Color userMessage = Color(0xFFE8E6E2);      // 사용자 질문 (조금 진한 톤)

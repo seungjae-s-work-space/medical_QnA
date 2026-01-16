@@ -27,6 +27,7 @@ dependencies:
   cached_network_image: ^3.3.0
   image_picker: ^1.0.5
   intl: ^0.18.1
+  flutter_svg: ^2.0.9
 
   # 유틸리티
   uuid: ^4.2.1
@@ -54,3 +55,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icons/
+    - assets/images/

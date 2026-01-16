@@ -309,23 +309,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHomeContent() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 서브타이틀
-          const Center(
-            child: Text(
-              '난임, 무엇이든 물어보세요',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-            ),
+          // 앱바 이미지
+          Image.asset(
+            'assets/images/appbar_section4x.png',
+            height: 47,
+            fit: BoxFit.contain,
           ),
-          const SizedBox(height: 24),
-
-          // 채팅하기 배너
+          const SizedBox(height: 16),
+          // 채팅하기 배너 (이미지로 대체 예정)
           _ChatBanner(
             onTap: () {
               Navigator.push(
@@ -336,37 +331,49 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
 
-          // 4개 메뉴 그리드
+          // 로고 영역
+          _buildLogoSection(),
+          const SizedBox(height: 24),
+
+          // 상단 2개 메뉴 (난임백과, 난임톡톡 소개)
           Row(
             children: [
               Expanded(
-                child: _MenuButton(
+                child: _NewMenuCard(
                   title: '난임백과',
-                  color: const Color(0xFFE8A838),
-                  onTap: () {
-                    setState(() => _currentIndex = 1);
-                  },
+                  icon: Icons.menu_book_rounded,
+                  color: const Color(0xFFF5E6A3),
+                  iconColor: const Color(0xFFD4A853),
+                  buttonBorderColor: const Color(0xFFD4A853),
+                  onTap: () => setState(() => _currentIndex = 1),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _MenuButton(
+                child: _NewMenuCard(
                   title: '난임톡톡 소개',
-                  color: const Color(0xFFADD8E6),
+                  icon: Icons.assignment_outlined,
+                  color: const Color(0xFFB8D4E8),
+                  iconColor: const Color(0xFF5B8BA8),
+                  buttonBorderColor: Colors.white,
                   onTap: _showAboutSheet,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
+
+          // 하단 2개 메뉴 (난임뉴스, 정회원 무제한채팅)
           Row(
             children: [
               Expanded(
-                child: _MenuButton(
-                  title: '난임&뉴스',
-                  color: const Color(0xFFE8A838),
+                child: _SmallMenuCard(
+                  title: '난임뉴스',
+                  icon: Icons.public,
+                  color: const Color(0xFFD4E8F0),
+                  iconColor: const Color(0xFF5B8BA8),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -381,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               onPressed: () => Navigator.pop(context),
                             ),
                             title: const Text(
-                              '난임&뉴스',
+                              '난임뉴스',
                               style: TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 18,
@@ -399,10 +406,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _MenuButton(
-                  title: '정회원 무제한채팅',
-                  subtitle: '6개월 1만원 / 1년 2만원',
-                  color: const Color(0xFFD3D3D3),
+                flex: 2,
+                child: _SubscriptionMenuCard(
                   onTap: () => _openSubscriptionScreen(),
                 ),
               ),
@@ -410,6 +415,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLogoSection() {
+    return Image.asset(
+      'assets/images/loggo_section4x.png',
+      width: double.infinity,
+      fit: BoxFit.contain,
     );
   }
 
@@ -581,19 +594,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: Text(
-          _getAppBarTitle(),
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      appBar: _currentIndex != 0
+          ? AppBar(
+              backgroundColor: AppColors.background,
+              elevation: 0,
+              title: Text(
+                _getAppBarTitle(),
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              centerTitle: true,
+            )
+          : null,
       body: SafeArea(
         child: IndexedStack(
           index: _currentIndex == 2 ? 0 : _currentIndex, // 채팅은 별도 화면으로 이동
@@ -641,88 +656,82 @@ class _ChatBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6B4E71), Color(0xFF8B6B8E)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6B4E71).withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.asset(
+          'assets/images/chatting4x.png',
+          width: double.infinity,
+          fit: BoxFit.contain,
         ),
-        child: Row(
+      ),
+    );
+  }
+}
+
+// 새 메뉴 카드 (난임백과, 난임톡톡 소개)
+class _NewMenuCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final Color iconColor;
+  final Color buttonBorderColor;
+  final VoidCallback onTap;
+
+  const _NewMenuCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.iconColor,
+    required this.buttonBorderColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 140,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '골통주부 이승주와',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '채팅하기',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'start',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(width: 4),
-                        Icon(
-                          Icons.play_arrow,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            // 아이콘
+            Icon(
+              icon,
+              size: 28,
+              color: iconColor,
+            ),
+            const Spacer(),
+            // 타이틀
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
             ),
-            // 이미지 영역 (나중에 실제 이미지로 교체)
+            const SizedBox(height: 10),
+            // view 버튼 (테두리 스타일)
             Container(
-              width: 100,
-              height: 100,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.transparent,
+                border: Border.all(color: buttonBorderColor, width: 1.5),
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(
-                Icons.chat_bubble_outline,
-                size: 48,
-                color: Colors.white54,
+              child: Text(
+                'view',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: buttonBorderColor,
+                ),
               ),
             ),
           ],
@@ -732,17 +741,19 @@ class _ChatBanner extends StatelessWidget {
   }
 }
 
-// 메뉴 버튼 위젯
-class _MenuButton extends StatelessWidget {
+// 작은 메뉴 카드 (난임뉴스)
+class _SmallMenuCard extends StatelessWidget {
   final String title;
-  final String? subtitle;
+  final IconData icon;
   final Color color;
+  final Color iconColor;
   final VoidCallback onTap;
 
-  const _MenuButton({
+  const _SmallMenuCard({
     required this.title,
-    this.subtitle,
+    required this.icon,
     required this.color,
+    required this.iconColor,
     required this.onTap,
   });
 
@@ -752,33 +763,104 @@ class _MenuButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 100,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                  color: iconColor,
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: iconColor,
+                  size: 22,
+                ),
+              ],
+            ),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
             ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                subtitle!,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textPrimary.withValues(alpha: 0.7),
-                ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 구독 메뉴 카드
+class _SubscriptionMenuCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _SubscriptionMenuCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 100,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0D8E8),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Icon(
+                    Icons.coffee_outlined,
+                    size: 24,
+                    color: Color(0xFFB87BA8),
+                  ),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '정회원 무제한채팅',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        '6개월 - 1만원  /  1년 - 2만원',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFFB87BA8),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: Color(0xFFB87BA8),
+              size: 24,
+            ),
           ],
         ),
       ),
