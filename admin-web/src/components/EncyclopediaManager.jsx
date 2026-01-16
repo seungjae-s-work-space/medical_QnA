@@ -111,9 +111,15 @@ function EncyclopediaManager() {
       const response = await fetch(base64String);
       const blob = await response.blob();
 
-      const fileName = `${uuidv4()}.jpg`;
+      // MIME 타입에서 확장자 추출
+      const mimeType = blob.type || 'image/jpeg';
+      const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+      const fileName = `${uuidv4()}.${ext}`;
       const storageRef = ref(storage, `encyclopedia_images/${fileName}`);
-      await uploadBytes(storageRef, blob);
+
+      // 메타데이터와 함께 업로드
+      const metadata = { contentType: mimeType };
+      await uploadBytes(storageRef, blob, metadata);
       return await getDownloadURL(storageRef);
     } catch (error) {
       console.error('Base64 upload error:', error);
@@ -154,9 +160,14 @@ function EncyclopediaManager() {
       if (!file) return;
 
       try {
-        const fileName = `${uuidv4()}.jpg`;
+        // 파일 확장자 추출
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const fileName = `${uuidv4()}.${ext}`;
         const storageRef = ref(storage, `encyclopedia_images/${fileName}`);
-        await uploadBytes(storageRef, file);
+
+        // 메타데이터와 함께 업로드
+        const metadata = { contentType: file.type };
+        await uploadBytes(storageRef, file, metadata);
         const url = await getDownloadURL(storageRef);
 
         const quill = quillRef.current?.getEditor();
