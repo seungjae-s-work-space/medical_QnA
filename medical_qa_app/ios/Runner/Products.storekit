@@ -1,0 +1,49 @@
+{
+  "identifier" : "Products",
+  "nonRenewingSubscriptions" : [
+    {
+      "displayPrice" : "10000",
+      "familyShareable" : false,
+      "internalID" : "6months",
+      "localizations" : [
+        {
+          "description" : "6개월 동안 무제한 채팅을 이용하세요",
+          "displayName" : "6개월 구독권",
+          "locale" : "ko"
+        }
+      ],
+      "productID" : "com.gukitso.medicalqa.subscription.6months",
+      "referenceName" : "6개월 구독권",
+      "type" : "NonRenewingSubscription"
+    },
+    {
+      "displayPrice" : "20000",
+      "familyShareable" : false,
+      "internalID" : "12months",
+      "localizations" : [
+        {
+          "description" : "12개월 동안 무제한 채팅을 이용하세요",
+          "displayName" : "12개월 구독권",
+          "locale" : "ko"
+        }
+      ],
+      "productID" : "com.gukitso.medicalqa.subscription.12months",
+      "referenceName" : "12개월 구독권",
+      "type" : "NonRenewingSubscription"
+    }
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "1234567890",
+    "_developerTeamID" : "TEAM_ID"
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

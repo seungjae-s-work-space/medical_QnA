@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'providers/subscription_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/user/home_screen.dart';
 import 'screens/admin/admin_conversations_screen.dart';
@@ -67,6 +68,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ],
       child: MaterialApp(
         title: '골통주부의 난임&상담톡',

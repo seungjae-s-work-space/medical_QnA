@@ -660,11 +660,11 @@ function NewsManager() {
                   },
                   // 강조 블록 스타일
                   '& .ql-editor blockquote': {
-                    borderLeft: `4px solid ${colors.primary}`,
-                    backgroundColor: colors.primaryLight,
+                    borderLeft: `4px solid ${colors.textPrimary}`,
+                    backgroundColor: 'transparent',
                     padding: '12px 16px',
                     margin: '16px 0',
-                    borderRadius: '0 8px 8px 0',
+                    color: colors.textPrimary,
                   },
                   // 이미지 크기 제한
                   '& .ql-editor img': {
@@ -856,11 +856,11 @@ function NewsManager() {
                   '& h2': { fontSize: '1.5em' },
                   '& h3': { fontSize: '1.25em' },
                   '& blockquote': {
-                    borderLeft: `4px solid ${colors.primary}`,
-                    backgroundColor: colors.primaryLight,
+                    borderLeft: `4px solid ${colors.textPrimary}`,
+                    backgroundColor: 'transparent',
                     padding: '8px 16px',
                     margin: '8px 0',
-                    borderRadius: '0 8px 8px 0',
+                    color: colors.textPrimary,
                   },
                   '& ul, & ol': { paddingLeft: '1.5em', margin: '0.3em 0' },
                   '& li': { marginBottom: '0.15em' },

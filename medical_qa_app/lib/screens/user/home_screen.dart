@@ -6,6 +6,8 @@ import '../../utils/app_colors.dart';
 import 'chat_screen.dart';
 import 'encyclopedia_screen.dart';
 import 'news_screen.dart';
+import 'subscription_screen.dart';
+import '../../providers/subscription_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -288,12 +290,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showComingSoon(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature 기능이 곧 출시됩니다!'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: AppColors.textPrimary,
+  void _openSubscriptionScreen() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+
+    // 구독 프로바이더 초기화
+    if (authProvider.currentUser != null) {
+      subscriptionProvider.initialize(authProvider.currentUser!.userId);
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SubscriptionScreen(),
       ),
     );
   }
@@ -394,7 +403,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: '정회원 무제한채팅',
                   subtitle: '6개월 1만원 / 1년 2만원',
                   color: const Color(0xFFD3D3D3),
-                  onTap: () => _showComingSoon('정회원 무제한채팅'),
+                  onTap: () => _openSubscriptionScreen(),
                 ),
               ),
             ],

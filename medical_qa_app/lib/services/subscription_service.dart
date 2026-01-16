@@ -1,0 +1,260 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
+import '../models/subscription_model.dart';
+
+class SubscriptionService {
+  static final SubscriptionService _instance = SubscriptionService._internal();
+  factory SubscriptionService() => _instance;
+  SubscriptionService._internal();
+
+  final InAppPurchase _iap = InAppPurchase.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  StreamSubscription<List<PurchaseDetails>>? _subscription;
+  List<ProductDetails> _products = [];
+  bool _isAvailable = false;
+
+  // 상품 ID 목록
+  Set<String> get _productIds {
+    if (Platform.isIOS) {
+      return SubscriptionPlan.defaultPlans
+          .map((p) => p.iosProductId)
+          .toSet();
+    } else {
+      return SubscriptionPlan.defaultPlans
+          .map((p) => p.androidProductId)
+          .toSet();
+    }
+  }
+
+  // 초기화
+  Future<void> initialize() async {
+    _isAvailable = await _iap.isAvailable();
+    if (!_isAvailable) {
+      debugPrint('In-app purchase is not available');
+      return;
+    }
+
+    // iOS에서 과거 거래 완료 처리
+    if (Platform.isIOS) {
+      final InAppPurchaseStoreKitPlatformAddition iosPlatformAddition =
+          _iap.getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
+      await iosPlatformAddition.setDelegate(ExamplePaymentQueueDelegate());
+    }
+
+    // 상품 정보 로드
+    await loadProducts();
+  }
+
+  // 상품 정보 로드
+  Future<void> loadProducts() async {
+    if (!_isAvailable) return;
+
+    final ProductDetailsResponse response =
+        await _iap.queryProductDetails(_productIds);
+
+    if (response.notFoundIDs.isNotEmpty) {
+      debugPrint('Products not found: ${response.notFoundIDs}');
+    }
+
+    _products = response.productDetails;
+    debugPrint('Loaded ${_products.length} products');
+  }
+
+  // 구매 스트림 리스닝 시작
+  void startListening(Function(PurchaseDetails) onPurchaseUpdate) {
+    _subscription = _iap.purchaseStream.listen(
+      (List<PurchaseDetails> purchaseDetailsList) {
+        for (final purchaseDetails in purchaseDetailsList) {
+          onPurchaseUpdate(purchaseDetails);
+        }
+      },
+      onDone: () {
+        _subscription?.cancel();
+      },
+      onError: (error) {
+        debugPrint('Purchase stream error: $error');
+      },
+    );
+  }
+
+  // 구매 스트림 리스닝 중지
+  void stopListening() {
+    _subscription?.cancel();
+    _subscription = null;
+  }
+
+  // 상품 목록 가져오기
+  List<ProductDetails> get products => _products;
+
+  // 특정 플랜의 상품 정보 가져오기
+  ProductDetails? getProductForPlan(SubscriptionPlan plan) {
+    final productId = Platform.isIOS ? plan.iosProductId : plan.androidProductId;
+    try {
+      return _products.firstWhere((p) => p.id == productId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 구매 시작
+  Future<bool> purchaseSubscription(SubscriptionPlan plan) async {
+    final product = getProductForPlan(plan);
+    if (product == null) {
+      debugPrint('Product not found for plan: ${plan.id}');
+      return false;
+    }
+
+    final PurchaseParam purchaseParam = PurchaseParam(
+      productDetails: product,
+    );
+
+    try {
+      return await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+    } catch (e) {
+      debugPrint('Purchase error: $e');
+      return false;
+    }
+  }
+
+  // 구매 완료 처리
+  Future<void> completePurchase(PurchaseDetails purchaseDetails) async {
+    if (purchaseDetails.pendingCompletePurchase) {
+      await _iap.completePurchase(purchaseDetails);
+    }
+  }
+
+  // 구매 복원
+  Future<void> restorePurchases() async {
+    await _iap.restorePurchases();
+  }
+
+  // Firestore에 구독 정보 저장
+  Future<void> saveSubscription({
+    required String userId,
+    required SubscriptionPlan plan,
+    required PurchaseDetails purchaseDetails,
+  }) async {
+    final now = DateTime.now();
+    final endDate = now.add(Duration(days: plan.durationMonths * 30));
+
+    final subscription = SubscriptionModel(
+      id: '', // Firestore에서 자동 생성
+      userId: userId,
+      planId: plan.id,
+      status: SubscriptionStatus.active,
+      platform: Platform.isIOS ? 'ios' : 'android',
+      platformProductId: purchaseDetails.productID,
+      transactionId: purchaseDetails.purchaseID,
+      originalTransactionId: _getOriginalTransactionId(purchaseDetails),
+      startDate: now,
+      endDate: endDate,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    // 구독 정보 저장
+    final docRef = await _firestore
+        .collection('subscriptions')
+        .add(subscription.toMap());
+
+    // 사용자 문서 업데이트
+    await _firestore.collection('users').doc(userId).update({
+      'subscriptionId': docRef.id,
+      'subscriptionStatus': SubscriptionStatus.active.name,
+      'subscriptionEndDate': Timestamp.fromDate(endDate),
+    });
+  }
+
+  // 원본 거래 ID 추출 (iOS)
+  String? _getOriginalTransactionId(PurchaseDetails purchaseDetails) {
+    if (Platform.isIOS && purchaseDetails is AppStorePurchaseDetails) {
+      return purchaseDetails.skPaymentTransaction.originalTransaction
+          ?.transactionIdentifier;
+    }
+    return null;
+  }
+
+  // 사용자의 현재 구독 정보 가져오기
+  Future<SubscriptionModel?> getCurrentSubscription(String userId) async {
+    final querySnapshot = await _firestore
+        .collection('subscriptions')
+        .where('userId', isEqualTo: userId)
+        .where('status', whereIn: ['active', 'cancelled'])
+        .orderBy('endDate', descending: true)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isEmpty) {
+      return null;
+    }
+
+    return SubscriptionModel.fromFirestore(querySnapshot.docs.first);
+  }
+
+  // 구독 상태 확인 및 업데이트
+  Future<void> checkAndUpdateSubscriptionStatus(String userId) async {
+    final subscription = await getCurrentSubscription(userId);
+    if (subscription == null) return;
+
+    final now = DateTime.now();
+    if (subscription.endDate.isBefore(now) &&
+        subscription.status != SubscriptionStatus.expired) {
+      // 구독 만료 처리
+      await _firestore
+          .collection('subscriptions')
+          .doc(subscription.id)
+          .update({
+        'status': SubscriptionStatus.expired.name,
+        'updatedAt': Timestamp.fromDate(now),
+      });
+
+      await _firestore.collection('users').doc(userId).update({
+        'subscriptionStatus': SubscriptionStatus.expired.name,
+      });
+    }
+  }
+
+  // 구독 플랜 정보 가져오기
+  SubscriptionPlan? getPlanById(String planId) {
+    try {
+      return SubscriptionPlan.defaultPlans.firstWhere((p) => p.id == planId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 사용 가능 여부
+  bool get isAvailable => _isAvailable;
+
+  // 리소스 정리
+  void dispose() {
+    stopListening();
+    if (Platform.isIOS) {
+      final InAppPurchaseStoreKitPlatformAddition iosPlatformAddition =
+          _iap.getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
+      iosPlatformAddition.setDelegate(null);
+    }
+  }
+}
+
+// iOS 결제 대리자
+class ExamplePaymentQueueDelegate implements SKPaymentQueueDelegateWrapper {
+  @override
+  bool shouldContinueTransaction(
+    SKPaymentTransactionWrapper transaction,
+    SKStorefrontWrapper storefront,
+  ) {
+    return true;
+  }
+
+  @override
+  bool shouldShowPriceConsent() {
+    return false;
+  }
+}

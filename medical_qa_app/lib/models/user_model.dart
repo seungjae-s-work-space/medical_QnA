@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'subscription_model.dart';
 
 class UserModel {
   final String userId;
@@ -10,6 +11,11 @@ class UserModel {
   final DateTime createdAt;
   final DateTime? lastSeenAt;
 
+  // 구독 관련 필드
+  final String? subscriptionId;        // 현재 구독 ID
+  final SubscriptionStatus subscriptionStatus; // 구독 상태
+  final DateTime? subscriptionEndDate; // 구독 만료일
+
   UserModel({
     required this.userId,
     required this.role,
@@ -19,6 +25,9 @@ class UserModel {
     this.fcmToken,
     required this.createdAt,
     this.lastSeenAt,
+    this.subscriptionId,
+    this.subscriptionStatus = SubscriptionStatus.free,
+    this.subscriptionEndDate,
   });
 
   // Firestore에서 읽기
@@ -33,6 +42,12 @@ class UserModel {
       fcmToken: data['fcmToken'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       lastSeenAt: (data['lastSeenAt'] as Timestamp?)?.toDate(),
+      subscriptionId: data['subscriptionId'],
+      subscriptionStatus: SubscriptionStatus.values.firstWhere(
+        (e) => e.name == data['subscriptionStatus'],
+        orElse: () => SubscriptionStatus.free,
+      ),
+      subscriptionEndDate: (data['subscriptionEndDate'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -47,11 +62,24 @@ class UserModel {
       'fcmToken': fcmToken,
       'createdAt': Timestamp.fromDate(createdAt),
       'lastSeenAt': lastSeenAt != null ? Timestamp.fromDate(lastSeenAt!) : null,
+      'subscriptionId': subscriptionId,
+      'subscriptionStatus': subscriptionStatus.name,
+      'subscriptionEndDate': subscriptionEndDate != null
+          ? Timestamp.fromDate(subscriptionEndDate!)
+          : null,
     };
   }
 
   // 관리자 여부 확인
   bool get isAdmin => role == 'admin';
+
+  // 구독 유효 여부 확인
+  bool get hasActiveSubscription {
+    if (subscriptionStatus == SubscriptionStatus.free) return false;
+    if (subscriptionStatus == SubscriptionStatus.expired) return false;
+    if (subscriptionEndDate == null) return false;
+    return DateTime.now().isBefore(subscriptionEndDate!);
+  }
 
   // copyWith
   UserModel copyWith({
@@ -63,6 +91,9 @@ class UserModel {
     String? fcmToken,
     DateTime? createdAt,
     DateTime? lastSeenAt,
+    String? subscriptionId,
+    SubscriptionStatus? subscriptionStatus,
+    DateTime? subscriptionEndDate,
   }) {
     return UserModel(
       userId: userId ?? this.userId,
@@ -73,6 +104,9 @@ class UserModel {
       fcmToken: fcmToken ?? this.fcmToken,
       createdAt: createdAt ?? this.createdAt,
       lastSeenAt: lastSeenAt ?? this.lastSeenAt,
+      subscriptionId: subscriptionId ?? this.subscriptionId,
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
     );
   }
 }

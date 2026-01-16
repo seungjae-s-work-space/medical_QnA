@@ -32,6 +32,10 @@ dependencies:
   uuid: ^4.2.1
   shared_preferences: ^2.2.2
 
+  # 인앱결제
+  in_app_purchase: ^3.2.0
+  in_app_purchase_storekit: ^0.3.18
+
   # HTML 렌더링
   flutter_html: ^3.0.0-beta.2
 
