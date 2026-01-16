@@ -331,7 +331,6 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          const SizedBox(height: 24),
 
           // 로고 영역
           _buildLogoSection(),
@@ -344,9 +343,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _NewMenuCard(
                   title: '난임백과',
                   icon: Icons.menu_book_rounded,
-                  color: const Color(0xFFF5E6A3),
-                  iconColor: const Color(0xFFD4A853),
-                  buttonBorderColor: const Color(0xFFD4A853),
+                  color: const Color(0xFFFFC77D),
+                  iconColor: const Color(0xFFBC843D),
+                  buttonBorderColor: Colors.white,
                   onTap: () => setState(() => _currentIndex = 1),
                 ),
               ),
@@ -355,8 +354,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _NewMenuCard(
                   title: '난임톡톡 소개',
                   icon: Icons.assignment_outlined,
-                  color: const Color(0xFFB8D4E8),
-                  iconColor: const Color(0xFF5B8BA8),
+                  color: const Color(0xFF87C6FF),
+                  iconColor: const Color(0xFF5A83CF),
                   buttonBorderColor: Colors.white,
                   onTap: _showAboutSheet,
                 ),
@@ -442,22 +441,22 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.inputBackground,
-              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFF0D8E8),
+              borderRadius: BorderRadius.circular(24),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6B4E71).withValues(alpha: 0.2),
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFB87BA8),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.person,
                     size: 32,
-                    color: Color(0xFF6B4E71),
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -490,29 +489,48 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 24),
 
           // 설정 메뉴
-          _buildSettingItem(
-            icon: _notificationsEnabled
-                ? Icons.notifications_active
-                : Icons.notifications_off_outlined,
-            title: '알림 설정',
-            trailing: Switch(
-              value: _notificationsEnabled,
-              onChanged: (_) => _toggleNotification(),
-              activeColor: const Color(0xFF6B4E71),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAFAFA),
+              borderRadius: BorderRadius.circular(20),
             ),
-          ),
-          const Divider(height: 1, color: AppColors.divider),
-          _buildSettingItem(
-            icon: Icons.info_outline,
-            title: '난임톡톡 소개',
-            onTap: _showAboutSheet,
-          ),
-          const Divider(height: 1, color: AppColors.divider),
-          _buildSettingItem(
-            icon: Icons.logout,
-            title: '로그아웃',
-            onTap: () => authProvider.signOut(),
-            textColor: Colors.red,
+            child: Column(
+              children: [
+                _buildSettingItem(
+                  icon: _notificationsEnabled
+                      ? Icons.notifications_active
+                      : Icons.notifications_off_outlined,
+                  title: '알림 설정',
+                  iconColor: const Color(0xFF5B8BA8),
+                  trailing: Switch(
+                    value: _notificationsEnabled,
+                    onChanged: (_) => _toggleNotification(),
+                    activeColor: const Color(0xFF5B8BA8),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Divider(height: 1, color: Color(0xFFE8E8E8)),
+                ),
+                _buildSettingItem(
+                  icon: Icons.info_outline,
+                  title: '난임톡톡 소개',
+                  iconColor: const Color(0xFFD4A853),
+                  onTap: _showAboutSheet,
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Divider(height: 1, color: Color(0xFFE8E8E8)),
+                ),
+                _buildSettingItem(
+                  icon: Icons.logout,
+                  title: '로그아웃',
+                  iconColor: Colors.red.shade300,
+                  onTap: () => authProvider.signOut(),
+                  textColor: Colors.red.shade400,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -525,19 +543,37 @@ class _HomeScreenState extends State<HomeScreen> {
     VoidCallback? onTap,
     Widget? trailing,
     Color? textColor,
+    Color? iconColor,
   }) {
     return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: textColor ?? AppColors.textSecondary),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: (iconColor ?? AppColors.textSecondary).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: iconColor ?? AppColors.textSecondary, size: 22),
+      ),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 15,
+          fontWeight: FontWeight.w500,
           color: textColor ?? AppColors.textPrimary,
         ),
       ),
       trailing: trailing ?? (onTap != null
-          ? const Icon(Icons.chevron_right, color: AppColors.textSecondary)
+          ? Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8E8E8),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+            )
           : null),
       onTap: onTap,
     );
@@ -691,7 +727,7 @@ class _NewMenuCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 140,
+        height: 137,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: color,

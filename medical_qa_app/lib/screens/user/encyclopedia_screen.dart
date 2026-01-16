@@ -102,16 +102,15 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
       children: [
         // 검색 바
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Row(
             children: [
               Expanded(
                 child: Container(
-                  height: 44,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: AppColors.inputBackground,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: AppColors.divider),
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: TextField(
                     controller: _searchController,
@@ -150,30 +149,34 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
               if (_matchedIndices.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5E6A3),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Text(
                     '${_currentMatchIndex + 1}/${_matchedIndices.length}',
                     style: const TextStyle(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      color: Color(0xFFD4A853),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
+                const SizedBox(width: 4),
                 GestureDetector(
                   onTap: _goToPreviousMatch,
                   child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AppColors.inputBackground,
+                    width: 36,
+                    height: 36,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF5E6A3),
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.divider),
                     ),
                     child: const Icon(
                       Icons.keyboard_arrow_up,
-                      size: 20,
-                      color: AppColors.textSecondary,
+                      size: 22,
+                      color: Color(0xFFD4A853),
                     ),
                   ),
                 ),
@@ -181,17 +184,16 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                 GestureDetector(
                   onTap: _goToNextMatch,
                   child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AppColors.inputBackground,
+                    width: 36,
+                    height: 36,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF5E6A3),
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.divider),
                     ),
                     child: const Icon(
                       Icons.keyboard_arrow_down,
-                      size: 20,
-                      color: AppColors.textSecondary,
+                      size: 22,
+                      color: Color(0xFFD4A853),
                     ),
                   ),
                 ),
@@ -199,7 +201,6 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
             ],
           ),
         ),
-        const Divider(height: 1, color: AppColors.divider),
         // 게시글 목록
         Expanded(
           child: StreamBuilder<List<EncyclopediaModel>>(
@@ -314,17 +315,17 @@ class _ArticleCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isHighlighted
-              ? const Color(0xFF6B4E71).withValues(alpha: 0.15)
+              ? const Color(0xFFF5E6A3).withValues(alpha: 0.6)
               : isMatched
-                  ? const Color(0xFFE8A838).withValues(alpha: 0.1)
-                  : AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(12),
+                  ? const Color(0xFFF5E6A3).withValues(alpha: 0.3)
+                  : const Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isHighlighted
-                ? const Color(0xFF6B4E71)
+                ? const Color(0xFFD4A853)
                 : isMatched
-                    ? const Color(0xFFE8A838)
-                    : AppColors.divider,
+                    ? const Color(0xFFD4A853).withValues(alpha: 0.5)
+                    : Colors.transparent,
             width: isHighlighted ? 2 : 1,
           ),
         ),
@@ -411,9 +412,18 @@ class _ArticleCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF5E6A3),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.chevron_right,
+                color: Color(0xFFD4A853),
+                size: 20,
+              ),
             ),
           ],
         ),
@@ -594,6 +604,45 @@ class EncyclopediaDetailScreen extends StatelessWidget {
                   // 본문 (HTML 렌더링)
                   Html(
                     data: _cleanHtmlContent(article.content),
+                    extensions: [
+                      TagExtension(
+                        tagsToExtend: {"img"},
+                        builder: (extensionContext) {
+                          final src = extensionContext.attributes['src'];
+                          if (src == null || src.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: CachedNetworkImage(
+                                imageUrl: src,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                                placeholder: (context, url) => Container(
+                                  height: 200,
+                                  color: AppColors.divider,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  height: 100,
+                                  color: AppColors.divider,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                     style: {
                       "body": Style(
                         fontSize: FontSize(16),

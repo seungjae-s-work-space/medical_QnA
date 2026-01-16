@@ -105,9 +105,8 @@ class _NewsCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider),
+          color: const Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
@@ -175,9 +174,18 @@ class _NewsCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                color: Color(0xFFD4E8F0),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.chevron_right,
+                color: Color(0xFF5B8BA8),
+                size: 20,
+              ),
             ),
           ],
         ),
@@ -231,7 +239,7 @@ class NewsDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          '난임&뉴스',
+          '난임뉴스',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
@@ -319,6 +327,45 @@ class NewsDetailScreen extends StatelessWidget {
                   // 본문 (HTML 렌더링)
                   Html(
                     data: _cleanHtmlContent(news.content),
+                    extensions: [
+                      TagExtension(
+                        tagsToExtend: {"img"},
+                        builder: (extensionContext) {
+                          final src = extensionContext.attributes['src'];
+                          if (src == null || src.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: CachedNetworkImage(
+                                imageUrl: src,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                                placeholder: (context, url) => Container(
+                                  height: 200,
+                                  color: AppColors.divider,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  height: 100,
+                                  color: AppColors.divider,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                     style: {
                       "body": Style(
                         fontSize: FontSize(16),

@@ -101,20 +101,27 @@ class _ChatScreenState extends State<ChatScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.textSecondary,
-            size: 20,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
           ),
-          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           '상담',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 17,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
           ),
         ),
@@ -139,20 +146,16 @@ class _ChatScreenState extends State<ChatScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            width: 64,
-                            height: 64,
+                            width: 72,
+                            height: 72,
                             decoration: BoxDecoration(
-                              color: AppColors.inputBackground,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.divider,
-                                width: 1,
-                              ),
+                              color: const Color(0xFFB8D4E8),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.forum_outlined,
-                              size: 28,
-                              color: AppColors.textSecondary.withValues(alpha: 0.6),
+                              size: 32,
+                              color: Color(0xFF5B8BA8),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -205,18 +208,8 @@ class _ChatScreenState extends State<ChatScreen> {
               top: 12,
               bottom: MediaQuery.of(context).padding.bottom + 12,
             ),
-            decoration: BoxDecoration(
-              color: AppColors.inputBackground,
-              border: const Border(
-                top: BorderSide(color: AppColors.divider, width: 1),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
+            decoration: const BoxDecoration(
+              color: AppColors.background,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -224,12 +217,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: const Color(0xFFF5F5F5),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: AppColors.divider,
-                        width: 1,
-                      ),
                     ),
                     child: TextField(
                       controller: _messageController,
@@ -259,14 +248,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(width: 10),
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 46,
+                  height: 46,
                   margin: const EdgeInsets.only(bottom: 2),
                   decoration: BoxDecoration(
                     color: _isSending
-                        ? AppColors.divider
-                        : AppColors.textPrimary.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(22),
+                        ? const Color(0xFFE0E0E0)
+                        : const Color(0xFF5B8BA8),
+                    borderRadius: BorderRadius.circular(23),
                   ),
                   child: IconButton(
                     onPressed: _isSending ? null : _sendMessage,
@@ -281,7 +270,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           )
                         : const Icon(
                             Icons.arrow_upward_rounded,
-                            color: AppColors.background,
+                            color: Colors.white,
                             size: 22,
                           ),
                   ),

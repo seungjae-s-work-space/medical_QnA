@@ -100,53 +100,68 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: hasActive
-            ? const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : null,
-        color: hasActive ? null : AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: hasActive ? null : Border.all(color: AppColors.divider),
+        color: hasActive ? const Color(0xFFF0D8E8) : const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                hasActive ? Icons.workspace_premium : Icons.person_outline,
-                color: hasActive ? Colors.white : AppColors.textSecondary,
-                size: 28,
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: hasActive
+                      ? const Color(0xFFB87BA8).withValues(alpha: 0.2)
+                      : const Color(0xFFE0E0E0),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  hasActive ? Icons.workspace_premium : Icons.person_outline,
+                  color: hasActive ? const Color(0xFFB87BA8) : AppColors.textSecondary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
                 hasActive ? '프리미엄 구독 중' : '무료 사용자',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: hasActive ? Colors.white : AppColors.textPrimary,
+                  color: hasActive ? const Color(0xFFB87BA8) : AppColors.textPrimary,
                 ),
               ),
             ],
           ),
           if (hasActive && subscription != null) ...[
             const SizedBox(height: 16),
-            Text(
-              '남은 기간: ${provider.remainingDays}일',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '만료일: ${DateFormat('yyyy년 M월 d일').format(subscription.endDate)}',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white60,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '남은 기간: ${provider.remainingDays}일',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFB87BA8),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '만료일: ${DateFormat('yyyy년 M월 d일').format(subscription.endDate)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
           ] else ...[
@@ -179,11 +194,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFEEF2FF) : AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? const Color(0xFFF0D8E8) : const Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF6366F1) : AppColors.divider,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? const Color(0xFFB87BA8) : Colors.transparent,
+            width: 2,
           ),
         ),
         child: Row(
@@ -194,22 +209,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
+                color: isSelected ? const Color(0xFFB87BA8) : Colors.transparent,
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF6366F1)
+                      ? const Color(0xFFB87BA8)
                       : AppColors.textSecondary,
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? Center(
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFF6366F1),
-                        ),
+                  ? const Center(
+                      child: Icon(
+                        Icons.check,
+                        size: 14,
+                        color: Colors.white,
                       ),
                     )
                   : null,
@@ -227,7 +240,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: isSelected
-                          ? const Color(0xFF6366F1)
+                          ? const Color(0xFFB87BA8)
                           : AppColors.textPrimary,
                     ),
                   ),
@@ -246,14 +259,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ),
 
             // 가격
-            Text(
-              price,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF6366F1)
-                    : AppColors.textPrimary,
+                    ? const Color(0xFFB87BA8).withValues(alpha: 0.15)
+                    : const Color(0xFFE8E8E8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                price,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected
+                      ? const Color(0xFFB87BA8)
+                      : AppColors.textPrimary,
+                ),
               ),
             ),
           ],
@@ -271,11 +293,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ? null
             : () => _handlePurchase(provider),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6366F1),
-          disabledBackgroundColor: AppColors.divider,
+          backgroundColor: const Color(0xFFB87BA8),
+          disabledBackgroundColor: const Color(0xFFE0E0E0),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(28),
           ),
+          elevation: 0,
         ),
         child: provider.isPurchasing
             ? const SizedBox(
@@ -321,8 +344,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

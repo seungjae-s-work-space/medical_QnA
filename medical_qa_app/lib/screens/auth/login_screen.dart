@@ -73,18 +73,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const SizedBox(height: 60),
 
-                  // 타이틀
-                  Text(
-                    '난임&상담톡',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                      letterSpacing: 1,
-                    ),
+                  // 로고 이미지
+                  Image.asset(
+                    'assets/images/appbar_section4x.png',
+                    height: 60,
+                    fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // 서브 타이틀
                   Text(
@@ -92,19 +87,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? '난임시술, 이제 혼자 고민하지 마세요'
                         : '새 계정을 만들어주세요',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       color: AppColors.textSecondary,
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 48),
 
                   // 이름 필드 (회원가입시에만)
                   if (!_isLogin) ...[
                     _buildInputField(
                       controller: _nameController,
                       hintText: '이름',
+                      icon: Icons.person_outline,
                       validator: (value) {
                         if (!_isLogin && (value == null || value.isEmpty)) {
                           return '이름을 입력해주세요';
@@ -119,6 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   _buildInputField(
                     controller: _emailController,
                     hintText: '이메일',
+                    icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -136,6 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   _buildInputField(
                     controller: _passwordController,
                     hintText: '비밀번호',
+                    icon: Icons.lock_outline,
                     obscureText: _obscurePassword,
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -162,33 +160,33 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 32),
 
                   // 제출 버튼
-                  Container(
-                    height: 52,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.buttonBorder),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: TextButton(
+                  SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
                       onPressed: authProvider.isLoading ? null : _submit,
-                      style: TextButton.styleFrom(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB87BA8),
+                        disabledBackgroundColor: const Color(0xFFE0E0E0),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(7),
+                          borderRadius: BorderRadius.circular(28),
                         ),
+                        elevation: 0,
                       ),
                       child: authProvider.isLoading
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: AppColors.textSecondary,
+                                color: Colors.white,
                               ),
                             )
                           : Text(
                               _isLogin ? '로그인' : '회원가입',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: AppColors.buttonText,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
                                 letterSpacing: 1,
                               ),
                             ),
@@ -203,13 +201,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         _isLogin = !_isLogin;
                       });
                     },
-                    child: Text(
-                      _isLogin
-                          ? '계정이 없으신가요? 회원가입'
-                          : '이미 계정이 있으신가요? 로그인',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 13),
+                        children: [
+                          TextSpan(
+                            text: _isLogin ? '계정이 없으신가요? ' : '이미 계정이 있으신가요? ',
+                            style: const TextStyle(color: AppColors.textSecondary),
+                          ),
+                          TextSpan(
+                            text: _isLogin ? '회원가입' : '로그인',
+                            style: const TextStyle(
+                              color: Color(0xFFB87BA8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -227,6 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildInputField({
     required TextEditingController controller,
     required String hintText,
+    IconData? icon,
     TextInputType? keyboardType,
     bool obscureText = false,
     Widget? suffixIcon,
@@ -236,38 +244,45 @@ class _LoginScreenState extends State<LoginScreen> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 16,
         color: AppColors.textPrimary,
       ),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(
+        hintStyle: const TextStyle(
           color: AppColors.textTertiary,
           fontSize: 15,
         ),
         filled: true,
-        fillColor: AppColors.inputBackground,
+        fillColor: const Color(0xFFF5F5F5),
+        prefixIcon: icon != null
+            ? Container(
+                margin: const EdgeInsets.only(left: 16, right: 12),
+                child: Icon(icon, color: const Color(0xFFB87BA8), size: 22),
+              )
+            : null,
+        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.inputBorder),
+          borderRadius: BorderRadius.circular(24),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.inputBorder),
+          borderRadius: BorderRadius.circular(24),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.textSecondary),
+          borderRadius: BorderRadius.circular(24),
+          borderSide: const BorderSide(color: Color(0xFFB87BA8), width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(24),
           borderSide: BorderSide(color: Colors.red.shade300),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(24),
           borderSide: BorderSide(color: Colors.red.shade300),
         ),
       ),

@@ -560,6 +560,45 @@ class AdminArticleDetailScreen extends StatelessWidget {
                   // 본문 (HTML 렌더링)
                   Html(
                     data: _cleanHtmlContent(article.content),
+                    extensions: [
+                      TagExtension(
+                        tagsToExtend: {"img"},
+                        builder: (extensionContext) {
+                          final src = extensionContext.attributes['src'];
+                          if (src == null || src.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: CachedNetworkImage(
+                                imageUrl: src,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                                placeholder: (context, url) => Container(
+                                  height: 200,
+                                  color: AppColors.divider,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  height: 100,
+                                  color: AppColors.divider,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                     style: {
                       "body": Style(
                         fontSize: FontSize(16),
@@ -611,10 +650,6 @@ class AdminArticleDetailScreen extends StatelessWidget {
                       ),
                       "li": Style(
                         margin: Margins.only(bottom: 4),
-                      ),
-                      "img": Style(
-                        width: Width(100, Unit.percent),
-                        margin: Margins.symmetric(vertical: 12),
                       ),
                     },
                   ),
