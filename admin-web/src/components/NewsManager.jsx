@@ -97,6 +97,13 @@ const stripHtml = (html) => {
   return tmp.textContent || tmp.innerText || '';
 };
 
+// 연속된 blockquote 병합 함수
+const mergeConsecutiveBlockquotes = (html) => {
+  if (!html) return html;
+  // </blockquote> 바로 다음에 <blockquote>가 오면 <br>로 교체
+  return html.replace(/<\/blockquote>\s*<blockquote>/gi, '<br>');
+};
+
 function NewsManager() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -213,6 +220,20 @@ function NewsManager() {
         image: imageHandler,
       },
     },
+    keyboard: {
+      bindings: {
+        // Shift+Enter: 같은 블록 내 줄바꿈 (soft break)
+        linebreak: {
+          key: 13, // Enter
+          shiftKey: true,
+          handler: function(range) {
+            this.quill.insertText(range.index, '\n');
+            this.quill.setSelection(range.index + 1);
+            return false;
+          },
+        },
+      },
+    },
     imageResize: {
       parchment: Quill.import('parchment'),
       modules: ['Resize', 'DisplaySize', 'Toolbar'],
@@ -278,7 +299,9 @@ function NewsManager() {
 
     try {
       // base64 이미지를 Storage URL로 변환
-      const convertedContent = await convertBase64ImagesToUrls(content.trim());
+      let convertedContent = await convertBase64ImagesToUrls(content.trim());
+      // 연속된 blockquote 병합
+      convertedContent = mergeConsecutiveBlockquotes(convertedContent);
 
       // 변환된 콘텐츠에서 이미지 추출
       const updatedImages = extractImagesFromContent(convertedContent);
