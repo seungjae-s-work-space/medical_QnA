@@ -24,6 +24,10 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   String _searchQuery = '';
   bool _isSearching = false;
 
+  // 페이지네이션
+  static const int _itemsPerPage = 5;
+  int _currentPage = 0;
+
   // 각 아이템의 GlobalKey를 저장
   final Map<int, GlobalKey> _itemKeys = {};
 
@@ -248,29 +252,53 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                 );
               }
 
-              return ListView.separated(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                itemCount: _allArticles.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  // GlobalKey 생성 및 저장
-                  _itemKeys[index] ??= GlobalKey();
+              // 페이지네이션 계산
+              final totalPages = (_allArticles.length / _itemsPerPage).ceil();
+              final startIndex = _currentPage * _itemsPerPage;
+              final endIndex = (startIndex + _itemsPerPage).clamp(0, _allArticles.length);
+              final pageItems = _allArticles.sublist(startIndex, endIndex);
 
-                  final article = _allArticles[index];
-                  final isMatched = _matchedIndices.contains(index);
-                  final isCurrentMatch = _matchedIndices.isNotEmpty &&
-                      _matchedIndices[_currentMatchIndex] == index;
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView.separated(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: pageItems.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final actualIndex = startIndex + index;
+                        // GlobalKey 생성 및 저장
+                        _itemKeys[actualIndex] ??= GlobalKey();
 
-                  return _ArticleCard(
-                    key: _itemKeys[index],
-                    article: article,
-                    searchQuery: _searchQuery,
-                    isHighlighted: isCurrentMatch,
-                    isMatched: isMatched,
-                    onTap: () => _openArticleDetail(article),
-                  );
-                },
+                        final article = pageItems[index];
+                        final isMatched = _matchedIndices.contains(actualIndex);
+                        final isCurrentMatch = _matchedIndices.isNotEmpty &&
+                            _matchedIndices[_currentMatchIndex] == actualIndex;
+
+                        return _ArticleCard(
+                          key: _itemKeys[actualIndex],
+                          article: article,
+                          searchQuery: _searchQuery,
+                          isHighlighted: isCurrentMatch,
+                          isMatched: isMatched,
+                          onTap: () => _openArticleDetail(article),
+                        );
+                      },
+                    ),
+                  ),
+                  // 페이지네이션 UI
+                  if (totalPages > 1)
+                    _PaginationBar(
+                      currentPage: _currentPage,
+                      totalPages: totalPages,
+                      onPageChanged: (page) {
+                        setState(() {
+                          _currentPage = page;
+                        });
+                      },
+                    ),
+                ],
               );
             },
           ),
@@ -467,6 +495,123 @@ class _ArticleCard extends StatelessWidget {
       text: TextSpan(style: baseStyle, children: spans),
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
+// 페이지네이션 바 위젯
+class _PaginationBar extends StatelessWidget {
+  final int currentPage;
+  final int totalPages;
+  final ValueChanged<int> onPageChanged;
+
+  const _PaginationBar({
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: AppColors.divider, width: 1),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 이전 버튼
+          _PageButton(
+            icon: Icons.chevron_left,
+            onTap: currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
+          ),
+          const SizedBox(width: 8),
+          // 페이지 번호들
+          ..._buildPageNumbers(),
+          const SizedBox(width: 8),
+          // 다음 버튼
+          _PageButton(
+            icon: Icons.chevron_right,
+            onTap: currentPage < totalPages - 1 ? () => onPageChanged(currentPage + 1) : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildPageNumbers() {
+    final List<Widget> widgets = [];
+    const maxVisiblePages = 5;
+
+    int startPage = 0;
+    int endPage = totalPages;
+
+    if (totalPages > maxVisiblePages) {
+      startPage = (currentPage - 2).clamp(0, totalPages - maxVisiblePages);
+      endPage = (startPage + maxVisiblePages).clamp(0, totalPages);
+    }
+
+    for (int i = startPage; i < endPage; i++) {
+      widgets.add(
+        GestureDetector(
+          onTap: () => onPageChanged(i),
+          child: Container(
+            width: 36,
+            height: 36,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: i == currentPage ? AppColors.textPrimary : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                '${i + 1}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: i == currentPage ? FontWeight.w600 : FontWeight.normal,
+                  color: i == currentPage ? Colors.white : AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return widgets;
+  }
+}
+
+class _PageButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _PageButton({
+    required this.icon,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnabled = onTap != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: isEnabled ? const Color(0xFFF5F5F5) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: isEnabled ? AppColors.textPrimary : AppColors.divider,
+        ),
+      ),
     );
   }
 }

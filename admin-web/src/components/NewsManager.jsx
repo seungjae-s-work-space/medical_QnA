@@ -234,6 +234,9 @@ function NewsManager() {
         },
       },
     },
+    clipboard: {
+      matchVisual: false,
+    },
     imageResize: {
       parchment: Quill.import('parchment'),
       modules: ['Resize', 'DisplaySize', 'Toolbar'],
@@ -751,6 +754,7 @@ function NewsManager() {
                   modules={quillModules}
                   formats={quillFormats}
                   placeholder="뉴스 내용을 입력하세요 (툴바의 이미지 버튼으로 사진 추가)"
+                  preserveWhitespace
                 />
               </Box>
             </Box>
