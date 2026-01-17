@@ -32,6 +32,7 @@ import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import AddPhotoAlternateRoundedIcon from '@mui/icons-material/AddPhotoAlternateRounded';
 import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ImageResize from 'quill-image-resize-module-react';
@@ -124,10 +125,16 @@ function NewsManager() {
   const [content, setContent] = useState('');
   const [isPublished, setIsPublished] = useState(true);
   const [selectedImageUrl, setSelectedImageUrl] = useState(null);
+  const [customThumbnail, setCustomThumbnail] = useState(null); // 별도 업로드한 썸네일
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const quillRef = useRef(null);
+  const thumbnailInputRef = useRef(null);
 
   // 본문 내 이미지 목록
   const contentImages = useMemo(() => extractImagesFromContent(content), [content]);
+
+  // 실제 대표 이미지 (커스텀 썸네일 > 선택된 이미지 > 첫 번째 본문 이미지)
+  const effectiveThumbnail = customThumbnail || selectedImageUrl || (contentImages.length > 0 ? contentImages[0] : null);
 
   // base64 이미지를 Storage에 업로드하고 URL 반환
   const uploadBase64Image = async (base64String) => {
@@ -171,6 +178,29 @@ function NewsManager() {
     }
 
     return result;
+  };
+
+  // 썸네일 업로드 핸들러
+  const handleThumbnailUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingThumbnail(true);
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${uuidv4()}.${ext}`;
+      const storageRef = ref(storage, `news_thumbnails/${fileName}`);
+      const metadata = { contentType: file.type };
+      await uploadBytes(storageRef, file, metadata);
+      const url = await getDownloadURL(storageRef);
+      setCustomThumbnail(url);
+      setSnackbar({ open: true, message: '썸네일이 업로드되었습니다', severity: 'success' });
+    } catch (error) {
+      console.error('Thumbnail upload error:', error);
+      setSnackbar({ open: true, message: '썸네일 업로드 실패', severity: 'error' });
+    } finally {
+      setUploadingThumbnail(false);
+    }
   };
 
   // 이미지 업로드 핸들러 (Quill 에디터용)
@@ -286,6 +316,7 @@ function NewsManager() {
     setContent('');
     setIsPublished(true);
     setSelectedImageUrl(null);
+    setCustomThumbnail(null);
     setEditingArticle(null);
   };
 
@@ -295,7 +326,15 @@ function NewsManager() {
       setTitle(article.title || '');
       setContent(article.content || '');
       setIsPublished(article.isPublished !== false);
-      setSelectedImageUrl(article.imageUrl || null);
+      // 기존 이미지가 본문에 없으면 커스텀 썸네일로 설정
+      const existingImages = extractImagesFromContent(article.content || '');
+      if (article.imageUrl && !existingImages.includes(article.imageUrl)) {
+        setCustomThumbnail(article.imageUrl);
+        setSelectedImageUrl(null);
+      } else {
+        setCustomThumbnail(null);
+        setSelectedImageUrl(article.imageUrl || null);
+      }
     } else {
       resetForm();
     }
@@ -323,9 +362,13 @@ function NewsManager() {
 
       // 변환된 콘텐츠에서 이미지 추출
       const updatedImages = extractImagesFromContent(convertedContent);
-      const imageUrl = selectedImageUrl && updatedImages.includes(selectedImageUrl)
-        ? selectedImageUrl
-        : (updatedImages.length > 0 ? updatedImages[0] : null);
+      // 커스텀 썸네일 > 선택된 본문 이미지 > 첫 번째 본문 이미지
+      let imageUrl = customThumbnail;
+      if (!imageUrl) {
+        imageUrl = selectedImageUrl && updatedImages.includes(selectedImageUrl)
+          ? selectedImageUrl
+          : (updatedImages.length > 0 ? updatedImages[0] : null);
+      }
 
       const user = auth.currentUser;
 
@@ -852,68 +895,157 @@ function NewsManager() {
               </Box>
             </Box>
 
-            {/* 대표 이미지 선택 */}
-            {contentImages.length > 0 && (
-              <Box>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 600, color: colors.textPrimary, mb: 1.5 }}
+            {/* 대표 이미지 (썸네일) */}
+            <Box>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: colors.textPrimary, mb: 1.5 }}
+              >
+                대표 이미지 {contentImages.length > 0 && !customThumbnail && '(기본: 첫 번째 본문 이미지)'}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                {/* 커스텀 썸네일 업로드 버튼 */}
+                <Box
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: 2,
+                    border: `2px dashed ${colors.border}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    bgcolor: colors.backgroundAlt,
+                    '&:hover': {
+                      borderColor: colors.primary,
+                      bgcolor: colors.primaryLight,
+                    },
+                  }}
                 >
-                  대표 이미지 선택 (기본: 첫 번째 이미지)
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                  {contentImages.map((imgUrl, index) => {
-                    const isSelected = selectedImageUrl === imgUrl || (!selectedImageUrl && index === 0);
-                    return (
-                      <Box
-                        key={imgUrl}
-                        onClick={() => setSelectedImageUrl(imgUrl)}
-                        sx={{
-                          position: 'relative',
-                          width: 100,
-                          height: 100,
-                          borderRadius: 2,
-                          overflow: 'hidden',
-                          cursor: 'pointer',
-                          border: isSelected ? `3px solid ${colors.primary}` : `2px solid ${colors.border}`,
-                          transition: 'all 0.2s',
-                          '&:hover': {
-                            borderColor: colors.primary,
-                            transform: 'scale(1.05)',
-                          },
-                        }}
-                      >
-                        <img
-                          src={imgUrl}
-                          alt={`이미지 ${index + 1}`}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
-                        />
-                        {isSelected && (
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              top: 4,
-                              right: 4,
-                              bgcolor: colors.primary,
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <CheckCircleRoundedIcon sx={{ fontSize: 20, color: 'white' }} />
-                          </Box>
-                        )}
-                      </Box>
-                    );
-                  })}
+                  {uploadingThumbnail ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <>
+                      <AddPhotoAlternateRoundedIcon sx={{ fontSize: 28, color: colors.textTertiary, mb: 0.5 }} />
+                      <Typography sx={{ fontSize: 11, color: colors.textTertiary }}>
+                        직접 업로드
+                      </Typography>
+                    </>
+                  )}
                 </Box>
+                <input
+                  ref={thumbnailInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleThumbnailUpload}
+                />
+
+                {/* 커스텀 썸네일 (업로드된 경우) */}
+                {customThumbnail && (
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: 100,
+                      height: 100,
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      border: `3px solid ${colors.primary}`,
+                    }}
+                  >
+                    <img
+                      src={customThumbnail}
+                      alt="커스텀 썸네일"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        bgcolor: colors.primary,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <CheckCircleRoundedIcon sx={{ fontSize: 20, color: 'white' }} />
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => setCustomThumbnail(null)}
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        left: 4,
+                        bgcolor: 'rgba(0,0,0,0.5)',
+                        color: 'white',
+                        padding: 0.3,
+                        '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+                      }}
+                    >
+                      <CloseRoundedIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Box>
+                )}
+
+                {/* 본문 이미지 목록 (커스텀 썸네일이 없을 때만 선택 가능) */}
+                {contentImages.map((imgUrl, index) => {
+                  const isSelected = !customThumbnail && (selectedImageUrl === imgUrl || (!selectedImageUrl && index === 0));
+                  return (
+                    <Box
+                      key={imgUrl}
+                      onClick={() => {
+                        setCustomThumbnail(null);
+                        setSelectedImageUrl(imgUrl);
+                      }}
+                      sx={{
+                        position: 'relative',
+                        width: 100,
+                        height: 100,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        border: isSelected ? `3px solid ${colors.primary}` : `2px solid ${colors.border}`,
+                        opacity: customThumbnail ? 0.5 : 1,
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          borderColor: colors.primary,
+                          transform: 'scale(1.05)',
+                          opacity: 1,
+                        },
+                      }}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`본문 이미지 ${index + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      {isSelected && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            bgcolor: colors.primary,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <CheckCircleRoundedIcon sx={{ fontSize: 20, color: 'white' }} />
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
               </Box>
-            )}
+            </Box>
 
             <FormControlLabel
               control={
