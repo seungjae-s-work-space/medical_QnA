@@ -133,9 +133,6 @@ function NewsManager() {
   // 본문 내 이미지 목록
   const contentImages = useMemo(() => extractImagesFromContent(content), [content]);
 
-  // 실제 대표 이미지 (커스텀 썸네일 > 선택된 이미지 > 첫 번째 본문 이미지)
-  const effectiveThumbnail = customThumbnail || selectedImageUrl || (contentImages.length > 0 ? contentImages[0] : null);
-
   // base64 이미지를 Storage에 업로드하고 URL 반환
   const uploadBase64Image = async (base64String) => {
     try {
