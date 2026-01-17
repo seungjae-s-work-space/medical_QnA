@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import { collection, query, onSnapshot, where } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import {
   Box,
   Drawer,
@@ -12,6 +14,7 @@ import {
   Typography,
   Avatar,
   Divider,
+  Badge,
 } from '@mui/material';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
@@ -21,15 +24,30 @@ import { colors } from '../theme';
 
 const DRAWER_WIDTH = 280;
 
-const menuItems = [
-  { path: '/', label: '상담 채팅', icon: <ChatBubbleOutlineRoundedIcon />, description: '사용자 문의 관리' },
-  { path: '/encyclopedia', label: '난임백과', icon: <AutoStoriesRoundedIcon />, description: '정보 콘텐츠 관리' },
-  { path: '/news', label: '뉴스', icon: <ArticleRoundedIcon />, description: '뉴스 콘텐츠 관리' },
-];
-
 function Layout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+
+  // 안 읽은 채팅방 개수 실시간 구독
+  useEffect(() => {
+    const q = query(
+      collection(db, 'conversations'),
+      where('unreadByAdmin', '>', 0)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setUnreadChatCount(snapshot.docs.length);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const menuItems = [
+    { path: '/', label: '상담 채팅', icon: <ChatBubbleOutlineRoundedIcon />, description: '사용자 문의 관리', badge: unreadChatCount },
+    { path: '/encyclopedia', label: '난임백과', icon: <AutoStoriesRoundedIcon />, description: '정보 콘텐츠 관리', badge: 0 },
+    { path: '/news', label: '뉴스', icon: <ArticleRoundedIcon />, description: '뉴스 콘텐츠 관리', badge: 0 },
+  ];
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -138,7 +156,21 @@ function Layout({ children }) {
                       color: isActive ? colors.primary : colors.textSecondary,
                     }}
                   >
-                    {item.icon}
+                    <Badge
+                      badgeContent={item.badge}
+                      color="error"
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          fontSize: 10,
+                          fontWeight: 700,
+                          minWidth: 18,
+                          height: 18,
+                          borderRadius: 9,
+                        },
+                      }}
+                    >
+                      {item.icon}
+                    </Badge>
                   </ListItemIcon>
                   <ListItemText
                     primary={item.label}
