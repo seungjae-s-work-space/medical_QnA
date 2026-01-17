@@ -68,6 +68,8 @@ const quillFormats = [
   'width',
   'height',
   'style',
+  'float',
+  'display',
 ];
 
 // HTML에서 이미지 URL 추출하는 함수
@@ -213,7 +215,12 @@ function NewsManager() {
     },
     imageResize: {
       parchment: Quill.import('parchment'),
-      modules: ['Resize', 'DisplaySize'],
+      modules: ['Resize', 'DisplaySize', 'Toolbar'],
+      toolbarStyles: {
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+      },
     },
   }), []);
 
@@ -634,7 +641,7 @@ function NewsManager() {
       )}
 
       {/* Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog open={dialogOpen} maxWidth="md" fullWidth disableEscapeKeyDown>
         <DialogTitle
           sx={{
             fontWeight: 700,
@@ -667,7 +674,7 @@ function NewsManager() {
               <Box
                 sx={{
                   '& .ql-container': {
-                    minHeight: 300,
+                    minHeight: 500,
                     fontSize: 15,
                     fontFamily: 'inherit',
                     borderBottomLeftRadius: 10,
@@ -679,7 +686,7 @@ function NewsManager() {
                     bgcolor: colors.backgroundAlt,
                   },
                   '& .ql-editor': {
-                    minHeight: 300,
+                    minHeight: 500,
                   },
                   '& .ql-editor.ql-blank::before': {
                     color: colors.textTertiary,
@@ -693,13 +700,23 @@ function NewsManager() {
                     margin: '16px 0',
                     color: colors.textPrimary,
                   },
-                  // 이미지 크기 제한
+                  // 이미지 기본 스타일
                   '& .ql-editor img': {
                     maxWidth: '100%',
                     height: 'auto',
                     maxHeight: 400,
                     objectFit: 'contain',
-                    borderRadius: 8,
+                    borderRadius: 2,
+                  },
+                  // 좌측 정렬 이미지 (float left)
+                  '& .ql-editor img[style*="float: left"]': {
+                    marginRight: 20,
+                    marginBottom: 10,
+                  },
+                  // 우측 정렬 이미지 (float right)
+                  '& .ql-editor img[style*="float: right"]': {
+                    marginLeft: 20,
+                    marginBottom: 10,
                   },
                 }}
               >
@@ -854,20 +871,6 @@ function NewsManager() {
               >
                 {viewArticle.title}
               </Typography>
-              {viewArticle.imageUrl && (
-                <Box sx={{ mb: 3 }}>
-                  <img
-                    src={viewArticle.imageUrl}
-                    alt={viewArticle.title}
-                    style={{
-                      width: '100%',
-                      maxHeight: 400,
-                      objectFit: 'cover',
-                      borderRadius: 12,
-                    }}
-                  />
-                </Box>
-              )}
               <Box
                 sx={{
                   lineHeight: 1.6,

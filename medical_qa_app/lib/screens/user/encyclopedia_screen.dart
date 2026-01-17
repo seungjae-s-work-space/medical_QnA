@@ -529,32 +529,6 @@ class EncyclopediaDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 헤더 이미지
-            if (article.imageUrl != null)
-              CachedNetworkImage(
-                imageUrl: article.imageUrl!,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  height: 200,
-                  color: AppColors.divider,
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  height: 200,
-                  color: AppColors.divider,
-                  child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      size: 48,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -655,10 +629,10 @@ class EncyclopediaDetailScreen extends StatelessWidget {
                         margin: Margins.only(bottom: 12),
                       ),
                       "blockquote": Style(
-                        backgroundColor: const Color(0xFFEEF2FF),
+                        backgroundColor: Colors.transparent,
                         border: const Border(
                           left: BorderSide(
-                            color: Color(0xFF6366F1),
+                            color: Color(0xFF333333),
                             width: 4,
                           ),
                         ),

@@ -459,32 +459,6 @@ class AdminNewsDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            // 대표 이미지
-            if (news.imageUrl != null && news.imageUrl!.isNotEmpty) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: news.imageUrl!,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    height: 200,
-                    color: AppColors.divider,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    height: 200,
-                    color: AppColors.divider,
-                    child: const Center(
-                      child: Icon(Icons.image_not_supported, size: 48),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
             // 본문 내용
             Html(
               data: _cleanHtmlContent(news.content),
@@ -539,12 +513,12 @@ class AdminNewsDetailScreen extends StatelessWidget {
                   margin: Margins.only(bottom: 12),
                 ),
                 "blockquote": Style(
-                  backgroundColor: AppColors.inputBackground,
+                  backgroundColor: Colors.transparent,
                   padding: HtmlPaddings.all(16),
                   margin: Margins.only(bottom: 16, left: 0, right: 0),
                   border: const Border(
                     left: BorderSide(
-                      color: Color(0xFF6B4E71),
+                      color: Color(0xFF333333),
                       width: 4,
                     ),
                   ),
