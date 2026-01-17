@@ -31,6 +31,8 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import RemoveRedEyeRoundedIcon from '@mui/icons-material/RemoveRedEyeRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ImageResize from 'quill-image-resize-module-react';
@@ -105,6 +107,8 @@ const mergeConsecutiveBlockquotes = (html) => {
   return html.replace(/<\/blockquote>\s*<blockquote>/gi, '<br>');
 };
 
+const ITEMS_PER_PAGE = 17;
+
 function EncyclopediaManager() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,6 +118,7 @@ function EncyclopediaManager() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [searchQuery, setSearchQuery] = useState('');
   const [viewArticle, setViewArticle] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -248,6 +253,16 @@ function EncyclopediaManager() {
       },
     },
   }), []);
+
+  // Quill 에디터 마운트 후 scrollSelectionIntoView 비활성화
+  useEffect(() => {
+    if (dialogOpen && quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      if (quill) {
+        quill.scrollSelectionIntoView = () => {};
+      }
+    }
+  }, [dialogOpen]);
 
   useEffect(() => {
     const q = query(
@@ -390,6 +405,19 @@ function EncyclopediaManager() {
     );
   });
 
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE);
+  const paginatedArticles = filteredArticles.slice(
+    currentPage * ITEMS_PER_PAGE,
+    (currentPage + 1) * ITEMS_PER_PAGE
+  );
+
+  // 검색어 변경 시 첫 페이지로
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(0);
+  };
+
   const publishedCount = articles.filter((a) => a.isPublished).length;
   const draftCount = articles.filter((a) => !a.isPublished).length;
 
@@ -480,7 +508,7 @@ function EncyclopediaManager() {
         fullWidth
         placeholder="제목 또는 내용 검색..."
         value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        onChange={handleSearchChange}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -525,7 +553,7 @@ function EncyclopediaManager() {
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {filteredArticles.map((article) => (
+          {paginatedArticles.map((article) => (
             <Grid item xs={12} sm={6} lg={4} key={article.id}>
               <Card
                 onClick={() => setViewArticle(article)}
@@ -650,12 +678,77 @@ function EncyclopediaManager() {
         </Grid>
       )}
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 1,
+            mt: 4,
+          }}
+        >
+          <IconButton
+            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+            disabled={currentPage === 0}
+            sx={{
+              color: colors.textSecondary,
+              '&:disabled': { color: colors.textTertiary },
+            }}
+          >
+            <ChevronLeftRoundedIcon />
+          </IconButton>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <Button
+              key={i}
+              onClick={() => setCurrentPage(i)}
+              variant={currentPage === i ? 'contained' : 'text'}
+              sx={{
+                minWidth: 40,
+                height: 40,
+                borderRadius: 2,
+                fontWeight: 600,
+                ...(currentPage !== i && {
+                  color: colors.textSecondary,
+                  '&:hover': { bgcolor: colors.backgroundAlt },
+                }),
+              }}
+            >
+              {i + 1}
+            </Button>
+          ))}
+          <IconButton
+            onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={currentPage === totalPages - 1}
+            sx={{
+              color: colors.textSecondary,
+              '&:disabled': { color: colors.textTertiary },
+            }}
+          >
+            <ChevronRightRoundedIcon />
+          </IconButton>
+        </Box>
+      )}
+
       {/* Edit Dialog */}
-      <Dialog open={dialogOpen} maxWidth="md" fullWidth disableEscapeKeyDown>
+      <Dialog
+        open={dialogOpen}
+        maxWidth="md"
+        fullWidth
+        disableEscapeKeyDown
+        PaperProps={{
+          sx: {
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 700, fontSize: 20 }}>
           {editingArticle ? '글 수정' : '새 글 작성'}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ flex: 1, overflow: 'auto' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
             <TextField
               label="제목"

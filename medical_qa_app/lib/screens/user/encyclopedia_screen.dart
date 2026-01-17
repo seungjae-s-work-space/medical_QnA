@@ -23,6 +23,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   int _currentMatchIndex = 0;
   String _searchQuery = '';
   bool _isSearching = false;
+  bool _isLoading = true;
 
   // 페이지네이션
   static const int _itemsPerPage = 5;
@@ -32,10 +33,107 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   final Map<int, GlobalKey> _itemKeys = {};
 
   @override
+  void initState() {
+    super.initState();
+    _service.getPublishedArticles().listen((articles) {
+      if (mounted) {
+        setState(() {
+          _allArticles = articles;
+          _isLoading = false;
+          // 현재 페이지가 범위를 벗어나면 첫 페이지로
+          final totalPages = (_allArticles.length / _itemsPerPage).ceil();
+          if (_currentPage >= totalPages && totalPages > 0) {
+            _currentPage = totalPages - 1;
+          }
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _changePage(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+  }
+
+  Widget _buildArticleList() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_allArticles.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.menu_book_outlined,
+              size: 64,
+              color: AppColors.textSecondary,
+            ),
+            SizedBox(height: 16),
+            Text(
+              '등록된 글이 없습니다',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 페이지네이션 계산
+    final totalPages = (_allArticles.length / _itemsPerPage).ceil();
+    final startIndex = _currentPage * _itemsPerPage;
+    final endIndex = (startIndex + _itemsPerPage).clamp(0, _allArticles.length);
+    final pageItems = _allArticles.sublist(startIndex, endIndex);
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.separated(
+            key: ValueKey(_currentPage),
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
+            itemCount: pageItems.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final actualIndex = startIndex + index;
+              _itemKeys[actualIndex] ??= GlobalKey();
+
+              final article = pageItems[index];
+              final isMatched = _matchedIndices.contains(actualIndex);
+              final isCurrentMatch = _matchedIndices.isNotEmpty &&
+                  _matchedIndices[_currentMatchIndex] == actualIndex;
+
+              return _ArticleCard(
+                key: _itemKeys[actualIndex],
+                article: article,
+                searchQuery: _searchQuery,
+                isHighlighted: isCurrentMatch,
+                isMatched: isMatched,
+                onTap: () => _openArticleDetail(article),
+              );
+            },
+          ),
+        ),
+        if (totalPages > 1)
+          _PaginationBar(
+            currentPage: _currentPage,
+            totalPages: totalPages,
+            onPageChanged: _changePage,
+          ),
+      ],
+    );
   }
 
   void _performSearch(String query) {
@@ -207,101 +305,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
         ),
         // 게시글 목록
         Expanded(
-          child: StreamBuilder<List<EncyclopediaModel>>(
-            stream: _service.getPublishedArticles(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                debugPrint('Encyclopedia Error: ${snapshot.error}');
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Text(
-                      '오류가 발생했습니다: ${snapshot.error}',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                );
-              }
-
-              _allArticles = snapshot.data ?? [];
-
-              if (_allArticles.isEmpty) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.menu_book_outlined,
-                        size: 64,
-                        color: AppColors.textSecondary,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        '등록된 글이 없습니다',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              // 페이지네이션 계산
-              final totalPages = (_allArticles.length / _itemsPerPage).ceil();
-              final startIndex = _currentPage * _itemsPerPage;
-              final endIndex = (startIndex + _itemsPerPage).clamp(0, _allArticles.length);
-              final pageItems = _allArticles.sublist(startIndex, endIndex);
-
-              return Column(
-                children: [
-                  Expanded(
-                    child: ListView.separated(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(16),
-                      itemCount: pageItems.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final actualIndex = startIndex + index;
-                        // GlobalKey 생성 및 저장
-                        _itemKeys[actualIndex] ??= GlobalKey();
-
-                        final article = pageItems[index];
-                        final isMatched = _matchedIndices.contains(actualIndex);
-                        final isCurrentMatch = _matchedIndices.isNotEmpty &&
-                            _matchedIndices[_currentMatchIndex] == actualIndex;
-
-                        return _ArticleCard(
-                          key: _itemKeys[actualIndex],
-                          article: article,
-                          searchQuery: _searchQuery,
-                          isHighlighted: isCurrentMatch,
-                          isMatched: isMatched,
-                          onTap: () => _openArticleDetail(article),
-                        );
-                      },
-                    ),
-                  ),
-                  // 페이지네이션 UI
-                  if (totalPages > 1)
-                    _PaginationBar(
-                      currentPage: _currentPage,
-                      totalPages: totalPages,
-                      onPageChanged: (page) {
-                        setState(() {
-                          _currentPage = page;
-                        });
-                      },
-                    ),
-                ],
-              );
-            },
-          ),
+          child: _buildArticleList(),
         ),
       ],
     );
