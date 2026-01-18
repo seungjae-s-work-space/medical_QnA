@@ -6,6 +6,8 @@ import '../../utils/app_colors.dart';
 import 'chat_screen.dart';
 import 'encyclopedia_screen.dart';
 import 'news_screen.dart';
+import 'notice_screen.dart';
+import 'video_screen.dart';
 import 'subscription_screen.dart';
 import '../../providers/subscription_provider.dart';
 
@@ -372,9 +374,49 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
 
-          // 하단 2개 메뉴 (난임뉴스, 정회원 무제한채팅)
+          // 하단 메뉴 (공지사항, 난임뉴스)
           Row(
             children: [
+              Expanded(
+                child: _SmallMenuCard(
+                  title: '공지사항',
+                  icon: Icons.campaign_rounded,
+                  color: const Color(0xFFFFE0B2),
+                  iconColor: const Color(0xFFFF9800),
+                  textColor: const Color(0xFFE65100),
+                  arrowColor: Colors.white,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Scaffold(
+                          backgroundColor: AppColors.background,
+                          appBar: AppBar(
+                            backgroundColor: AppColors.background,
+                            elevation: 0,
+                            leading: IconButton(
+                              icon: const Icon(Icons.arrow_back,
+                                  color: AppColors.textPrimary),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            title: const Text(
+                              '공지사항',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            centerTitle: true,
+                          ),
+                          body: const NoticeScreen(),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: _SmallMenuCard(
                   title: '난임뉴스',
@@ -408,6 +450,51 @@ class _HomeScreenState extends State<HomeScreen> {
                             centerTitle: true,
                           ),
                           body: const NewsScreen(),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // 아기성공TV, 정회원 무제한채팅
+          Row(
+            children: [
+              Expanded(
+                child: _SmallMenuCard(
+                  title: '아기성공TV',
+                  icon: Icons.play_circle_filled,
+                  color: const Color(0xFFFFCDD2),
+                  iconColor: const Color(0xFFFF0000),
+                  textColor: const Color(0xFFC62828),
+                  arrowColor: Colors.white,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Scaffold(
+                          backgroundColor: AppColors.background,
+                          appBar: AppBar(
+                            backgroundColor: AppColors.background,
+                            elevation: 0,
+                            leading: IconButton(
+                              icon: const Icon(Icons.arrow_back,
+                                  color: AppColors.textPrimary),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            title: const Text(
+                              '아기성공TV',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            centerTitle: true,
+                          ),
+                          body: const VideoScreen(),
                         ),
                       ),
                     );

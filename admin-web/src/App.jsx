@@ -9,6 +9,8 @@ import ConversationList from './components/ConversationList';
 import ChatWindow from './components/ChatWindow';
 import EncyclopediaManager from './components/EncyclopediaManager';
 import NewsManager from './components/NewsManager';
+import NoticeManager from './components/NoticeManager';
+import VideoManager from './components/VideoManager';
 import { CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colors } from './theme';
@@ -108,6 +110,30 @@ function App() {
               user && isAdmin ? (
                 <Layout>
                   <NewsManager />
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/notice"
+            element={
+              user && isAdmin ? (
+                <Layout>
+                  <NoticeManager />
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/video"
+            element={
+              user && isAdmin ? (
+                <Layout>
+                  <VideoManager />
                 </Layout>
               ) : (
                 <Navigate to="/login" />

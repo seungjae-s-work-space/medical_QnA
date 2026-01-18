@@ -19,6 +19,8 @@ import {
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
+import CampaignRoundedIcon from '@mui/icons-material/CampaignRounded';
+import YouTubeIcon from '@mui/icons-material/YouTube';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import { colors } from '../theme';
 
@@ -45,8 +47,10 @@ function Layout({ children }) {
 
   const menuItems = [
     { path: '/', label: '상담 채팅', icon: <ChatBubbleOutlineRoundedIcon />, description: '사용자 문의 관리', badge: unreadChatCount },
+    { path: '/notice', label: '공지사항', icon: <CampaignRoundedIcon />, description: '공지사항 관리', badge: 0 },
     { path: '/encyclopedia', label: '난임백과', icon: <AutoStoriesRoundedIcon />, description: '정보 콘텐츠 관리', badge: 0 },
     { path: '/news', label: '뉴스', icon: <ArticleRoundedIcon />, description: '뉴스 콘텐츠 관리', badge: 0 },
+    { path: '/video', label: '아기성공TV', icon: <YouTubeIcon />, description: '유튜브 영상 관리', badge: 0 },
   ];
 
   const handleLogout = async () => {
