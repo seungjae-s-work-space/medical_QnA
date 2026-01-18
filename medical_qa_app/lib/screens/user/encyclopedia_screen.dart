@@ -160,20 +160,29 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   void _scrollToMatch(int matchIndex) {
     if (_matchedIndices.isEmpty) return;
 
+    final articleIndex = _matchedIndices[matchIndex];
+    final targetPage = articleIndex ~/ _itemsPerPage;
+
     setState(() {
       _currentMatchIndex = matchIndex;
+      // 해당 아이템이 있는 페이지로 자동 이동
+      if (_currentPage != targetPage) {
+        _currentPage = targetPage;
+      }
     });
 
-    final articleIndex = _matchedIndices[matchIndex];
-    final key = _itemKeys[articleIndex];
-    if (key?.currentContext != null) {
-      Scrollable.ensureVisible(
-        key!.currentContext!,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        alignment: 0.3,
-      );
-    }
+    // 페이지 변경 후 스크롤 (약간의 딜레이 필요)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final key = _itemKeys[articleIndex];
+      if (key?.currentContext != null) {
+        Scrollable.ensureVisible(
+          key!.currentContext!,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: 0.3,
+        );
+      }
+    });
   }
 
   void _goToPreviousMatch() {
