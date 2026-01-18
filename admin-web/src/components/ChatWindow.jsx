@@ -93,6 +93,7 @@ function ChatWindow() {
       lastMessage: newMessage,
       lastMessageAt: serverTimestamp(),
       unreadByUser: increment(1),
+      hasAdminReplied: true,
     });
 
     setNewMessage('');

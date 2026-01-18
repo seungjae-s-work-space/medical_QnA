@@ -68,7 +68,7 @@ function Login() {
               letterSpacing: '-0.02em',
             }}
           >
-            난임상담톡
+            난임상담톡톡
           </Typography>
           <Typography
             variant="h6"

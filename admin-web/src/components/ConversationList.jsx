@@ -20,6 +20,7 @@ import { colors } from '../theme';
 function ConversationList() {
   const [conversations, setConversations] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterMode, setFilterMode] = useState('all'); // 'all', 'unread', 'new'
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +53,10 @@ function ConversationList() {
   };
 
   const filteredConversations = conversations.filter((conv) => {
+    // 필터 모드
+    if (filterMode === 'unread' && conv.unreadByAdmin <= 0) return false;
+    if (filterMode === 'new' && conv.hasAdminReplied) return false;
+    // 검색 필터
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -61,6 +66,7 @@ function ConversationList() {
   });
 
   const unreadCount = conversations.filter((c) => c.unreadByAdmin > 0).length;
+  const newUserCount = conversations.filter((c) => !c.hasAdminReplied).length;
   const totalCount = conversations.length;
 
   return (
@@ -78,41 +84,84 @@ function ConversationList() {
       {/* Stats Cards */}
       <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
         <Box
+          onClick={() => setFilterMode('all')}
           sx={{
             flex: 1,
             p: 3,
-            bgcolor: colors.card,
+            bgcolor: filterMode === 'all' ? colors.primary : colors.card,
             borderRadius: 3,
-            border: `1px solid ${colors.border}`,
+            border: `1px solid ${filterMode === 'all' ? colors.primary : colors.border}`,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            },
           }}
         >
-          <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+          <Typography variant="body2" sx={{ color: filterMode === 'all' ? 'white' : colors.textSecondary, mb: 0.5 }}>
             전체 대화
           </Typography>
-          <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
+          <Typography variant="h4" sx={{ color: filterMode === 'all' ? 'white' : colors.textPrimary, fontWeight: 700 }}>
             {totalCount}
           </Typography>
         </Box>
         <Box
+          onClick={() => unreadCount > 0 && setFilterMode(filterMode === 'unread' ? 'all' : 'unread')}
           sx={{
             flex: 1,
             p: 3,
-            bgcolor: unreadCount > 0 ? colors.errorLight : colors.card,
+            bgcolor: filterMode === 'unread' ? colors.primary : (unreadCount > 0 ? colors.errorLight : colors.card),
             borderRadius: 3,
-            border: `1px solid ${unreadCount > 0 ? colors.error : colors.border}`,
+            border: `1px solid ${filterMode === 'unread' ? colors.primary : (unreadCount > 0 ? colors.error : colors.border)}`,
+            cursor: unreadCount > 0 ? 'pointer' : 'default',
+            transition: 'all 0.2s',
+            '&:hover': unreadCount > 0 ? {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            } : {},
           }}
         >
           <Typography
             variant="body2"
-            sx={{ color: unreadCount > 0 ? colors.error : colors.textSecondary, mb: 0.5 }}
+            sx={{ color: filterMode === 'unread' ? 'white' : (unreadCount > 0 ? colors.error : colors.textSecondary), mb: 0.5 }}
           >
-            읽지 않음
+            {filterMode === 'unread' ? '필터 중' : '읽지 않음'}
           </Typography>
           <Typography
             variant="h4"
-            sx={{ color: unreadCount > 0 ? colors.error : colors.textPrimary, fontWeight: 700 }}
+            sx={{ color: filterMode === 'unread' ? 'white' : (unreadCount > 0 ? colors.error : colors.textPrimary), fontWeight: 700 }}
           >
             {unreadCount}
+          </Typography>
+        </Box>
+        <Box
+          onClick={() => newUserCount > 0 && setFilterMode(filterMode === 'new' ? 'all' : 'new')}
+          sx={{
+            flex: 1,
+            p: 3,
+            bgcolor: filterMode === 'new' ? colors.primary : (newUserCount > 0 ? colors.warningLight : colors.card),
+            borderRadius: 3,
+            border: `1px solid ${filterMode === 'new' ? colors.primary : (newUserCount > 0 ? colors.warning : colors.border)}`,
+            cursor: newUserCount > 0 ? 'pointer' : 'default',
+            transition: 'all 0.2s',
+            '&:hover': newUserCount > 0 ? {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            } : {},
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: filterMode === 'new' ? 'white' : (newUserCount > 0 ? colors.warning : colors.textSecondary), mb: 0.5 }}
+          >
+            {filterMode === 'new' ? '필터 중' : '신규 사용자'}
+          </Typography>
+          <Typography
+            variant="h4"
+            sx={{ color: filterMode === 'new' ? 'white' : (newUserCount > 0 ? colors.warning : colors.textPrimary), fontWeight: 700 }}
+          >
+            {newUserCount}
           </Typography>
         </Box>
       </Box>
