@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final NotificationService _notificationService = NotificationService();
   bool _notificationsEnabled = true;
   int _currentIndex = 0;
+  DateTime? _lastBackPressTime;
 
   // 추천 전문의 리스트
   final List<Map<String, String>> _doctors = const [
@@ -730,10 +731,27 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _currentIndex == 0,
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
+        if (_currentIndex != 0) {
+          // 다른 탭에서는 홈으로 이동
           setState(() => _currentIndex = 0);
+        } else {
+          // 홈 탭에서는 더블탭으로 종료
+          final now = DateTime.now();
+          if (_lastBackPressTime == null ||
+              now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+            _lastBackPressTime = now;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('뒤로가기를 한 번 더 누르면 종료됩니다'),
+                duration: Duration(seconds: 2),
+                backgroundColor: Color(0xFF333333),
+              ),
+            );
+          } else {
+            Navigator.of(context).pop();
+          }
         }
       },
       child: Scaffold(
