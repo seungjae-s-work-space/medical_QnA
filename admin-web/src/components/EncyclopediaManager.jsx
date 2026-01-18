@@ -56,8 +56,14 @@ import { v4 as uuidv4 } from 'uuid';
 // 이미지 리사이즈 모듈 등록
 Quill.register('modules/imageResize', ImageResize);
 
+// 폰트 사이즈 설정
+const Size = Quill.import('attributors/style/size');
+Size.whitelist = ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'];
+Quill.register(Size, true);
+
 const quillFormats = [
   'header',
+  'size',
   'bold',
   'italic',
   'underline',
@@ -67,6 +73,7 @@ const quillFormats = [
   'list',
   'bullet',
   'indent',
+  'align',
   'blockquote',
   'image',
   'width',
@@ -241,10 +248,12 @@ function EncyclopediaManager() {
     toolbar: {
       container: [
         [{ header: [1, 2, 3, false] }],
+        [{ size: ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'] }],
         ['bold', 'italic', 'underline', 'strike'],
         [{ color: [] }, { background: [] }],
         [{ list: 'ordered' }, { list: 'bullet' }],
         [{ indent: '-1' }, { indent: '+1' }],
+        [{ align: [] }],
         ['blockquote'],
         ['image'],
         ['clean'],
