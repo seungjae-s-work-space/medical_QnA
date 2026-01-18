@@ -62,9 +62,10 @@ function ChatWindow() {
       setTimeout(scrollToBottom, 100);
     });
 
-    // 읽음 표시
+    // 읽음 표시 + 관리자가 본 적 있음 표시
     updateDoc(doc(db, 'conversations', conversationId), {
       unreadByAdmin: 0,
+      hasAdminViewed: true,
     });
 
     return unsubscribe;

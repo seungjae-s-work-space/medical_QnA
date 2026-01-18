@@ -129,9 +129,12 @@ class FirestoreService {
 
     // 대화방의 unread 카운트 초기화
     String unreadField = userRole == 'admin' ? 'unreadByAdmin' : 'unreadByUser';
-    await _db.collection('conversations').doc(conversationId).update({
-      unreadField: 0,
-    });
+    Map<String, dynamic> updateData = {unreadField: 0};
+    // 관리자가 읽은 경우 hasAdminViewed 플래그 추가
+    if (userRole == 'admin') {
+      updateData['hasAdminViewed'] = true;
+    }
+    await _db.collection('conversations').doc(conversationId).update(updateData);
   }
 
   // 특정 대화방 가져오기

@@ -66,6 +66,7 @@ function ConversationList() {
   });
 
   const unreadCount = conversations.filter((c) => c.unreadByAdmin > 0).length;
+  // 신규: 관리자가 한 번도 답장하지 않은 채팅방
   const newUserCount = conversations.filter((c) => !c.hasAdminReplied).length;
   const totalCount = conversations.length;
 
