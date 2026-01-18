@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
   List,
@@ -12,6 +12,8 @@ import {
   InputAdornment,
   Chip,
   Avatar,
+  IconButton,
+  CircularProgress,
 } from '@mui/material';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
@@ -21,6 +23,8 @@ function ConversationList() {
   const [conversations, setConversations] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState('all'); // 'all', 'unread', 'new'
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState(null); // { conversationId: matchedMessage }
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,17 +56,88 @@ function ConversationList() {
     return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
   };
 
+  // 전체 메시지 검색 함수
+  const handleDeepSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      return;
+    }
+
+    setIsSearching(true);
+    const results = {};
+    const keyword = searchQuery.toLowerCase();
+
+    try {
+      // 모든 대화방의 메시지를 병렬로 검색
+      await Promise.all(
+        conversations.map(async (conv) => {
+          const messagesRef = collection(db, 'conversations', conv.id, 'messages');
+          const messagesSnapshot = await getDocs(messagesRef);
+
+          for (const msgDoc of messagesSnapshot.docs) {
+            const msgData = msgDoc.data();
+            const text = (msgData.text || '').toLowerCase();
+
+            if (text.includes(keyword)) {
+              // 첫 번째 매칭 메시지만 저장
+              if (!results[conv.id]) {
+                results[conv.id] = msgData.text;
+              }
+              break;
+            }
+          }
+        })
+      );
+
+      setSearchResults(results);
+    } catch (error) {
+      console.error('검색 중 오류:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 검색 결과 초기화
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults(null);
+  };
+
+  // 키워드 하이라이트 함수
+  const highlightKeyword = (text, keyword) => {
+    if (!keyword || !text) return text;
+
+    const lowerText = text.toLowerCase();
+    const lowerKeyword = keyword.toLowerCase();
+    const index = lowerText.indexOf(lowerKeyword);
+
+    if (index === -1) return text;
+
+    // 키워드 주변 텍스트 추출 (앞뒤로 20자)
+    const start = Math.max(0, index - 20);
+    const end = Math.min(text.length, index + keyword.length + 20);
+
+    let snippet = text.substring(start, end);
+    if (start > 0) snippet = '...' + snippet;
+    if (end < text.length) snippet = snippet + '...';
+
+    return snippet;
+  };
+
   const filteredConversations = conversations.filter((conv) => {
     // 필터 모드
     if (filterMode === 'unread' && conv.unreadByAdmin <= 0) return false;
     if (filterMode === 'new' && conv.hasAdminReplied) return false;
-    // 검색 필터
+
+    // 깊은 검색 결과가 있으면 해당 결과로 필터링
+    if (searchResults !== null) {
+      return conv.id in searchResults;
+    }
+
+    // 기본 검색 필터 (사용자 이름만)
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return (
-      (conv.userName || '').toLowerCase().includes(q) ||
-      (conv.lastMessage || '').toLowerCase().includes(q)
-    );
+    return (conv.userName || '').toLowerCase().includes(q);
   });
 
   const unreadCount = conversations.filter((c) => c.unreadByAdmin > 0).length;
@@ -168,20 +243,84 @@ function ConversationList() {
       </Box>
 
       {/* Search */}
-      <TextField
-        fullWidth
-        placeholder="사용자 이름 또는 메시지 검색..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchRoundedIcon sx={{ color: colors.textTertiary }} />
-            </InputAdornment>
-          ),
-        }}
-        sx={{ mb: 3 }}
-      />
+      <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+        <TextField
+          fullWidth
+          placeholder="대화 내용 검색... (검색 버튼을 눌러주세요)"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            if (!e.target.value) {
+              setSearchResults(null);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleDeepSearch();
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchRoundedIcon sx={{ color: colors.textTertiary }} />
+              </InputAdornment>
+            ),
+            endAdornment: searchResults !== null && (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={clearSearch}>
+                  <Typography sx={{ fontSize: 12, color: colors.textTertiary }}>✕</Typography>
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        <IconButton
+          onClick={handleDeepSearch}
+          disabled={isSearching || !searchQuery.trim()}
+          sx={{
+            width: 56,
+            height: 56,
+            bgcolor: colors.primary,
+            color: 'white',
+            borderRadius: 2,
+            '&:hover': {
+              bgcolor: colors.primary,
+              opacity: 0.9,
+            },
+            '&.Mui-disabled': {
+              bgcolor: colors.divider,
+              color: colors.textTertiary,
+            },
+          }}
+        >
+          {isSearching ? (
+            <CircularProgress size={24} sx={{ color: 'white' }} />
+          ) : (
+            <SearchRoundedIcon />
+          )}
+        </IconButton>
+      </Box>
+
+      {/* 검색 결과 안내 */}
+      {searchResults !== null && (
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography sx={{ color: colors.textSecondary, fontSize: 14 }}>
+            "{searchQuery}" 검색 결과: <strong>{Object.keys(searchResults).length}</strong>개의 채팅방
+          </Typography>
+          <Chip
+            label="검색 초기화"
+            size="small"
+            onClick={clearSearch}
+            sx={{
+              bgcolor: colors.backgroundAlt,
+              color: colors.textSecondary,
+              fontSize: 12,
+              cursor: 'pointer',
+              '&:hover': { bgcolor: colors.divider },
+            }}
+          />
+        </Box>
+      )}
 
       {/* Conversation List */}
       {filteredConversations.length === 0 ? (
@@ -313,18 +452,34 @@ function ConversationList() {
                           {formatTime(conv.lastMessageAt)}
                         </Typography>
                       </Box>
-                      <Typography
-                        sx={{
-                          color: hasUnread ? colors.textPrimary : colors.textSecondary,
-                          fontSize: 14,
-                          fontWeight: hasUnread ? 500 : 400,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {conv.lastMessage}
-                      </Typography>
+                      {/* 검색 결과가 있으면 매칭된 메시지 표시 */}
+                      {searchResults && searchResults[conv.id] ? (
+                        <Typography
+                          sx={{
+                            color: colors.primary,
+                            fontSize: 14,
+                            fontWeight: 500,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          💬 {highlightKeyword(searchResults[conv.id], searchQuery)}
+                        </Typography>
+                      ) : (
+                        <Typography
+                          sx={{
+                            color: hasUnread ? colors.textPrimary : colors.textSecondary,
+                            fontSize: 14,
+                            fontWeight: hasUnread ? 500 : 400,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {conv.lastMessage}
+                        </Typography>
+                      )}
                     </Box>
                   </ListItemButton>
                 </ListItem>
