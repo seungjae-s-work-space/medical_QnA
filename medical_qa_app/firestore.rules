@@ -71,5 +71,27 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
+
+    // notices 컬렉션 (공지사항)
+    match /notices/{noticeId} {
+      // 읽기: 공개된 글은 인증된 사용자 모두, 비공개 글은 관리자만
+      allow read: if isAuthenticated() &&
+                     (resource.data.isPublished == true || isAdmin());
+      // 생성/수정/삭제: 관리자만
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // videos 컬렉션 (아기성공TV)
+    match /videos/{videoId} {
+      // 읽기: 공개된 글은 인증된 사용자 모두, 비공개 글은 관리자만
+      allow read: if isAuthenticated() &&
+                     (resource.data.isPublished == true || isAdmin());
+      // 생성/수정/삭제: 관리자만
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }
