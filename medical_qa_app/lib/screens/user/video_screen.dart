@@ -378,8 +378,10 @@ class VideoDetailScreen extends StatelessWidget {
 
   Future<void> _openYoutubeVideo() async {
     final url = Uri.parse(video.youtubeUrl);
-    if (await canLaunchUrl(url)) {
+    try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('YouTube URL 열기 실패: $e');
     }
   }
 
