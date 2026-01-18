@@ -94,7 +94,7 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
                 const Text(
                   '아직 질문이 없습니다',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -174,7 +174,7 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
                       Text(
                         authProvider.currentUser?.name ?? '관리자',
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),
@@ -183,7 +183,7 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
                       const Text(
                         '관리자 계정',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -204,7 +204,7 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
             ),
             title: const Text(
               '알림 설정',
-              style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 17, color: AppColors.textPrimary),
             ),
             trailing: Switch(
               value: _notificationsEnabled,
@@ -218,7 +218,7 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text(
               '로그아웃',
-              style: TextStyle(fontSize: 15, color: Colors.red),
+              style: TextStyle(fontSize: 17, color: Colors.red),
             ),
             onTap: () => authProvider.signOut(),
           ),
@@ -261,7 +261,7 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
           _getAppBarTitle(),
           style: const TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),

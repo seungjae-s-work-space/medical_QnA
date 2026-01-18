@@ -126,7 +126,7 @@ class _ChatScreenState extends State<ChatScreen> {
           '상담',
           style: TextStyle(
             color: textPrimary,
-            fontSize: 17,
+            fontSize: 19,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
           ),
@@ -168,7 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           const Text(
                             '궁금한 점이 있으신가요?',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.w500,
                               color: textPrimary,
                             ),
@@ -178,7 +178,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             '편하게 질문해주세요.\n빠른 시일 내에 답변드리겠습니다.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 16,
                               color: textSecondary.withValues(alpha: 0.8),
                               height: 1.5,
                             ),
@@ -231,7 +231,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       maxLines: 4,
                       minLines: 1,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 17,
                         color: textPrimary,
                         height: 1.4,
                       ),
@@ -239,7 +239,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         hintText: '메시지를 입력하세요',
                         hintStyle: TextStyle(
                           color: textTertiary,
-                          fontSize: 14,
+                          fontSize: 16,
                         ),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 18,

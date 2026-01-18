@@ -64,7 +64,7 @@ class _NewsScreenState extends State<NewsScreen> {
             Text(
               '등록된 뉴스가 없습니다',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -183,7 +183,7 @@ class _NewsCard extends StatelessWidget {
                   Text(
                     news.title,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
@@ -195,7 +195,7 @@ class _NewsCard extends StatelessWidget {
                   Text(
                     DateFormat('yyyy.MM.dd').format(news.createdAt),
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -237,7 +237,7 @@ class _PaginationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      padding: const EdgeInsets.only(top: 16, bottom: 100, left: 16, right: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -294,7 +294,7 @@ class _PaginationBar extends StatelessWidget {
               child: Text(
                 '${i + 1}',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: i == currentPage ? FontWeight.w600 : FontWeight.normal,
                   color: i == currentPage ? Colors.white : AppColors.textSecondary,
                 ),
@@ -387,7 +387,7 @@ class NewsDetailScreen extends StatelessWidget {
           '난임뉴스',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -406,7 +406,7 @@ class NewsDetailScreen extends StatelessWidget {
                   Text(
                     news.title,
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                       height: 1.4,
@@ -419,7 +419,7 @@ class NewsDetailScreen extends StatelessWidget {
                       Text(
                         news.authorName,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -434,7 +434,7 @@ class NewsDetailScreen extends StatelessWidget {
                       Text(
                         DateFormat('yyyy년 M월 d일').format(news.createdAt),
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: AppColors.textSecondary,
                         ),
                       ),

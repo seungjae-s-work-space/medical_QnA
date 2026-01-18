@@ -67,7 +67,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                     Text(
                       '등록된 뉴스가 없습니다',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         color: AppColors.textSecondary,
                       ),
                     ),
@@ -75,7 +75,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                     Text(
                       '+ 버튼을 눌러 새 뉴스를 작성하세요',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         color: AppColors.textTertiary,
                       ),
                     ),
@@ -263,7 +263,7 @@ class _AdminNewsCard extends StatelessWidget {
                 child: Text(
                   news.isPublished ? '공개' : '비공개',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     color: news.isPublished ? Colors.green : Colors.orange,
                     fontWeight: FontWeight.w500,
                   ),
@@ -329,7 +329,7 @@ class _AdminNewsCard extends StatelessWidget {
           Text(
             news.title,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
@@ -341,7 +341,7 @@ class _AdminNewsCard extends StatelessWidget {
           Text(
             _stripHtml(news.content),
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               color: AppColors.textSecondary,
               height: 1.4,
             ),
@@ -353,7 +353,7 @@ class _AdminNewsCard extends StatelessWidget {
           Text(
             DateFormat('yyyy.MM.dd HH:mm').format(news.createdAt),
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 14,
               color: AppColors.textTertiary,
             ),
           ),
@@ -401,7 +401,7 @@ class AdminNewsDetailScreen extends StatelessWidget {
           '뉴스 상세',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -433,7 +433,7 @@ class AdminNewsDetailScreen extends StatelessWidget {
               child: Text(
                 news.isPublished ? '공개' : '비공개',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   color: news.isPublished ? Colors.green : Colors.orange,
                   fontWeight: FontWeight.w500,
                 ),
@@ -444,7 +444,7 @@ class AdminNewsDetailScreen extends StatelessWidget {
             Text(
               news.title,
               style: const TextStyle(
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
@@ -454,7 +454,7 @@ class AdminNewsDetailScreen extends StatelessWidget {
             Text(
               '${news.authorName} · ${DateFormat('yyyy.MM.dd HH:mm').format(news.createdAt)}',
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 15,
                 color: AppColors.textTertiary,
               ),
             ),
@@ -639,7 +639,7 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
         const Text(
           '대표 이미지',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
@@ -751,7 +751,7 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
                   Text(
                     '이미지 추가',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -790,7 +790,7 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
           _isEditing ? '뉴스 수정' : '새 뉴스 작성',
           style: const TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -835,7 +835,7 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
                   const Text(
                     '제목',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
@@ -874,7 +874,7 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
                   const Text(
                     '내용',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
@@ -917,7 +917,7 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
                       const Text(
                         '바로 공개',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),

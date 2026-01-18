@@ -63,7 +63,7 @@ class _VideoScreenState extends State<VideoScreen> {
             Text(
               '등록된 영상이 없습니다',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -208,7 +208,7 @@ class _VideoCard extends StatelessWidget {
                   Text(
                     video.title,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 17,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
@@ -228,7 +228,7 @@ class _VideoCard extends StatelessWidget {
                       Text(
                         '아기성공TV',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
                         ),
@@ -237,7 +237,7 @@ class _VideoCard extends StatelessWidget {
                       Text(
                         DateFormat('yyyy.MM.dd').format(video.createdAt),
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -268,7 +268,7 @@ class _PaginationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      padding: const EdgeInsets.only(top: 16, bottom: 100, left: 16, right: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -325,7 +325,7 @@ class _PaginationBar extends StatelessWidget {
               child: Text(
                 '${i + 1}',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: i == currentPage ? FontWeight.w600 : FontWeight.normal,
                   color: i == currentPage ? Colors.white : AppColors.textSecondary,
                 ),
@@ -400,7 +400,7 @@ class VideoDetailScreen extends StatelessWidget {
           '아기성공TV',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -492,7 +492,7 @@ class VideoDetailScreen extends StatelessWidget {
                             'YouTube에서 보기',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -513,7 +513,7 @@ class VideoDetailScreen extends StatelessWidget {
                   Text(
                     video.title,
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                       height: 1.4,
@@ -541,7 +541,7 @@ class VideoDetailScreen extends StatelessWidget {
                             Text(
                               '아기성공TV',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFFFF0000),
                               ),
@@ -553,7 +553,7 @@ class VideoDetailScreen extends StatelessWidget {
                       Text(
                         DateFormat('yyyy년 M월 d일').format(video.createdAt),
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -567,7 +567,7 @@ class VideoDetailScreen extends StatelessWidget {
                     Text(
                       video.description,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         color: AppColors.textPrimary,
                         height: 1.8,
                       ),
@@ -589,7 +589,7 @@ class VideoDetailScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         textStyle: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

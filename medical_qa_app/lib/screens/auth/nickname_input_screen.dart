@@ -72,7 +72,7 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
                     '의료 Q&A',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 26,
                       fontWeight: FontWeight.w500,
                       color: AppColors.textPrimary,
                       letterSpacing: 0.5,
@@ -83,7 +83,7 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
                     '질문을 시작하려면 닉네임을 입력해주세요',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       color: AppColors.textSecondary,
                       height: 1.5,
                     ),
@@ -118,16 +118,16 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
                       fillColor: AppColors.backgroundAlt,
                       labelStyle: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 14,
+                        fontSize: 16,
                       ),
                       hintStyle: const TextStyle(
                         color: AppColors.textTertiary,
-                        fontSize: 13,
+                        fontSize: 15,
                       ),
                     ),
                     style: const TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 15,
+                      fontSize: 17,
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -170,7 +170,7 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
                         : const Text(
                             '시작하기',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 17,
                               fontWeight: FontWeight.w500,
                               letterSpacing: 0.5,
                             ),
@@ -182,7 +182,7 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
                     '입력하신 닉네임은 관리자에게만 표시됩니다\n다음 방문 시 자동으로 로그인됩니다',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       color: AppColors.textTertiary,
                       height: 1.6,
                     ),

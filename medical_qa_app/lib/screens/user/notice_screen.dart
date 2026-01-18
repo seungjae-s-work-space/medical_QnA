@@ -62,7 +62,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
             Text(
               '등록된 공지사항이 없습니다',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -160,7 +160,7 @@ class _NoticeCard extends StatelessWidget {
                   Text(
                     notice.title,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 17,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
@@ -172,7 +172,7 @@ class _NoticeCard extends StatelessWidget {
                   Text(
                     DateFormat('yyyy.MM.dd').format(notice.createdAt),
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -206,7 +206,7 @@ class _PaginationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      padding: const EdgeInsets.only(top: 16, bottom: 100, left: 16, right: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -263,7 +263,7 @@ class _PaginationBar extends StatelessWidget {
               child: Text(
                 '${i + 1}',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: i == currentPage ? FontWeight.w600 : FontWeight.normal,
                   color: i == currentPage ? Colors.white : AppColors.textSecondary,
                 ),
@@ -329,7 +329,7 @@ class NoticeDetailScreen extends StatelessWidget {
           '공지사항',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -345,7 +345,7 @@ class NoticeDetailScreen extends StatelessWidget {
               Text(
                 notice.title,
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                   height: 1.4,
@@ -356,7 +356,7 @@ class NoticeDetailScreen extends StatelessWidget {
               Text(
                 DateFormat('yyyy년 M월 d일').format(notice.createdAt),
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 15,
                   color: AppColors.textSecondary,
                 ),
               ),
@@ -367,7 +367,7 @@ class NoticeDetailScreen extends StatelessWidget {
               Text(
                 notice.content,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   color: AppColors.textPrimary,
                   height: 1.8,
                 ),

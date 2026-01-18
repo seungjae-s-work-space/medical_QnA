@@ -36,7 +36,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           '구독 관리',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -62,7 +62,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   const Text(
                     '구독 플랜 선택',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
@@ -127,7 +127,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               Text(
                 hasActive ? '프리미엄 구독 중' : '무료 사용자',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: hasActive ? const Color(0xFFB87BA8) : AppColors.textPrimary,
                 ),
@@ -148,7 +148,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   Text(
                     '남은 기간: ${provider.remainingDays}일',
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 17,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFFB87BA8),
                     ),
@@ -157,7 +157,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   Text(
                     '만료일: ${DateFormat('yyyy년 M월 d일').format(subscription.endDate)}',
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 15,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -169,7 +169,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             const Text(
               '프리미엄 구독으로 모든 기능을 이용하세요',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -237,7 +237,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   Text(
                     plan.name,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? const Color(0xFFB87BA8)
@@ -249,7 +249,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     Text(
                       plan.description!,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: AppColors.textSecondary,
                       ),
                     ),
@@ -270,7 +270,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               child: Text(
                 price,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: isSelected
                       ? const Color(0xFFB87BA8)
@@ -312,7 +312,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             : const Text(
                 '구독하기',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
@@ -332,7 +332,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         child: const Text(
           '이전 구매 복원',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             color: AppColors.textSecondary,
           ),
         ),
@@ -353,7 +353,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const Text(
             '이용 안내',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
@@ -377,7 +377,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const Text(
             '• ',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 14,
               color: AppColors.textSecondary,
             ),
           ),
@@ -385,7 +385,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             child: Text(
               text,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 color: AppColors.textSecondary,
                 height: 1.4,
               ),

@@ -69,7 +69,7 @@ class MessageRecord extends StatelessWidget {
                     Text(
                       message.text,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 17,
                         height: 1.5,
                         color: isUser ? Colors.white : const Color(0xFF333333),
                         fontWeight: FontWeight.w400,
@@ -95,7 +95,7 @@ class MessageRecord extends StatelessWidget {
                       child: Text(
                         DateFormat('HH:mm').format(message.createdAt),
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 12,
                           color: isUser
                               ? Colors.white.withValues(alpha: 0.7)
                               : const Color(0xFF999999),

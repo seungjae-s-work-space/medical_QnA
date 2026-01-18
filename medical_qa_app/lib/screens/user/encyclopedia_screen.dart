@@ -82,7 +82,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
             Text(
               '등록된 글이 없습니다',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -233,7 +233,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                       hintText: '키워드 검색',
                       hintStyle: const TextStyle(
                         color: AppColors.textTertiary,
-                        fontSize: 14,
+                        fontSize: 16,
                       ),
                       prefixIcon: const Icon(
                         Icons.search,
@@ -268,7 +268,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
                   child: Text(
                     '${_currentMatchIndex + 1}/${_matchedIndices.length}',
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 15,
                       color: Color(0xFFD4A853),
                       fontWeight: FontWeight.w600,
                     ),
@@ -418,7 +418,7 @@ class _ArticleCard extends StatelessWidget {
                     article.title,
                     searchQuery,
                     const TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
@@ -430,7 +430,7 @@ class _ArticleCard extends StatelessWidget {
                       Text(
                         DateFormat('yyyy.MM.dd').format(article.createdAt),
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -444,7 +444,7 @@ class _ArticleCard extends StatelessWidget {
                       Text(
                         '${article.viewCount}',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: AppColors.textSecondary.withValues(alpha: 0.7),
                         ),
                       ),
@@ -527,7 +527,7 @@ class _PaginationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      padding: const EdgeInsets.only(top: 16, bottom: 100, left: 16, right: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -584,7 +584,7 @@ class _PaginationBar extends StatelessWidget {
               child: Text(
                 '${i + 1}',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: i == currentPage ? FontWeight.w600 : FontWeight.normal,
                   color: i == currentPage ? Colors.white : AppColors.textSecondary,
                 ),
@@ -677,7 +677,7 @@ class EncyclopediaDetailScreen extends StatelessWidget {
           '난임백과',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -696,7 +696,7 @@ class EncyclopediaDetailScreen extends StatelessWidget {
                   Text(
                     article.title,
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                       height: 1.4,
@@ -709,7 +709,7 @@ class EncyclopediaDetailScreen extends StatelessWidget {
                       Text(
                         article.authorName,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -724,7 +724,7 @@ class EncyclopediaDetailScreen extends StatelessWidget {
                       Text(
                         DateFormat('yyyy년 M월 d일').format(article.createdAt),
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: AppColors.textSecondary,
                         ),
                       ),

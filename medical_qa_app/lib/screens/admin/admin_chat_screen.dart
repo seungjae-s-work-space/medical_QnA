@@ -74,7 +74,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
           widget.conversation.userName,
           style: const TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 16,
+            fontSize: 18,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -105,7 +105,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                         const Text(
                           '아직 기록이 없습니다',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 16,
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -150,7 +150,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                     controller: _messageController,
                     maxLines: null,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 17,
                       height: 1.6,
                       color: AppColors.textPrimary,
                     ),

@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         : '새 계정을 만들어주세요',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       color: AppColors.textSecondary,
                       height: 1.5,
                     ),
@@ -184,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           : Text(
                               _isLogin ? '로그인' : '회원가입',
                               style: const TextStyle(
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
                                 letterSpacing: 1,
@@ -203,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: RichText(
                       text: TextSpan(
-                        style: const TextStyle(fontSize: 13),
+                        style: const TextStyle(fontSize: 15),
                         children: [
                           TextSpan(
                             text: _isLogin ? '계정이 없으신가요? ' : '이미 계정이 있으신가요? ',
@@ -245,14 +245,14 @@ class _LoginScreenState extends State<LoginScreen> {
       keyboardType: keyboardType,
       obscureText: obscureText,
       style: const TextStyle(
-        fontSize: 16,
+        fontSize: 18,
         color: AppColors.textPrimary,
       ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(
           color: AppColors.textTertiary,
-          fontSize: 15,
+          fontSize: 17,
         ),
         filled: true,
         fillColor: const Color(0xFFF5F5F5),

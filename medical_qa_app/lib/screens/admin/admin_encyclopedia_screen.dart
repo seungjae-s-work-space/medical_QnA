@@ -67,7 +67,7 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
                   Text(
                     '등록된 글이 없습니다',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -75,7 +75,7 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
                   Text(
                     '+ 버튼을 눌러 새 글을 작성하세요',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       color: AppColors.textTertiary,
                     ),
                   ),
@@ -261,7 +261,7 @@ class _AdminArticleCard extends StatelessWidget {
                 child: Text(
                   article.isPublished ? '공개' : '비공개',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     color: article.isPublished ? Colors.green : Colors.orange,
                     fontWeight: FontWeight.w500,
                   ),
@@ -327,7 +327,7 @@ class _AdminArticleCard extends StatelessWidget {
           Text(
             article.title,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
@@ -339,7 +339,7 @@ class _AdminArticleCard extends StatelessWidget {
           Text(
             _stripHtml(article.content),
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               color: AppColors.textSecondary,
               height: 1.4,
             ),
@@ -353,7 +353,7 @@ class _AdminArticleCard extends StatelessWidget {
               Text(
                 DateFormat('yyyy.MM.dd HH:mm').format(article.createdAt),
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   color: AppColors.textTertiary,
                 ),
               ),
@@ -367,7 +367,7 @@ class _AdminArticleCard extends StatelessWidget {
               Text(
                 '${article.viewCount}',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   color: AppColors.textTertiary,
                 ),
               ),
@@ -433,7 +433,7 @@ class AdminArticleDetailScreen extends StatelessWidget {
           '난임백과',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -469,7 +469,7 @@ class AdminArticleDetailScreen extends StatelessWidget {
                     child: Text(
                       article.isPublished ? '공개' : '비공개',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: article.isPublished ? Colors.green : Colors.orange,
                         fontWeight: FontWeight.w500,
                       ),
@@ -480,7 +480,7 @@ class AdminArticleDetailScreen extends StatelessWidget {
                   Text(
                     article.title,
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                       height: 1.4,
@@ -493,7 +493,7 @@ class AdminArticleDetailScreen extends StatelessWidget {
                       Text(
                         article.authorName,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -508,7 +508,7 @@ class AdminArticleDetailScreen extends StatelessWidget {
                       Text(
                         DateFormat('yyyy년 M월 d일').format(article.createdAt),
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -522,7 +522,7 @@ class AdminArticleDetailScreen extends StatelessWidget {
                       Text(
                         '${article.viewCount}',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: AppColors.textTertiary,
                         ),
                       ),
@@ -745,7 +745,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
         const Text(
           '대표 이미지',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
@@ -857,7 +857,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
                   Text(
                     '이미지 추가',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -896,7 +896,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
           _isEditing ? '글 수정' : '새 글 작성',
           style: const TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -941,7 +941,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
                   const Text(
                     '제목',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
@@ -980,7 +980,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
                   const Text(
                     '내용',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
@@ -1023,7 +1023,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
                       const Text(
                         '바로 공개',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),
