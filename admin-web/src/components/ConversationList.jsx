@@ -124,11 +124,17 @@ function ConversationList() {
     return snippet;
   };
 
-  const filteredConversations = conversations.filter((conv) => {
+  // 메시지가 있는 대화방만 (빈 대화방 제외)
+  const activeConversations = conversations.filter((c) => c.lastMessage);
+
+  const filteredConversations = activeConversations.filter((conv) => {
     // 필터 모드
-    if (filterMode === 'unread' && conv.unreadByAdmin <= 0) return false;
-    // 신규 사용자: 관리자가 답장 안 했고, 사용자가 실제로 메시지를 보낸 경우만
-    if (filterMode === 'new' && (conv.hasAdminReplied || !conv.lastMessage)) return false;
+    if (filterMode === 'unread') {
+      // 읽지 않음: unreadByAdmin > 0이고 메시지가 있는 경우만
+      if (conv.unreadByAdmin <= 0) return false;
+    }
+    // 신규 사용자: 관리자가 답장 안 한 경우
+    if (filterMode === 'new' && conv.hasAdminReplied) return false;
 
     // 깊은 검색 결과가 있으면 해당 결과로 필터링
     if (searchResults !== null) {
@@ -141,10 +147,10 @@ function ConversationList() {
     return (conv.userName || '').toLowerCase().includes(q);
   });
 
-  const unreadCount = conversations.filter((c) => c.unreadByAdmin > 0).length;
-  // 신규: 관리자가 한 번도 답장하지 않았고, 사용자가 실제로 메시지를 보낸 채팅방
-  const newUserCount = conversations.filter((c) => !c.hasAdminReplied && c.lastMessage).length;
-  const totalCount = conversations.length;
+  const unreadCount = activeConversations.filter((c) => c.unreadByAdmin > 0).length;
+  // 신규: 관리자가 한 번도 답장하지 않은 채팅방
+  const newUserCount = activeConversations.filter((c) => !c.hasAdminReplied).length;
+  const totalCount = activeConversations.length;
 
   return (
     <Box sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
