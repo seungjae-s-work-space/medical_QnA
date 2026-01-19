@@ -7,8 +7,10 @@ import {
   doc,
   getDoc,
   updateDoc,
+  setDoc,
   Timestamp,
   where,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
@@ -35,32 +37,55 @@ import {
   Alert,
   TextField,
   MenuItem,
+  Autocomplete,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import BlockIcon from '@mui/icons-material/Block';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { colors } from '../theme';
 
 const SUBSCRIPTION_PLANS = {
   plan_monthly: '월간 이용권',
   plan_6months: '6개월 이용권',
   plan_12months: '12개월 이용권',
+  admin_grant: '관리자 부여',
 };
 
 function SubscriptionManager() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [users, setUsers] = useState({});
+  const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [stats, setStats] = useState({ total: 0, active: 0, expired: 0 });
+  const [tabValue, setTabValue] = useState(0);
 
   // Dialog states
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [grantDialogOpen, setGrantDialogOpen] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [extendDays, setExtendDays] = useState(30);
+  const [grantDays, setGrantDays] = useState(30);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   // Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  // 전체 사용자 목록 가져오기
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersList = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setAllUsers(usersList);
+    };
+    fetchAllUsers();
+  }, []);
 
   // 구독 목록 실시간 구독
   useEffect(() => {
@@ -129,6 +154,11 @@ function SubscriptionManager() {
     return unsubscribe;
   }, []);
 
+  // 구독이 없는 사용자 필터링
+  const usersWithoutSubscription = allUsers.filter(user => {
+    return !subscriptions.some(sub => sub.userId === user.id);
+  });
+
   const handleExtendOpen = (subscription) => {
     setSelectedSubscription(subscription);
     setExtendDays(30);
@@ -138,6 +168,12 @@ function SubscriptionManager() {
   const handleBlockOpen = (subscription) => {
     setSelectedSubscription(subscription);
     setBlockDialogOpen(true);
+  };
+
+  const handleGrantOpen = () => {
+    setSelectedUser(null);
+    setGrantDays(30);
+    setGrantDialogOpen(true);
   };
 
   const handleExtend = async () => {
@@ -194,6 +230,77 @@ function SubscriptionManager() {
     }
   };
 
+  const handleGrant = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + grantDays);
+
+      const subscriptionId = `admin_${selectedUser.id}_${Date.now()}`;
+
+      await setDoc(doc(db, 'subscriptions', subscriptionId), {
+        userId: selectedUser.id,
+        planId: 'admin_grant',
+        platform: 'admin',
+        status: 'active',
+        startDate: Timestamp.fromDate(startDate),
+        endDate: Timestamp.fromDate(endDate),
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        grantedBy: 'admin',
+      });
+
+      setSnackbar({
+        open: true,
+        message: `${selectedUser.name}님에게 ${grantDays}일 구독이 부여되었습니다`,
+        severity: 'success',
+      });
+      setGrantDialogOpen(false);
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: '구독 부여 실패: ' + error.message,
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleGrantToUser = async (user, days) => {
+    try {
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + days);
+
+      const subscriptionId = `admin_${user.id}_${Date.now()}`;
+
+      await setDoc(doc(db, 'subscriptions', subscriptionId), {
+        userId: user.id,
+        planId: 'admin_grant',
+        platform: 'admin',
+        status: 'active',
+        startDate: Timestamp.fromDate(startDate),
+        endDate: Timestamp.fromDate(endDate),
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        grantedBy: 'admin',
+      });
+
+      setSnackbar({
+        open: true,
+        message: `${user.name}님에게 ${days}일 구독이 부여되었습니다`,
+        severity: 'success',
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: '구독 부여 실패: ' + error.message,
+        severity: 'error',
+      });
+    }
+  };
+
   const formatDate = (timestamp) => {
     if (!timestamp) return '-';
     const date = timestamp.toDate();
@@ -237,9 +344,19 @@ function SubscriptionManager() {
   return (
     <Box sx={{ p: 4 }}>
       {/* Header */}
-      <Typography variant="h5" sx={{ fontWeight: 700, color: colors.textPrimary, mb: 3 }}>
-        구독 관리
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: colors.textPrimary }}>
+          구독 관리
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<PersonAddIcon />}
+          onClick={handleGrantOpen}
+          sx={{ bgcolor: '#4CAF50', '&:hover': { bgcolor: '#43A047' } }}
+        >
+          구독 부여
+        </Button>
+      </Box>
 
       {/* Stats Cards */}
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
@@ -291,111 +408,209 @@ function SubscriptionManager() {
             만료
           </Typography>
         </Paper>
-      </Box>
-
-      {/* Filter */}
-      <Box sx={{ mb: 3 }}>
-        <ToggleButtonGroup
-          value={filter}
-          exclusive
-          onChange={(e, newFilter) => newFilter && setFilter(newFilter)}
-          size="small"
+        <Paper
+          sx={{
+            flex: 1,
+            p: 3,
+            borderRadius: 3,
+            bgcolor: '#F3E5F5',
+            border: '1px solid #CE93D8',
+          }}
         >
-          <ToggleButton value="all" sx={{ px: 3 }}>전체</ToggleButton>
-          <ToggleButton value="active" sx={{ px: 3 }}>활성</ToggleButton>
-          <ToggleButton value="expired" sx={{ px: 3 }}>만료</ToggleButton>
-        </ToggleButtonGroup>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: '#9C27B0' }}>
+            {usersWithoutSubscription.length}
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#9C27B0' }}>
+            미구독
+          </Typography>
+        </Paper>
       </Box>
 
-      {/* Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: '#FAFAFA' }}>
-              <TableCell sx={{ fontWeight: 600 }}>사용자</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>플랜</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>상태</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>플랫폼</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>시작일</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>만료일</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>남은 기간</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>관리</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {subscriptions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 8, color: colors.textSecondary }}>
-                  구독 내역이 없습니다
-                </TableCell>
-              </TableRow>
-            ) : (
-              subscriptions.map((subscription) => {
-                const user = users[subscription.userId];
-                const endDate = subscription.endDate?.toDate();
-                const isActive = subscription.status === 'active' && endDate && endDate > new Date();
-                const remainingDays = getRemainingDays(subscription.endDate);
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+          <Tab label="구독자 관리" />
+          <Tab label={`미구독 사용자 (${usersWithoutSubscription.length})`} />
+        </Tabs>
+      </Box>
 
-                return (
-                  <TableRow key={subscription.id} hover>
+      {tabValue === 0 && (
+        <>
+          {/* Filter */}
+          <Box sx={{ mb: 3 }}>
+            <ToggleButtonGroup
+              value={filter}
+              exclusive
+              onChange={(e, newFilter) => newFilter && setFilter(newFilter)}
+              size="small"
+            >
+              <ToggleButton value="all" sx={{ px: 3 }}>전체</ToggleButton>
+              <ToggleButton value="active" sx={{ px: 3 }}>활성</ToggleButton>
+              <ToggleButton value="expired" sx={{ px: 3 }}>만료</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {/* Table */}
+          <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: '#FAFAFA' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>사용자</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>플랜</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>상태</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>플랫폼</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>시작일</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>만료일</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>남은 기간</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>관리</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {subscriptions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 8, color: colors.textSecondary }}>
+                      구독 내역이 없습니다
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  subscriptions.map((subscription) => {
+                    const user = users[subscription.userId];
+                    const endDate = subscription.endDate?.toDate();
+                    const isActive = subscription.status === 'active' && endDate && endDate > new Date();
+                    const remainingDays = getRemainingDays(subscription.endDate);
+
+                    return (
+                      <TableRow key={subscription.id} hover>
+                        <TableCell>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {user?.name || '알 수 없음'}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: colors.textSecondary }}>
+                              {user?.email || ''}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          {SUBSCRIPTION_PLANS[subscription.planId] || subscription.planId || '-'}
+                        </TableCell>
+                        <TableCell>{getStatusChip(subscription)}</TableCell>
+                        <TableCell sx={{ textTransform: 'uppercase' }}>
+                          {subscription.platform || '-'}
+                        </TableCell>
+                        <TableCell>{formatDate(subscription.startDate)}</TableCell>
+                        <TableCell>{formatDate(subscription.endDate)}</TableCell>
+                        <TableCell>
+                          {isActive ? (
+                            <Chip
+                              label={`${remainingDays}일`}
+                              size="small"
+                              sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', fontWeight: 600 }}
+                            />
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleExtendOpen(subscription)}
+                              sx={{ color: '#4CAF50' }}
+                              title="기간 연장"
+                            >
+                              <AddCircleOutlineIcon />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleBlockOpen(subscription)}
+                              disabled={!isActive}
+                              sx={{ color: isActive ? '#F44336' : '#E0E0E0' }}
+                              title="이용 차단"
+                            >
+                              <BlockIcon />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
+
+      {tabValue === 1 && (
+        <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: '#FAFAFA' }}>
+                <TableCell sx={{ fontWeight: 600 }}>사용자</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>이메일</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>가입일</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>구독 부여</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {usersWithoutSubscription.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center" sx={{ py: 8, color: colors.textSecondary }}>
+                    모든 사용자가 구독 중입니다
+                  </TableCell>
+                </TableRow>
+              ) : (
+                usersWithoutSubscription.map((user) => (
+                  <TableRow key={user.id} hover>
                     <TableCell>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {user?.name || '알 수 없음'}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: colors.textSecondary }}>
-                          {user?.email || ''}
-                        </Typography>
-                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {user.name || '알 수 없음'}
+                      </Typography>
                     </TableCell>
                     <TableCell>
-                      {SUBSCRIPTION_PLANS[subscription.planId] || subscription.planId || '-'}
+                      <Typography variant="body2" sx={{ color: colors.textSecondary }}>
+                        {user.email || '-'}
+                      </Typography>
                     </TableCell>
-                    <TableCell>{getStatusChip(subscription)}</TableCell>
-                    <TableCell sx={{ textTransform: 'uppercase' }}>
-                      {subscription.platform || '-'}
-                    </TableCell>
-                    <TableCell>{formatDate(subscription.startDate)}</TableCell>
-                    <TableCell>{formatDate(subscription.endDate)}</TableCell>
                     <TableCell>
-                      {isActive ? (
-                        <Chip
-                          label={`${remainingDays}일`}
-                          size="small"
-                          sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', fontWeight: 600 }}
-                        />
-                      ) : (
-                        '-'
-                      )}
+                      {user.createdAt ? formatDate(user.createdAt) : '-'}
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton
+                        <Button
                           size="small"
-                          onClick={() => handleExtendOpen(subscription)}
-                          sx={{ color: '#4CAF50' }}
-                          title="기간 연장"
+                          variant="outlined"
+                          onClick={() => handleGrantToUser(user, 7)}
+                          sx={{ minWidth: 60 }}
                         >
-                          <AddCircleOutlineIcon />
-                        </IconButton>
-                        <IconButton
+                          1주
+                        </Button>
+                        <Button
                           size="small"
-                          onClick={() => handleBlockOpen(subscription)}
-                          disabled={!isActive}
-                          sx={{ color: isActive ? '#F44336' : '#E0E0E0' }}
-                          title="이용 차단"
+                          variant="outlined"
+                          onClick={() => handleGrantToUser(user, 30)}
+                          sx={{ minWidth: 60 }}
                         >
-                          <BlockIcon />
-                        </IconButton>
+                          1개월
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={() => handleGrantToUser(user, 365)}
+                          sx={{ minWidth: 60, bgcolor: '#4CAF50', '&:hover': { bgcolor: '#43A047' } }}
+                        >
+                          1년
+                        </Button>
                       </Box>
                     </TableCell>
                   </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {/* Extend Dialog */}
       <Dialog open={extendDialogOpen} onClose={() => setExtendDialogOpen(false)}>
@@ -451,6 +666,59 @@ function SubscriptionManager() {
           <Button onClick={() => setBlockDialogOpen(false)}>아니오</Button>
           <Button onClick={handleBlock} variant="contained" color="error">
             차단하기
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Grant Dialog */}
+      <Dialog open={grantDialogOpen} onClose={() => setGrantDialogOpen(false)}>
+        <DialogTitle>구독 부여</DialogTitle>
+        <DialogContent sx={{ minWidth: 350 }}>
+          <Typography variant="body2" sx={{ mb: 2, color: colors.textSecondary }}>
+            사용자를 선택하고 구독 기간을 설정하세요.
+          </Typography>
+          <Autocomplete
+            options={usersWithoutSubscription}
+            getOptionLabel={(option) => `${option.name || '알 수 없음'} (${option.email || '-'})`}
+            value={selectedUser}
+            onChange={(e, newValue) => setSelectedUser(newValue)}
+            renderInput={(params) => (
+              <TextField {...params} label="사용자 선택" fullWidth sx={{ mb: 2 }} />
+            )}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            select
+            fullWidth
+            label="구독 기간"
+            value={grantDays}
+            onChange={(e) => setGrantDays(Number(e.target.value))}
+          >
+            <MenuItem value={7}>1주 (7일)</MenuItem>
+            <MenuItem value={30}>1개월 (30일)</MenuItem>
+            <MenuItem value={90}>3개월 (90일)</MenuItem>
+            <MenuItem value={180}>6개월 (180일)</MenuItem>
+            <MenuItem value={365}>1년 (365일)</MenuItem>
+          </TextField>
+          {selectedUser && (
+            <Typography variant="caption" sx={{ display: 'block', mt: 2, color: colors.textSecondary }}>
+              만료일: {(() => {
+                const endDate = new Date();
+                endDate.setDate(endDate.getDate() + grantDays);
+                return endDate.toLocaleDateString('ko-KR');
+              })()}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setGrantDialogOpen(false)}>취소</Button>
+          <Button
+            onClick={handleGrant}
+            variant="contained"
+            disabled={!selectedUser}
+            sx={{ bgcolor: '#4CAF50' }}
+          >
+            부여
           </Button>
         </DialogActions>
       </Dialog>
