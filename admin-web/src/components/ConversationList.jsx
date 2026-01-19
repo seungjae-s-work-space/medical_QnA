@@ -127,7 +127,8 @@ function ConversationList() {
   const filteredConversations = conversations.filter((conv) => {
     // 필터 모드
     if (filterMode === 'unread' && conv.unreadByAdmin <= 0) return false;
-    if (filterMode === 'new' && conv.hasAdminReplied) return false;
+    // 신규 사용자: 관리자가 답장 안 했고, 사용자가 실제로 메시지를 보낸 경우만
+    if (filterMode === 'new' && (conv.hasAdminReplied || !conv.lastMessage)) return false;
 
     // 깊은 검색 결과가 있으면 해당 결과로 필터링
     if (searchResults !== null) {
@@ -141,8 +142,8 @@ function ConversationList() {
   });
 
   const unreadCount = conversations.filter((c) => c.unreadByAdmin > 0).length;
-  // 신규: 관리자가 한 번도 답장하지 않은 채팅방
-  const newUserCount = conversations.filter((c) => !c.hasAdminReplied).length;
+  // 신규: 관리자가 한 번도 답장하지 않았고, 사용자가 실제로 메시지를 보낸 채팅방
+  const newUserCount = conversations.filter((c) => !c.hasAdminReplied && c.lastMessage).length;
   const totalCount = conversations.length;
 
   return (
