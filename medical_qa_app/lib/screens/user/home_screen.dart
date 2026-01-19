@@ -333,14 +333,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16),
           // 채팅하기 배너 (이미지로 대체 예정)
           _ChatBanner(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ChatScreen(),
-                ),
-              );
-            },
+            onTap: _navigateToChat,
           ),
 
           // 로고 영역
@@ -682,17 +675,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _navigateToChat() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ChatScreen(),
+      ),
+    );
+  }
+
   Widget _buildNavItem(int index, IconData icon, IconData activeIcon) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
       onTap: () {
         if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ChatScreen(),
-            ),
-          );
+          _navigateToChat();
         } else {
           setState(() => _currentIndex = index);
         }
@@ -1021,7 +1018,7 @@ class _SubscriptionMenuCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '정회원 무제한채팅',
+                        '무제한 상담 이용권',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
@@ -1030,7 +1027,7 @@ class _SubscriptionMenuCard extends StatelessWidget {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        '6개월 - 1만원  /  1년 - 2만원',
+                        '월 2,900원부터',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.white,

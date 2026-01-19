@@ -9,6 +9,7 @@ import '../../utils/app_colors.dart';
 import 'admin_chat_screen.dart';
 import 'admin_encyclopedia_screen.dart';
 import 'admin_news_screen.dart';
+import 'admin_subscription_screen.dart';
 
 class AdminConversationsScreen extends StatefulWidget {
   const AdminConversationsScreen({super.key});
@@ -64,6 +65,8 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
       case 2:
         return '뉴스 관리';
       case 3:
+        return '구독 관리';
+      case 4:
         return '설정';
       default:
         return '관리자';
@@ -135,6 +138,10 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
 
   Widget _buildNewsContent() {
     return const AdminNewsScreen();
+  }
+
+  Widget _buildSubscriptionContent() {
+    return const AdminSubscriptionScreen();
   }
 
   Widget _buildSettingsContent() {
@@ -274,6 +281,7 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
             _buildConversationsContent(),
             _buildEncyclopediaContent(),
             _buildNewsContent(),
+            _buildSubscriptionContent(),
             _buildSettingsContent(),
           ],
         ),
@@ -295,7 +303,8 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
               _buildNavItem(0, Icons.chat_bubble_outline, Icons.chat_bubble),
               _buildNavItem(1, Icons.menu_book_outlined, Icons.menu_book),
               _buildNavItem(2, Icons.newspaper_outlined, Icons.newspaper),
-              _buildNavItem(3, Icons.settings_outlined, Icons.settings),
+              _buildNavItem(3, Icons.card_membership_outlined, Icons.card_membership),
+              _buildNavItem(4, Icons.settings_outlined, Icons.settings),
             ],
           ),
         ),

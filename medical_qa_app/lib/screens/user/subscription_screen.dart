@@ -18,7 +18,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedPlan = SubscriptionPlan.defaultPlans.first;
+    // 12개월 플랜을 기본 선택 (최고 할인율)
+    _selectedPlan = SubscriptionPlan.defaultPlans.last;
   }
 
   @override

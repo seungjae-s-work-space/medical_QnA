@@ -10,7 +10,8 @@ enum SubscriptionStatus {
 
 /// 구독 플랜 타입
 enum SubscriptionPlanType {
-  sixMonths,   // 6개월권
+  monthly,      // 월간권
+  sixMonths,    // 6개월권
   twelveMonths, // 12개월권
 }
 
@@ -43,24 +44,35 @@ class SubscriptionPlan {
   /// 기본 구독 플랜들
   static const List<SubscriptionPlan> defaultPlans = [
     SubscriptionPlan(
+      id: 'plan_monthly',
+      name: '월간 이용권',
+      type: SubscriptionPlanType.monthly,
+      durationMonths: 1,
+      price: 2900,
+      currency: 'KRW',
+      description: '1개월 동안 무제한 상담',
+      iosProductId: 'com.gukitso.medicalqa.subscription.monthly',
+      androidProductId: 'subscription_monthly',
+    ),
+    SubscriptionPlan(
       id: 'plan_6months',
-      name: '6개월 구독권',
+      name: '6개월 이용권',
       type: SubscriptionPlanType.sixMonths,
       durationMonths: 6,
-      price: 10000,
+      price: 14900,
       currency: 'KRW',
-      description: '6개월 동안 무제한 채팅을 이용하세요',
+      description: '17,400원 → 14,900원 (14% 할인)',
       iosProductId: 'com.gukitso.medicalqa.subscription.6months',
       androidProductId: 'subscription_6months',
     ),
     SubscriptionPlan(
       id: 'plan_12months',
-      name: '12개월 구독권',
+      name: '12개월 이용권',
       type: SubscriptionPlanType.twelveMonths,
       durationMonths: 12,
-      price: 20000,
+      price: 19900,
       currency: 'KRW',
-      description: '12개월 동안 무제한 채팅을 이용하세요',
+      description: '34,800원 → 19,900원 (43% 할인)',
       iosProductId: 'com.gukitso.medicalqa.subscription.12months',
       androidProductId: 'subscription_12months',
     ),
