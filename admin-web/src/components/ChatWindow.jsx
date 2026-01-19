@@ -27,7 +27,6 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import ImageIcon from '@mui/icons-material/Image';
 import VideoFileIcon from '@mui/icons-material/VideoFile';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
