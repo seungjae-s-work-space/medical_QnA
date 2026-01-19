@@ -93,5 +93,18 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
+
+    // subscriptions 컬렉션 (구독)
+    match /subscriptions/{subscriptionId} {
+      // 읽기: 본인 구독 정보 또는 관리자
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      // 생성: 인증된 사용자 (인앱결제 시스템에서 생성)
+      allow create: if isAuthenticated();
+      // 수정: 관리자만 (기간 연장, 차단 등)
+      allow update: if isAdmin();
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
   }
 }
