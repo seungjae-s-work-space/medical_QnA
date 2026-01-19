@@ -11,6 +11,7 @@ import EncyclopediaManager from './components/EncyclopediaManager';
 import NewsManager from './components/NewsManager';
 import NoticeManager from './components/NoticeManager';
 import VideoManager from './components/VideoManager';
+import SubscriptionManager from './components/SubscriptionManager';
 import { CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colors } from './theme';
@@ -134,6 +135,18 @@ function App() {
               user && isAdmin ? (
                 <Layout>
                   <VideoManager />
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              user && isAdmin ? (
+                <Layout>
+                  <SubscriptionManager />
                 </Layout>
               ) : (
                 <Navigate to="/login" />
