@@ -622,12 +622,111 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () => authProvider.signOut(),
                   textColor: Colors.red.shade400,
                 ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Divider(height: 1, color: Color(0xFFE8E8E8)),
+                ),
+                _buildSettingItem(
+                  icon: Icons.person_remove_outlined,
+                  title: '회원 탈퇴',
+                  iconColor: Colors.grey.shade400,
+                  onTap: () => _showDeleteAccountDialog(authProvider),
+                  textColor: Colors.grey.shade500,
+                ),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _showDeleteAccountDialog(AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          '회원 탈퇴',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF333333),
+          ),
+        ),
+        content: const Text(
+          '정말 탈퇴하시겠습니까?\n\n'
+          '탈퇴 시 모든 데이터(상담 내역, 구독 정보 등)가 삭제되며 복구할 수 없습니다.',
+          style: TextStyle(
+            fontSize: 16,
+            color: Color(0xFF666666),
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '취소',
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF888888),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              _handleDeleteAccount(authProvider);
+            },
+            child: Text(
+              '탈퇴하기',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.red.shade400,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteAccount(AuthProvider authProvider) async {
+    // 로딩 다이얼로그 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    final success = await authProvider.deleteAccount();
+
+    if (mounted) {
+      Navigator.pop(context); // 로딩 다이얼로그 닫기
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('회원 탈퇴가 완료되었습니다.'),
+            backgroundColor: Color(0xFF333333),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? '탈퇴에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildSettingItem({

@@ -242,4 +242,63 @@ class AuthService {
     await prefs.remove('nickname');
     await _auth.signOut();
   }
+
+  // 회원 탈퇴 - 사용자 데이터 및 계정 삭제
+  Future<void> deleteAccount(String userId) async {
+    try {
+      final batch = _db.batch();
+
+      // 1. 사용자의 대화 내역 삭제
+      final conversationsQuery = await _db
+          .collection('conversations')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      for (final doc in conversationsQuery.docs) {
+        // 대화 내 메시지들 삭제
+        final messagesQuery = await _db
+            .collection('conversations')
+            .doc(doc.id)
+            .collection('messages')
+            .get();
+
+        for (final msgDoc in messagesQuery.docs) {
+          batch.delete(msgDoc.reference);
+        }
+
+        // 대화 삭제
+        batch.delete(doc.reference);
+      }
+
+      // 2. 구독 정보 삭제
+      final subscriptionsQuery = await _db
+          .collection('subscriptions')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      for (final doc in subscriptionsQuery.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // 3. 사용자 문서 삭제
+      batch.delete(_db.collection('users').doc(userId));
+
+      // 배치 실행
+      await batch.commit();
+
+      // 4. 로컬 저장소 초기화
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('userId');
+      await prefs.remove('nickname');
+
+      // 5. Firebase Auth 계정 삭제
+      final user = _auth.currentUser;
+      if (user != null) {
+        await user.delete();
+      }
+    } catch (e) {
+      print('회원 탈퇴 오류: $e');
+      rethrow;
+    }
+  }
 }

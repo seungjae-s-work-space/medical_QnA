@@ -174,4 +174,26 @@ class AuthProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+
+  // 회원 탈퇴
+  Future<bool> deleteAccount() async {
+    if (_currentUser == null) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _authService.deleteAccount(_currentUser!.userId);
+      _currentUser = null;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = '회원 탈퇴에 실패했습니다. 다시 시도해주세요.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
 }

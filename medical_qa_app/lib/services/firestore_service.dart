@@ -38,6 +38,7 @@ class FirestoreService {
     required String conversationId,
     required String text,
     String? imageUrl,
+    List<AttachmentModel>? attachments,
   }) async {
     User? currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('로그인이 필요합니다');
@@ -46,6 +47,26 @@ class FirestoreService {
     DocumentSnapshot userDoc =
         await _db.collection('users').doc(currentUser.uid).get();
     UserModel user = UserModel.fromFirestore(userDoc);
+
+    // 첨부파일이 있으면 마지막 메시지 텍스트 생성
+    String lastMessageText = text;
+    if (text.isEmpty && attachments != null && attachments.isNotEmpty) {
+      final attachment = attachments.first;
+      switch (attachment.type) {
+        case AttachmentType.image:
+          lastMessageText = '📷 사진';
+          break;
+        case AttachmentType.video:
+          lastMessageText = '🎬 동영상';
+          break;
+        case AttachmentType.file:
+          lastMessageText = '📎 ${attachment.fileName ?? "파일"}';
+          break;
+      }
+      if (attachments.length > 1) {
+        lastMessageText += ' 외 ${attachments.length - 1}개';
+      }
+    }
 
     // 메시지 추가
     await _db
@@ -59,6 +80,7 @@ class FirestoreService {
       'senderProfileImage': user.profileImage,
       'text': text,
       'imageUrl': imageUrl,
+      'attachments': attachments?.map((a) => a.toMap()).toList(),
       'isRead': false,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -67,7 +89,7 @@ class FirestoreService {
     String unreadField = user.role == 'admin' ? 'unreadByUser' : 'unreadByAdmin';
 
     await _db.collection('conversations').doc(conversationId).update({
-      'lastMessage': text,
+      'lastMessage': lastMessageText,
       'lastMessageAt': FieldValue.serverTimestamp(),
       unreadField: FieldValue.increment(1),
     });
