@@ -97,7 +97,7 @@ function ChatWindow() {
     e.target.value = '';
   };
 
-  const allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip'];
+  const allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip', 'hwp', 'hwpx'];
 
   const isAllowedFile = (file) => {
     if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
@@ -681,90 +681,95 @@ function ChatWindow() {
             py: 1,
             borderTop: `1px solid ${colors.divider}`,
             bgcolor: colors.backgroundAlt,
-            display: 'flex',
-            gap: 1,
-            overflowX: 'auto',
           }}
         >
-          {pendingFiles.map((fileObj, index) => (
-            <Box
-              key={index}
-              sx={{
-                position: 'relative',
-                width: 60,
-                height: 60,
-                borderRadius: 2,
-                border: `1px solid ${colors.divider}`,
-                bgcolor: colors.background,
-                overflow: 'hidden',
-                flexShrink: 0,
-              }}
-            >
-              {fileObj.type === 'image' ? (
-                <img
-                  src={fileObj.preview}
-                  alt="미리보기"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : fileObj.type === 'video' ? (
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'rgba(229, 115, 115, 0.1)',
-                  }}
-                >
-                  <VideoFileIcon sx={{ color: '#E57373' }} />
-                </Box>
-              ) : (
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'rgba(129, 199, 132, 0.1)',
-                    p: 0.5,
-                  }}
-                >
-                  <InsertDriveFileIcon sx={{ color: '#81C784', fontSize: 20 }} />
-                  <Typography
-                    sx={{
-                      fontSize: 8,
-                      color: colors.textSecondary,
-                      textAlign: 'center',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      width: '100%',
-                    }}
-                  >
-                    {fileObj.file.name}
-                  </Typography>
-                </Box>
-              )}
-              <IconButton
-                size="small"
-                onClick={() => removePendingFile(index)}
+          <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', mb: 0.5 }}>
+            {pendingFiles.map((fileObj, index) => (
+              <Box
+                key={index}
                 sx={{
-                  position: 'absolute',
-                  top: 2,
-                  right: 2,
-                  width: 18,
-                  height: 18,
-                  bgcolor: 'rgba(0, 0, 0, 0.5)',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                  position: 'relative',
+                  width: 60,
+                  height: 60,
+                  borderRadius: 2,
+                  border: `1px solid ${colors.divider}`,
+                  bgcolor: colors.background,
+                  overflow: 'hidden',
+                  flexShrink: 0,
                 }}
               >
-                <CloseIcon sx={{ fontSize: 12 }} />
-              </IconButton>
-            </Box>
-          ))}
+                {fileObj.type === 'image' ? (
+                  <img
+                    src={fileObj.preview}
+                    alt="미리보기"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : fileObj.type === 'video' ? (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'rgba(229, 115, 115, 0.1)',
+                    }}
+                  >
+                    <VideoFileIcon sx={{ color: '#E57373' }} />
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'rgba(129, 199, 132, 0.1)',
+                      p: 0.5,
+                    }}
+                  >
+                    <InsertDriveFileIcon sx={{ color: '#81C784', fontSize: 20 }} />
+                    <Typography
+                      sx={{
+                        fontSize: 8,
+                        color: colors.textSecondary,
+                        textAlign: 'center',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        width: '100%',
+                      }}
+                    >
+                      {fileObj.file.name}
+                    </Typography>
+                  </Box>
+                )}
+                <IconButton
+                  size="small"
+                  onClick={() => removePendingFile(index)}
+                  sx={{
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    width: 18,
+                    height: 18,
+                    bgcolor: 'rgba(0, 0, 0, 0.5)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                  }}
+                >
+                  <CloseIcon sx={{ fontSize: 12 }} />
+                </IconButton>
+              </Box>
+            ))}
+          </Box>
+          {/* 파일 보관 기간 안내 */}
+          <Typography sx={{ fontSize: 11, color: colors.textTertiary }}>
+            {pendingFiles.some(f => f.type === 'video')
+              ? '동영상 7일, 이미지/문서 30일 후 자동 삭제'
+              : '이미지/문서는 30일 후 자동 삭제됩니다'}
+          </Typography>
         </Box>
       )}
 

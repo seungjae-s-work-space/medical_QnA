@@ -453,6 +453,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildPendingAttachmentsPreview() {
     if (_pendingAttachments.isEmpty) return const SizedBox.shrink();
 
+    final hasVideo = _pendingAttachments.any((a) => a.type == AttachmentType.video);
+    final expiryText = hasVideo
+        ? '동영상 7일, 이미지/문서 30일 후 자동 삭제'
+        : '이미지/문서는 30일 후 자동 삭제됩니다';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
@@ -461,53 +466,66 @@ class _ChatScreenState extends State<ChatScreen> {
           bottom: BorderSide(color: Color(0xFFE0E0E0), width: 0.5),
         ),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: List.generate(_pendingAttachments.length, (index) {
-            final attachment = _pendingAttachments[index];
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Stack(
-                children: [
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE0E0E0)),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(11),
-                      child: _buildAttachmentPreview(attachment),
-                    ),
-                  ),
-                  Positioned(
-                    top: -4,
-                    right: -4,
-                    child: GestureDetector(
-                      onTap: () => _removePendingAttachment(index),
-                      child: Container(
-                        width: 22,
-                        height: 22,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(_pendingAttachments.length, (index) {
+                final attachment = _pendingAttachments[index];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 70,
                         decoration: BoxDecoration(
-                          color: Colors.red.shade400,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
                           color: Colors.white,
-                          size: 14,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(11),
+                          child: _buildAttachmentPreview(attachment),
                         ),
                       ),
-                    ),
+                      Positioned(
+                        top: -4,
+                        right: -4,
+                        child: GestureDetector(
+                          onTap: () => _removePendingAttachment(index),
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade400,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }),
-        ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            expiryText,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF999999),
+            ),
+          ),
+        ],
       ),
     );
   }

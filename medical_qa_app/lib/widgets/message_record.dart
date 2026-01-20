@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/message_model.dart';
+import '../services/download_service.dart';
 
 /// 메시지 버블 - 모던하고 깔끔한 디자인
-class MessageRecord extends StatelessWidget {
+class MessageRecord extends StatefulWidget {
   final MessageModel message;
   final bool isUser;
-
-  // 채팅 전용 색상
-  static const Color _userBubbleColor = Color(0xFF5B8BA8);  // 파란색 (사용자)
-  static const Color _adminBubbleColor = Color(0xFFF0F0F0); // 밝은 회색 (관리자)
-  static const Color _adminIconBg = Color(0xFFE8F4FC);      // 아이콘 배경
-  static const Color _adminIconColor = Color(0xFF5B8BA8);   // 아이콘 색상
 
   const MessageRecord({
     super.key,
@@ -22,16 +16,31 @@ class MessageRecord extends StatelessWidget {
   });
 
   @override
+  State<MessageRecord> createState() => _MessageRecordState();
+}
+
+class _MessageRecordState extends State<MessageRecord> {
+  // 채팅 전용 색상
+  static const Color _userBubbleColor = Color(0xFF5B8BA8);  // 파란색 (사용자)
+  static const Color _adminBubbleColor = Color(0xFFF0F0F0); // 밝은 회색 (관리자)
+  static const Color _adminIconBg = Color(0xFFE8F4FC);      // 아이콘 배경
+  static const Color _adminIconColor = Color(0xFF5B8BA8);   // 아이콘 색상
+
+  final DownloadService _downloadService = DownloadService();
+  bool _isDownloading = false;
+  double _downloadProgress = 0;
+
+  @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: widget.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isUser) ...[
+          if (!widget.isUser) ...[
             // 상담사 아이콘
             Container(
               width: 32,
@@ -54,12 +63,12 @@ class MessageRecord extends StatelessWidget {
               constraints: BoxConstraints(maxWidth: screenWidth * 0.7),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isUser ? _userBubbleColor : _adminBubbleColor,
+                color: widget.isUser ? _userBubbleColor : _adminBubbleColor,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(isUser ? 18 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 18),
+                  bottomLeft: Radius.circular(widget.isUser ? 18 : 4),
+                  bottomRight: Radius.circular(widget.isUser ? 4 : 18),
                 ),
               ),
               child: IntrinsicWidth(
@@ -68,42 +77,46 @@ class MessageRecord extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // 텍스트
-                    if (message.text.isNotEmpty)
+                    if (widget.message.text.isNotEmpty)
                       Text(
-                        message.text,
+                        widget.message.text,
                         style: TextStyle(
                           fontSize: 17,
                           height: 1.5,
-                          color: isUser ? Colors.white : const Color(0xFF333333),
+                          color: widget.isUser ? Colors.white : const Color(0xFF333333),
                           fontWeight: FontWeight.w400,
                         ),
                       ),
 
                     // 첨부파일들
-                    if (message.hasAttachments) ...[
-                      if (message.text.isNotEmpty) const SizedBox(height: 10),
+                    if (widget.message.hasAttachments) ...[
+                      if (widget.message.text.isNotEmpty) const SizedBox(height: 10),
                       _buildAttachments(context),
                     ],
 
                     // 이미지가 있으면 (하위 호환성)
-                    if (message.imageUrl != null && message.attachments.isEmpty) ...[
-                      if (message.text.isNotEmpty) const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: CachedNetworkImage(
-                          imageUrl: message.imageUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            height: 150,
-                            color: Colors.grey.shade200,
-                            child: const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                    if (widget.message.imageUrl != null && widget.message.attachments.isEmpty) ...[
+                      if (widget.message.text.isNotEmpty) const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () => _showFullScreenImage(context, widget.message.imageUrl!, null),
+                        onLongPress: () => _showImageOptions(context, widget.message.imageUrl!, null),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: widget.message.imageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              height: 150,
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
                             ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            height: 100,
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.error),
+                            errorWidget: (context, url, error) => Container(
+                              height: 100,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.error),
+                            ),
                           ),
                         ),
                       ),
@@ -114,10 +127,10 @@ class MessageRecord extends StatelessWidget {
                     Align(
                       alignment: Alignment.bottomRight,
                       child: Text(
-                        DateFormat('HH:mm').format(message.createdAt),
+                        DateFormat('HH:mm').format(widget.message.createdAt),
                         style: TextStyle(
                           fontSize: 12,
-                          color: isUser
+                          color: widget.isUser
                               ? Colors.white.withValues(alpha: 0.7)
                               : const Color(0xFF999999),
                         ),
@@ -136,7 +149,7 @@ class MessageRecord extends StatelessWidget {
   Widget _buildAttachments(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: message.attachments.map((attachment) {
+      children: widget.message.attachments.map((attachment) {
         switch (attachment.type) {
           case AttachmentType.image:
             return _buildImageAttachment(context, attachment);
@@ -153,7 +166,8 @@ class MessageRecord extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        onTap: () => _showFullScreenImage(context, attachment.url),
+        onTap: () => _showFullScreenImage(context, attachment.url, attachment.fileName),
+        onLongPress: () => _showImageOptions(context, attachment.url, attachment.fileName),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: CachedNetworkImage(
@@ -181,11 +195,11 @@ class MessageRecord extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        onTap: () => _openUrl(attachment.url),
+        onTap: () => _showVideoOptions(context, attachment),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isUser
+            color: widget.isUser
                 ? Colors.white.withValues(alpha: 0.15)
                 : const Color(0xFFE0E0E0),
             borderRadius: BorderRadius.circular(8),
@@ -200,11 +214,20 @@ class MessageRecord extends StatelessWidget {
                   color: const Color(0xFFE57373).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.play_circle_fill_rounded,
-                  color: Color(0xFFE57373),
-                  size: 24,
-                ),
+                child: _isDownloading
+                    ? Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: CircularProgressIndicator(
+                          value: _downloadProgress > 0 ? _downloadProgress : null,
+                          strokeWidth: 2,
+                          color: const Color(0xFFE57373),
+                        ),
+                      )
+                    : const Icon(
+                        Icons.play_circle_fill_rounded,
+                        color: Color(0xFFE57373),
+                        size: 24,
+                      ),
               ),
               const SizedBox(width: 10),
               Flexible(
@@ -216,7 +239,7 @@ class MessageRecord extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: isUser ? Colors.white : const Color(0xFF333333),
+                        color: widget.isUser ? Colors.white : const Color(0xFF333333),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -226,13 +249,19 @@ class MessageRecord extends StatelessWidget {
                         attachment.fileSizeString,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isUser
+                          color: widget.isUser
                               ? Colors.white.withValues(alpha: 0.7)
                               : const Color(0xFF888888),
                         ),
                       ),
                   ],
                 ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.download_rounded,
+                size: 20,
+                color: widget.isUser ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF888888),
               ),
             ],
           ),
@@ -245,11 +274,11 @@ class MessageRecord extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        onTap: () => _openUrl(attachment.url),
+        onTap: () => _downloadAndOpenFile(context, attachment),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isUser
+            color: widget.isUser
                 ? Colors.white.withValues(alpha: 0.15)
                 : const Color(0xFFE0E0E0),
             borderRadius: BorderRadius.circular(8),
@@ -264,11 +293,20 @@ class MessageRecord extends StatelessWidget {
                   color: const Color(0xFF81C784).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  _getFileIcon(attachment.fileName),
-                  color: const Color(0xFF81C784),
-                  size: 22,
-                ),
+                child: _isDownloading
+                    ? Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: CircularProgressIndicator(
+                          value: _downloadProgress > 0 ? _downloadProgress : null,
+                          strokeWidth: 2,
+                          color: const Color(0xFF81C784),
+                        ),
+                      )
+                    : Icon(
+                        _getFileIcon(attachment.fileName),
+                        color: const Color(0xFF81C784),
+                        size: 22,
+                      ),
               ),
               const SizedBox(width: 10),
               Flexible(
@@ -280,7 +318,7 @@ class MessageRecord extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: isUser ? Colors.white : const Color(0xFF333333),
+                        color: widget.isUser ? Colors.white : const Color(0xFF333333),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -290,7 +328,7 @@ class MessageRecord extends StatelessWidget {
                         attachment.fileSizeString,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isUser
+                          color: widget.isUser
                               ? Colors.white.withValues(alpha: 0.7)
                               : const Color(0xFF888888),
                         ),
@@ -302,7 +340,7 @@ class MessageRecord extends StatelessWidget {
               Icon(
                 Icons.download_rounded,
                 size: 20,
-                color: isUser ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF888888),
+                color: widget.isUser ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF888888),
               ),
             ],
           ),
@@ -337,32 +375,235 @@ class MessageRecord extends StatelessWidget {
     }
   }
 
-  void _showFullScreenImage(BuildContext context, String imageUrl) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            iconTheme: const IconThemeData(color: Colors.white),
-            elevation: 0,
-          ),
-          body: Center(
-            child: InteractiveViewer(
-              minScale: 0.5,
-              maxScale: 4.0,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.contain,
-                placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-                errorWidget: (context, url, error) => const Icon(
-                  Icons.error,
-                  color: Colors.white,
-                  size: 50,
+  // 이미지 옵션 (길게 누르기)
+  void _showImageOptions(BuildContext context, String url, String? fileName) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.save_alt_rounded, color: Color(0xFF5B8BA8)),
+                title: const Text('갤러리에 저장'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _saveImageToGallery(context, url, fileName);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 동영상 옵션
+  void _showVideoOptions(BuildContext context, AttachmentModel attachment) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.save_alt_rounded, color: Color(0xFFE57373)),
+                title: const Text('갤러리에 저장'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _saveVideoToGallery(context, attachment);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 이미지 갤러리 저장
+  Future<void> _saveImageToGallery(BuildContext context, String url, String? fileName) async {
+    setState(() => _isDownloading = true);
+
+    final name = fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final result = await _downloadService.saveImageToGallery(url, name);
+
+    setState(() => _isDownloading = false);
+
+    if (context.mounted) {
+      _showResultSnackBar(context, result);
+    }
+  }
+
+  // 동영상 갤러리 저장
+  Future<void> _saveVideoToGallery(BuildContext context, AttachmentModel attachment) async {
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0;
+    });
+
+    final name = attachment.fileName ?? 'video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    final result = await _downloadService.saveVideoToGallery(
+      attachment.url,
+      name,
+      onProgress: (progress) {
+        setState(() => _downloadProgress = progress);
+      },
+    );
+
+    setState(() {
+      _isDownloading = false;
+      _downloadProgress = 0;
+    });
+
+    if (context.mounted) {
+      _showResultSnackBar(context, result);
+    }
+  }
+
+  // 파일 다운로드 및 열기
+  Future<void> _downloadAndOpenFile(BuildContext context, AttachmentModel attachment) async {
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0;
+    });
+
+    final name = attachment.fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
+    final result = await _downloadService.downloadFile(
+      attachment.url,
+      name,
+      onProgress: (progress) {
+        setState(() => _downloadProgress = progress);
+      },
+    );
+
+    setState(() {
+      _isDownloading = false;
+      _downloadProgress = 0;
+    });
+
+    if (context.mounted) {
+      if (result.success && result.filePath != null) {
+        // 다운로드 성공 시 파일 열기
+        await _downloadService.openFile(result.filePath!);
+      } else {
+        _showResultSnackBar(context, result);
+      }
+    }
+  }
+
+  void _showResultSnackBar(BuildContext context, DownloadResult result) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.message),
+        backgroundColor: result.success ? Colors.green.shade400 : Colors.red.shade400,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(BuildContext context, String imageUrl, String? fileName) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _FullScreenImageView(
+          imageUrl: imageUrl,
+          fileName: fileName,
+          downloadService: _downloadService,
+        ),
+      ),
+    );
+  }
+}
+
+// 전체화면 이미지 뷰어 (저장 버튼 포함)
+class _FullScreenImageView extends StatefulWidget {
+  final String imageUrl;
+  final String? fileName;
+  final DownloadService downloadService;
+
+  const _FullScreenImageView({
+    required this.imageUrl,
+    this.fileName,
+    required this.downloadService,
+  });
+
+  @override
+  State<_FullScreenImageView> createState() => _FullScreenImageViewState();
+}
+
+class _FullScreenImageViewState extends State<_FullScreenImageView> {
+  bool _isSaving = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: _isSaving ? null : _saveImage,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.download_rounded),
+          ),
+        ],
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: CachedNetworkImage(
+            imageUrl: widget.imageUrl,
+            fit: BoxFit.contain,
+            placeholder: (context, url) => const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+            errorWidget: (context, url, error) => const Icon(
+              Icons.error,
+              color: Colors.white,
+              size: 50,
             ),
           ),
         ),
@@ -370,10 +611,23 @@ class MessageRecord extends StatelessWidget {
     );
   }
 
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _saveImage() async {
+    setState(() => _isSaving = true);
+
+    final name = widget.fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final result = await widget.downloadService.saveImageToGallery(widget.imageUrl, name);
+
+    setState(() => _isSaving = false);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: result.success ? Colors.green.shade400 : Colors.red.shade400,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
 }
