@@ -27,8 +27,10 @@ class _MessageRecordState extends State<MessageRecord> {
   static const Color _adminIconColor = Color(0xFF5B8BA8);   // 아이콘 색상
 
   final DownloadService _downloadService = DownloadService();
-  bool _isDownloading = false;
-  double _downloadProgress = 0;
+
+  // 파일별 다운로드 상태 관리 (파일 URL을 키로 사용)
+  final Set<String> _downloadingUrls = {};
+  final Map<String, double> _progressByUrl = {};
 
   @override
   Widget build(BuildContext context) {
@@ -390,6 +392,9 @@ class _MessageRecordState extends State<MessageRecord> {
   }
 
   Widget _buildVideoAttachment(BuildContext context, AttachmentModel attachment) {
+    final isDownloading = _downloadingUrls.contains(attachment.url);
+    final progress = _progressByUrl[attachment.url] ?? 0.0;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
@@ -412,11 +417,11 @@ class _MessageRecordState extends State<MessageRecord> {
                   color: const Color(0xFFE57373).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: _isDownloading
+                child: isDownloading
                     ? Padding(
                         padding: const EdgeInsets.all(8),
                         child: CircularProgressIndicator(
-                          value: _downloadProgress > 0 ? _downloadProgress : null,
+                          value: progress > 0 ? progress : null,
                           strokeWidth: 2,
                           color: const Color(0xFFE57373),
                         ),
@@ -469,6 +474,9 @@ class _MessageRecordState extends State<MessageRecord> {
   }
 
   Widget _buildFileAttachment(BuildContext context, AttachmentModel attachment) {
+    final isDownloading = _downloadingUrls.contains(attachment.url);
+    final progress = _progressByUrl[attachment.url] ?? 0.0;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
@@ -491,11 +499,11 @@ class _MessageRecordState extends State<MessageRecord> {
                   color: const Color(0xFF81C784).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: _isDownloading
+                child: isDownloading
                     ? Padding(
                         padding: const EdgeInsets.all(8),
                         child: CircularProgressIndicator(
-                          value: _downloadProgress > 0 ? _downloadProgress : null,
+                          value: progress > 0 ? progress : null,
                           strokeWidth: 2,
                           color: const Color(0xFF81C784),
                         ),
@@ -651,12 +659,12 @@ class _MessageRecordState extends State<MessageRecord> {
 
   // 이미지 갤러리 저장
   Future<void> _saveImageToGallery(BuildContext context, String url, String? fileName) async {
-    setState(() => _isDownloading = true);
+    setState(() => _downloadingUrls.add(url));
 
     final name = fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
     final result = await _downloadService.saveImageToGallery(url, name);
 
-    setState(() => _isDownloading = false);
+    setState(() => _downloadingUrls.remove(url));
 
     if (context.mounted) {
       _showResultSnackBar(context, result);
@@ -665,23 +673,24 @@ class _MessageRecordState extends State<MessageRecord> {
 
   // 동영상 갤러리 저장
   Future<void> _saveVideoToGallery(BuildContext context, AttachmentModel attachment) async {
+    final url = attachment.url;
     setState(() {
-      _isDownloading = true;
-      _downloadProgress = 0;
+      _downloadingUrls.add(url);
+      _progressByUrl[url] = 0;
     });
 
     final name = attachment.fileName ?? 'video_${DateTime.now().millisecondsSinceEpoch}.mp4';
     final result = await _downloadService.saveVideoToGallery(
-      attachment.url,
+      url,
       name,
       onProgress: (progress) {
-        setState(() => _downloadProgress = progress);
+        setState(() => _progressByUrl[url] = progress);
       },
     );
 
     setState(() {
-      _isDownloading = false;
-      _downloadProgress = 0;
+      _downloadingUrls.remove(url);
+      _progressByUrl.remove(url);
     });
 
     if (context.mounted) {
@@ -691,23 +700,24 @@ class _MessageRecordState extends State<MessageRecord> {
 
   // 파일 다운로드 및 열기
   Future<void> _downloadAndOpenFile(BuildContext context, AttachmentModel attachment) async {
+    final url = attachment.url;
     setState(() {
-      _isDownloading = true;
-      _downloadProgress = 0;
+      _downloadingUrls.add(url);
+      _progressByUrl[url] = 0;
     });
 
     final name = attachment.fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
     final result = await _downloadService.downloadFile(
-      attachment.url,
+      url,
       name,
       onProgress: (progress) {
-        setState(() => _downloadProgress = progress);
+        setState(() => _progressByUrl[url] = progress);
       },
     );
 
     setState(() {
-      _isDownloading = false;
-      _downloadProgress = 0;
+      _downloadingUrls.remove(url);
+      _progressByUrl.remove(url);
     });
 
     if (context.mounted) {
