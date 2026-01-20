@@ -36,6 +36,8 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import SlideshowIcon from '@mui/icons-material/Slideshow';
 import FolderZipIcon from '@mui/icons-material/FolderZip';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { colors } from '../theme';
 
 function ChatWindow() {
@@ -323,135 +325,241 @@ function ChatWindow() {
     return groups;
   }, {});
 
+  // 이미지 그리드 레이아웃 (카카오톡 스타일)
+  const renderImageGrid = (images, allAttachments) => {
+    const count = images.length;
+    const gridSize = 200; // 전체 그리드 크기
+    const gap = 2;
+
+    // 전체 이미지 목록에서 현재 이미지의 인덱스를 찾는 함수
+    const openGallery = (startIndex) => {
+      setPreviewImage({ images, currentIndex: startIndex });
+    };
+
+    if (count === 1) {
+      return (
+        <Box sx={{ mt: 1, cursor: 'pointer' }} onClick={() => openGallery(0)}>
+          <img
+            src={images[0].url}
+            alt="첨부 이미지"
+            style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8 }}
+          />
+        </Box>
+      );
+    }
+
+    if (count === 2) {
+      return (
+        <Box sx={{ mt: 1, display: 'flex', gap: `${gap}px`, maxWidth: gridSize }}>
+          {images.map((img, idx) => (
+            <Box
+              key={idx}
+              sx={{ flex: 1, height: gridSize / 2, cursor: 'pointer', overflow: 'hidden', borderRadius: 1 }}
+              onClick={() => openGallery(idx)}
+            >
+              <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </Box>
+          ))}
+        </Box>
+      );
+    }
+
+    if (count === 3) {
+      return (
+        <Box sx={{ mt: 1, display: 'flex', gap: `${gap}px`, maxWidth: gridSize, height: gridSize * 0.75 }}>
+          <Box
+            sx={{ flex: 2, cursor: 'pointer', overflow: 'hidden', borderRadius: 1 }}
+            onClick={() => openGallery(0)}
+          >
+            <img src={images[0].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </Box>
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: `${gap}px` }}>
+            {images.slice(1).map((img, idx) => (
+              <Box
+                key={idx}
+                sx={{ flex: 1, cursor: 'pointer', overflow: 'hidden', borderRadius: 1 }}
+                onClick={() => openGallery(idx + 1)}
+              >
+                <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      );
+    }
+
+    if (count === 4) {
+      return (
+        <Box sx={{ mt: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: `${gap}px`, maxWidth: gridSize }}>
+          {images.map((img, idx) => (
+            <Box
+              key={idx}
+              sx={{ height: gridSize / 2 - gap, cursor: 'pointer', overflow: 'hidden', borderRadius: 1 }}
+              onClick={() => openGallery(idx)}
+            >
+              <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </Box>
+          ))}
+        </Box>
+      );
+    }
+
+    // 5개 이상: 2x2 그리드 + 마지막에 "+N" 오버레이
+    const displayImages = images.slice(0, 4);
+    const remaining = count - 4;
+
+    return (
+      <Box sx={{ mt: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: `${gap}px`, maxWidth: gridSize }}>
+        {displayImages.map((img, idx) => (
+          <Box
+            key={idx}
+            sx={{ height: gridSize / 2 - gap, cursor: 'pointer', overflow: 'hidden', borderRadius: 1, position: 'relative' }}
+            onClick={() => openGallery(idx)}
+          >
+            <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {idx === 3 && remaining > 0 && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  bgcolor: 'rgba(0,0,0,0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Typography sx={{ color: 'white', fontSize: 20, fontWeight: 600 }}>
+                  +{remaining}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        ))}
+      </Box>
+    );
+  };
+
   const renderAttachments = (attachments, isAdmin) => {
     if (!attachments || attachments.length === 0) return null;
 
-    return attachments.map((att, idx) => {
-      if (att.type === 'image') {
-        return (
-          <Box
-            key={idx}
-            sx={{ mt: 1, cursor: 'pointer' }}
-            onClick={() => setPreviewImage(att.url)}
-          >
-            <img
-              src={att.url}
-              alt="첨부 이미지"
-              style={{
-                maxWidth: '100%',
-                maxHeight: 200,
-                borderRadius: 8,
-              }}
-            />
-          </Box>
-        );
-      }
+    // 이미지와 다른 파일 분리
+    const images = attachments.filter(att => att.type === 'image');
+    const others = attachments.filter(att => att.type !== 'image');
 
-      if (att.type === 'video') {
-        return (
-          <Box
-            key={idx}
-            sx={{
-              mt: 1,
-              p: 1.5,
-              bgcolor: isAdmin ? 'rgba(255,255,255,0.1)' : colors.divider,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              cursor: 'pointer',
-            }}
-            onClick={() => window.open(att.url, '_blank')}
-          >
+    return (
+      <>
+        {/* 이미지 그리드 */}
+        {images.length > 0 && renderImageGrid(images, attachments)}
+
+        {/* 동영상 및 파일 */}
+        {others.map((att, idx) => {
+          if (att.type === 'video') {
+            return (
+              <Box
+                key={`other-${idx}`}
+                sx={{
+                  mt: 1,
+                  p: 1.5,
+                  bgcolor: isAdmin ? 'rgba(255,255,255,0.1)' : colors.divider,
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  cursor: 'pointer',
+                }}
+                onClick={() => window.open(att.url, '_blank')}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1,
+                    bgcolor: 'rgba(229, 115, 115, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <PlayCircleFilledIcon sx={{ color: '#E57373' }} />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: colors.textPrimary,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {att.fileName || '동영상'}
+                  </Typography>
+                  {att.fileSize && (
+                    <Typography sx={{ fontSize: 11, color: colors.textTertiary }}>
+                      {formatFileSize(att.fileSize)}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            );
+          }
+
+          // file
+          const FileIcon = getFileIcon(att.fileName);
+          return (
             <Box
+              key={`other-${idx}`}
               sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 1,
-                bgcolor: 'rgba(229, 115, 115, 0.2)',
+                mt: 1,
+                p: 1.5,
+                bgcolor: isAdmin ? 'rgba(255,255,255,0.1)' : colors.divider,
+                borderRadius: 2,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                gap: 1.5,
+                cursor: 'pointer',
               }}
+              onClick={() => window.open(att.url, '_blank')}
             >
-              <PlayCircleFilledIcon sx={{ color: '#E57373' }} />
-            </Box>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
+              <Box
                 sx={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: colors.textPrimary,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  width: 40,
+                  height: 40,
+                  borderRadius: 1,
+                  bgcolor: 'rgba(129, 199, 132, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                {att.fileName || '동영상'}
-              </Typography>
-              {att.fileSize && (
-                <Typography sx={{ fontSize: 11, color: colors.textTertiary }}>
-                  {formatFileSize(att.fileSize)}
+                <FileIcon sx={{ color: '#81C784' }} />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: colors.textPrimary,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {att.fileName || '파일'}
                 </Typography>
-              )}
+                {att.fileSize && (
+                  <Typography sx={{ fontSize: 11, color: colors.textTertiary }}>
+                    {formatFileSize(att.fileSize)}
+                  </Typography>
+                )}
+              </Box>
+              <DownloadIcon sx={{ fontSize: 18, color: colors.textTertiary }} />
             </Box>
-          </Box>
-        );
-      }
-
-      // file
-      const FileIcon = getFileIcon(att.fileName);
-      return (
-        <Box
-          key={idx}
-          sx={{
-            mt: 1,
-            p: 1.5,
-            bgcolor: isAdmin ? 'rgba(255,255,255,0.1)' : colors.divider,
-            borderRadius: 2,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            cursor: 'pointer',
-          }}
-          onClick={() => window.open(att.url, '_blank')}
-        >
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 1,
-              bgcolor: 'rgba(129, 199, 132, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <FileIcon sx={{ color: '#81C784' }} />
-          </Box>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              sx={{
-                fontSize: 13,
-                fontWeight: 500,
-                color: colors.textPrimary,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {att.fileName || '파일'}
-            </Typography>
-            {att.fileSize && (
-              <Typography sx={{ fontSize: 11, color: colors.textTertiary }}>
-                {formatFileSize(att.fileSize)}
-              </Typography>
-            )}
-          </Box>
-          <DownloadIcon sx={{ fontSize: 18, color: colors.textTertiary }} />
-        </Box>
-      );
-    });
+          );
+        })}
+      </>
+    );
   };
 
   return (
@@ -866,32 +974,98 @@ function ChatWindow() {
         </IconButton>
       </Box>
 
-      {/* 이미지 미리보기 다이얼로그 */}
+      {/* 이미지 갤러리 다이얼로그 */}
       <Dialog
         open={!!previewImage}
         onClose={() => setPreviewImage(null)}
-        maxWidth="lg"
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(0,0,0,0.95)',
+            maxWidth: '95vw',
+            maxHeight: '95vh',
+          }
+        }}
       >
-        <Box sx={{ position: 'relative' }}>
+        <Box sx={{ position: 'relative', minWidth: 300 }}>
+          {/* 닫기 버튼 */}
           <IconButton
             onClick={() => setPreviewImage(null)}
             sx={{
               position: 'absolute',
               top: 8,
               right: 8,
-              bgcolor: 'rgba(0,0,0,0.5)',
+              bgcolor: 'rgba(255,255,255,0.2)',
               color: 'white',
-              '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+              zIndex: 10,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
             }}
           >
             <CloseIcon />
           </IconButton>
+
+          {/* 이미지 표시 */}
           {previewImage && (
-            <img
-              src={previewImage}
-              alt="미리보기"
-              style={{ maxWidth: '90vw', maxHeight: '90vh' }}
-            />
+            <>
+              {/* 단일 이미지 (이전 방식 호환) */}
+              {typeof previewImage === 'string' ? (
+                <img
+                  src={previewImage}
+                  alt="미리보기"
+                  style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'block' }}
+                />
+              ) : (
+                /* 갤러리 모드 */
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {/* 이전 버튼 */}
+                  <IconButton
+                    onClick={() => setPreviewImage(prev => ({
+                      ...prev,
+                      currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length
+                    }))}
+                    sx={{
+                      color: 'white',
+                      mx: 1,
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                    }}
+                    disabled={previewImage.images.length <= 1}
+                  >
+                    <ChevronLeftIcon sx={{ fontSize: 40 }} />
+                  </IconButton>
+
+                  {/* 현재 이미지 */}
+                  <Box sx={{ textAlign: 'center' }}>
+                    <img
+                      src={previewImage.images[previewImage.currentIndex]?.url}
+                      alt="미리보기"
+                      style={{ maxWidth: '80vw', maxHeight: '85vh', display: 'block' }}
+                    />
+                    {/* 인디케이터 */}
+                    {previewImage.images.length > 1 && (
+                      <Typography sx={{ color: 'white', mt: 1, fontSize: 14 }}>
+                        {previewImage.currentIndex + 1} / {previewImage.images.length}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* 다음 버튼 */}
+                  <IconButton
+                    onClick={() => setPreviewImage(prev => ({
+                      ...prev,
+                      currentIndex: (prev.currentIndex + 1) % prev.images.length
+                    }))}
+                    sx={{
+                      color: 'white',
+                      mx: 1,
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                    }}
+                    disabled={previewImage.images.length <= 1}
+                  >
+                    <ChevronRightIcon sx={{ fontSize: 40 }} />
+                  </IconButton>
+                </Box>
+              )}
+            </>
           )}
         </Box>
       </Dialog>

@@ -147,26 +147,187 @@ class _MessageRecordState extends State<MessageRecord> {
   }
 
   Widget _buildAttachments(BuildContext context) {
+    // 이미지와 다른 파일 분리
+    final images = widget.message.attachments
+        .where((a) => a.type == AttachmentType.image)
+        .toList();
+    final others = widget.message.attachments
+        .where((a) => a.type != AttachmentType.image)
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: widget.message.attachments.map((attachment) {
-        switch (attachment.type) {
-          case AttachmentType.image:
-            return _buildImageAttachment(context, attachment);
-          case AttachmentType.video:
-            return _buildVideoAttachment(context, attachment);
-          case AttachmentType.file:
-            return _buildFileAttachment(context, attachment);
-        }
-      }).toList(),
+      children: [
+        // 이미지 그리드
+        if (images.isNotEmpty) _buildImageGrid(context, images),
+        // 동영상 및 파일
+        ...others.map((attachment) {
+          switch (attachment.type) {
+            case AttachmentType.video:
+              return _buildVideoAttachment(context, attachment);
+            case AttachmentType.file:
+              return _buildFileAttachment(context, attachment);
+            default:
+              return const SizedBox.shrink();
+          }
+        }),
+      ],
     );
   }
 
-  Widget _buildImageAttachment(BuildContext context, AttachmentModel attachment) {
+  // 카카오톡 스타일 이미지 그리드
+  Widget _buildImageGrid(BuildContext context, List<AttachmentModel> images) {
+    final count = images.length;
+    const gridSize = 200.0;
+    const gap = 2.0;
+
+    if (count == 1) {
+      return _buildSingleImage(context, images[0], images);
+    }
+
+    if (count == 2) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: SizedBox(
+          width: gridSize,
+          height: gridSize / 2,
+          child: Row(
+            children: [
+              Expanded(child: _buildGridImage(context, images[0], 0, images)),
+              const SizedBox(width: gap),
+              Expanded(child: _buildGridImage(context, images[1], 1, images)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (count == 3) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: SizedBox(
+          width: gridSize,
+          height: gridSize * 0.75,
+          child: Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: _buildGridImage(context, images[0], 0, images),
+              ),
+              const SizedBox(width: gap),
+              Expanded(
+                child: Column(
+                  children: [
+                    Expanded(child: _buildGridImage(context, images[1], 1, images)),
+                    const SizedBox(height: gap),
+                    Expanded(child: _buildGridImage(context, images[2], 2, images)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (count == 4) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: SizedBox(
+          width: gridSize,
+          height: gridSize,
+          child: Column(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _buildGridImage(context, images[0], 0, images)),
+                    const SizedBox(width: gap),
+                    Expanded(child: _buildGridImage(context, images[1], 1, images)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: gap),
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _buildGridImage(context, images[2], 2, images)),
+                    const SizedBox(width: gap),
+                    Expanded(child: _buildGridImage(context, images[3], 3, images)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 5개 이상: 2x2 + 마지막에 "+N" 오버레이
+    final remaining = count - 4;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SizedBox(
+        width: gridSize,
+        height: gridSize,
+        child: Column(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(child: _buildGridImage(context, images[0], 0, images)),
+                  const SizedBox(width: gap),
+                  Expanded(child: _buildGridImage(context, images[1], 1, images)),
+                ],
+              ),
+            ),
+            const SizedBox(height: gap),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(child: _buildGridImage(context, images[2], 2, images)),
+                  const SizedBox(width: gap),
+                  Expanded(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildGridImage(context, images[3], 3, images),
+                        GestureDetector(
+                          onTap: () => _showImageGallery(context, images, 3),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '+$remaining',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSingleImage(BuildContext context, AttachmentModel attachment, List<AttachmentModel> allImages) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        onTap: () => _showFullScreenImage(context, attachment.url, attachment.fileName),
+        onTap: () => _showImageGallery(context, allImages, 0),
         onLongPress: () => _showImageOptions(context, attachment.url, attachment.fileName),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -186,6 +347,43 @@ class _MessageRecordState extends State<MessageRecord> {
               child: const Icon(Icons.error),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGridImage(BuildContext context, AttachmentModel attachment, int index, List<AttachmentModel> allImages) {
+    return GestureDetector(
+      onTap: () => _showImageGallery(context, allImages, index),
+      onLongPress: () => _showImageOptions(context, attachment.url, attachment.fileName),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: CachedNetworkImage(
+          imageUrl: attachment.url,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            color: Colors.grey.shade200,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            color: Colors.grey.shade200,
+            child: const Icon(Icons.error, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 이미지 갤러리 (스와이프)
+  void _showImageGallery(BuildContext context, List<AttachmentModel> images, int initialIndex) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _ImageGalleryView(
+          images: images,
+          initialIndex: initialIndex,
+          downloadService: _downloadService,
         ),
       ),
     );
@@ -616,6 +814,123 @@ class _FullScreenImageViewState extends State<_FullScreenImageView> {
 
     final name = widget.fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
     final result = await widget.downloadService.saveImageToGallery(widget.imageUrl, name);
+
+    setState(() => _isSaving = false);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: result.success ? Colors.green.shade400 : Colors.red.shade400,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+}
+
+// 이미지 갤러리 뷰어 (스와이프)
+class _ImageGalleryView extends StatefulWidget {
+  final List<AttachmentModel> images;
+  final int initialIndex;
+  final DownloadService downloadService;
+
+  const _ImageGalleryView({
+    required this.images,
+    required this.initialIndex,
+    required this.downloadService,
+  });
+
+  @override
+  State<_ImageGalleryView> createState() => _ImageGalleryViewState();
+}
+
+class _ImageGalleryViewState extends State<_ImageGalleryView> {
+  late PageController _pageController;
+  late int _currentIndex;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+        title: widget.images.length > 1
+            ? Text(
+                '${_currentIndex + 1} / ${widget.images.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              )
+            : null,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: _isSaving ? null : _saveCurrentImage,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.download_rounded),
+          ),
+        ],
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.images.length,
+        onPageChanged: (index) {
+          setState(() => _currentIndex = index);
+        },
+        itemBuilder: (context, index) {
+          return InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4.0,
+            child: Center(
+              child: CachedNetworkImage(
+                imageUrl: widget.images[index].url,
+                fit: BoxFit.contain,
+                placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+                errorWidget: (context, url, error) => const Icon(
+                  Icons.error,
+                  color: Colors.white,
+                  size: 50,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _saveCurrentImage() async {
+    setState(() => _isSaving = true);
+
+    final image = widget.images[_currentIndex];
+    final name = image.fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final result = await widget.downloadService.saveImageToGallery(image.url, name);
 
     setState(() => _isSaving = false);
 
