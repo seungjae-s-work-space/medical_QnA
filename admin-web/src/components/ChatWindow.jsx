@@ -109,6 +109,24 @@ function ChatWindow() {
     return allowedExtensions.includes(ext);
   };
 
+  // 파일 크기 제한 (storage.rules와 동일)
+  const FILE_SIZE_LIMITS = {
+    image: 10 * 1024 * 1024,   // 10MB
+    video: 100 * 1024 * 1024,  // 100MB
+    file: 50 * 1024 * 1024,    // 50MB
+  };
+
+  const checkFileSize = (file) => {
+    const type = getFileType(file);
+    const limit = FILE_SIZE_LIMITS[type];
+    return file.size <= limit;
+  };
+
+  const formatSizeLimit = (type) => {
+    const limit = FILE_SIZE_LIMITS[type];
+    return `${limit / (1024 * 1024)}MB`;
+  };
+
   const addFiles = (files) => {
     const validFiles = files.filter(isAllowedFile);
     const invalidCount = files.length - validFiles.length;
@@ -118,6 +136,18 @@ function ChatWindow() {
     }
 
     if (validFiles.length === 0) return;
+
+    // 파일 크기 검증
+    const oversizedFiles = validFiles.filter(f => !checkFileSize(f));
+    if (oversizedFiles.length > 0) {
+      const messages = oversizedFiles.map(f => {
+        const type = getFileType(f);
+        const sizeMB = (f.size / (1024 * 1024)).toFixed(1);
+        return `• ${f.name} (${sizeMB}MB) - 최대 ${formatSizeLimit(type)}`;
+      });
+      alert(`파일 크기 제한을 초과했습니다:\n${messages.join('\n')}`);
+      return;
+    }
 
     if (pendingFiles.length + validFiles.length > 5) {
       alert('최대 5개까지 첨부할 수 있습니다');
