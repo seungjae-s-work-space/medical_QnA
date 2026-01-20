@@ -66,10 +66,12 @@ function SubscriptionManager() {
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [grantDialogOpen, setGrantDialogOpen] = useState(false);
+  const [grantConfirmDialogOpen, setGrantConfirmDialogOpen] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [extendDays, setExtendDays] = useState(30);
   const [grantDays, setGrantDays] = useState(30);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [pendingGrant, setPendingGrant] = useState(null); // { user, days } for confirmation
 
   // Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -154,8 +156,10 @@ function SubscriptionManager() {
     return unsubscribe;
   }, []);
 
-  // 구독이 없는 사용자 필터링
+  // 구독이 없는 사용자 필터링 (admin 계정 제외)
   const usersWithoutSubscription = allUsers.filter(user => {
+    // admin 계정 제외
+    if (user.role === 'admin' || user.isAdmin === true) return false;
     return !subscriptions.some(sub => sub.userId === user.id);
   });
 
@@ -217,14 +221,14 @@ function SubscriptionManager() {
 
       setSnackbar({
         open: true,
-        message: '이용이 차단되었습니다',
+        message: '구독이 만료 처리되었습니다',
         severity: 'warning',
       });
       setBlockDialogOpen(false);
     } catch (error) {
       setSnackbar({
         open: true,
-        message: '차단 실패: ' + error.message,
+        message: '만료 처리 실패: ' + error.message,
         severity: 'error',
       });
     }
@@ -267,7 +271,18 @@ function SubscriptionManager() {
     }
   };
 
-  const handleGrantToUser = async (user, days) => {
+  // 구독 부여 확인 다이얼로그 열기
+  const handleGrantToUser = (user, days) => {
+    setPendingGrant({ user, days });
+    setGrantConfirmDialogOpen(true);
+  };
+
+  // 실제 구독 부여 실행
+  const executeGrant = async () => {
+    if (!pendingGrant) return;
+
+    const { user, days } = pendingGrant;
+
     try {
       const startDate = new Date();
       const endDate = new Date();
@@ -292,6 +307,8 @@ function SubscriptionManager() {
         message: `${user.name}님에게 ${days}일 구독이 부여되었습니다`,
         severity: 'success',
       });
+      setGrantConfirmDialogOpen(false);
+      setPendingGrant(null);
     } catch (error) {
       setSnackbar({
         open: true,
@@ -653,10 +670,10 @@ function SubscriptionManager() {
 
       {/* Block Dialog */}
       <Dialog open={blockDialogOpen} onClose={() => setBlockDialogOpen(false)}>
-        <DialogTitle>이용 차단</DialogTitle>
+        <DialogTitle>구독 만료</DialogTitle>
         <DialogContent>
           <Typography>
-            {users[selectedSubscription?.userId]?.name || '사용자'}님의 이용을 차단하시겠습니까?
+            {users[selectedSubscription?.userId]?.name || '사용자'}님의 구독을 만료시키겠습니까?
           </Typography>
           <Typography variant="body2" sx={{ mt: 1, color: colors.textSecondary }}>
             즉시 서비스 이용이 불가능해집니다.
@@ -665,7 +682,7 @@ function SubscriptionManager() {
         <DialogActions>
           <Button onClick={() => setBlockDialogOpen(false)}>아니오</Button>
           <Button onClick={handleBlock} variant="contained" color="error">
-            차단하기
+            만료시키기
           </Button>
         </DialogActions>
       </Dialog>
@@ -719,6 +736,35 @@ function SubscriptionManager() {
             sx={{ bgcolor: '#4CAF50' }}
           >
             부여
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Grant Confirm Dialog */}
+      <Dialog open={grantConfirmDialogOpen} onClose={() => setGrantConfirmDialogOpen(false)}>
+        <DialogTitle>구독 부여 확인</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {pendingGrant?.user?.name || '사용자'}님에게 {pendingGrant?.days}일 구독을 부여하시겠습니까?
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 1, color: colors.textSecondary }}>
+            만료일: {(() => {
+              if (!pendingGrant) return '-';
+              const endDate = new Date();
+              endDate.setDate(endDate.getDate() + pendingGrant.days);
+              return endDate.toLocaleDateString('ko-KR');
+            })()}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setGrantConfirmDialogOpen(false);
+            setPendingGrant(null);
+          }}>
+            취소
+          </Button>
+          <Button onClick={executeGrant} variant="contained" sx={{ bgcolor: '#4CAF50' }}>
+            부여하기
           </Button>
         </DialogActions>
       </Dialog>
