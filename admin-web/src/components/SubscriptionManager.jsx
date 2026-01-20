@@ -53,6 +53,12 @@ const SUBSCRIPTION_PLANS = {
   admin_grant: '관리자 부여',
 };
 
+// 실제 활성 상태 확인 함수 (endDate까지 고려)
+const isActuallyActive = (subscription) => {
+  const endDate = subscription.endDate?.toDate();
+  return subscription.status === 'active' && endDate && endDate > new Date();
+};
+
 function SubscriptionManager() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [users, setUsers] = useState({});
@@ -89,20 +95,15 @@ function SubscriptionManager() {
     fetchAllUsers();
   }, []);
 
+  // 전체 구독 목록 (필터링 전)
+  const [allSubscriptions, setAllSubscriptions] = useState([]);
+
   // 구독 목록 실시간 구독
   useEffect(() => {
-    let q = query(
+    const q = query(
       collection(db, 'subscriptions'),
       orderBy('endDate', 'desc')
     );
-
-    if (filter !== 'all') {
-      q = query(
-        collection(db, 'subscriptions'),
-        where('status', '==', filter),
-        orderBy('endDate', 'desc')
-      );
-    }
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const subs = snapshot.docs.map((doc) => ({
@@ -110,7 +111,7 @@ function SubscriptionManager() {
         ...doc.data(),
       }));
 
-      setSubscriptions(subs);
+      setAllSubscriptions(subs);
 
       // 사용자 정보 가져오기
       const userIds = [...new Set(subs.map((s) => s.userId))];
@@ -126,41 +127,37 @@ function SubscriptionManager() {
     });
 
     return unsubscribe;
-  }, [filter]);
+  }, []);
 
-  // 통계 계산
+  // 필터링된 구독 목록
+  const subscriptions = allSubscriptions.filter((sub) => {
+    if (filter === 'all') return true;
+    if (filter === 'active') return isActuallyActive(sub);
+    if (filter === 'expired') return !isActuallyActive(sub);
+    return true;
+  });
+
+  // 통계 계산 (allSubscriptions 기반)
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'subscriptions'), (snapshot) => {
-      let total = 0;
-      let active = 0;
-      let expired = 0;
+    let active = 0;
+    let expired = 0;
 
-      snapshot.docs.forEach((doc) => {
-        const data = doc.data();
-        total++;
-        if (data.status === 'active') {
-          const endDate = data.endDate?.toDate();
-          if (endDate && endDate > new Date()) {
-            active++;
-          } else {
-            expired++;
-          }
-        } else if (data.status === 'expired') {
-          expired++;
-        }
-      });
-
-      setStats({ total, active, expired });
+    allSubscriptions.forEach((sub) => {
+      if (isActuallyActive(sub)) {
+        active++;
+      } else {
+        expired++;
+      }
     });
 
-    return unsubscribe;
-  }, []);
+    setStats({ total: allSubscriptions.length, active, expired });
+  }, [allSubscriptions]);
 
   // 구독이 없는 사용자 필터링 (admin 계정 제외)
   const usersWithoutSubscription = allUsers.filter(user => {
     // admin 계정 제외
     if (user.role === 'admin' || user.isAdmin === true) return false;
-    return !subscriptions.some(sub => sub.userId === user.id);
+    return !allSubscriptions.some(sub => sub.userId === user.id);
   });
 
   const handleExtendOpen = (subscription) => {
