@@ -60,7 +60,6 @@ const isActuallyActive = (subscription) => {
 };
 
 function SubscriptionManager() {
-  const [subscriptions, setSubscriptions] = useState([]);
   const [users, setUsers] = useState({});
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
