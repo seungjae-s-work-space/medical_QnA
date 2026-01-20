@@ -97,13 +97,32 @@ function ChatWindow() {
     e.target.value = '';
   };
 
+  const allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip'];
+
+  const isAllowedFile = (file) => {
+    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+      return true;
+    }
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    return allowedExtensions.includes(ext);
+  };
+
   const addFiles = (files) => {
-    if (pendingFiles.length + files.length > 5) {
+    const validFiles = files.filter(isAllowedFile);
+    const invalidCount = files.length - validFiles.length;
+
+    if (invalidCount > 0) {
+      alert(`${invalidCount}개 파일은 지원하지 않는 형식입니다.\n(이미지, 동영상, PDF, 문서, 압축파일만 가능)`);
+    }
+
+    if (validFiles.length === 0) return;
+
+    if (pendingFiles.length + validFiles.length > 5) {
       alert('최대 5개까지 첨부할 수 있습니다');
       return;
     }
 
-    const newFiles = files.map(file => ({
+    const newFiles = validFiles.map(file => ({
       file,
       type: getFileType(file),
       preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
@@ -733,13 +752,13 @@ function ChatWindow() {
                 onClick={() => removePendingFile(index)}
                 sx={{
                   position: 'absolute',
-                  top: -6,
-                  right: -6,
-                  width: 20,
-                  height: 20,
-                  bgcolor: 'error.main',
+                  top: 2,
+                  right: 2,
+                  width: 18,
+                  height: 18,
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
                   color: 'white',
-                  '&:hover': { bgcolor: 'error.dark' },
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
                 }}
               >
                 <CloseIcon sx={{ fontSize: 12 }} />
