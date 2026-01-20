@@ -109,6 +109,12 @@ function ChatWindow() {
     return allowedExtensions.includes(ext);
   };
 
+  const getFileType = (file) => {
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('video/')) return 'video';
+    return 'file';
+  };
+
   // 파일 크기 제한 (storage.rules와 동일)
   const FILE_SIZE_LIMITS = {
     image: 10 * 1024 * 1024,   // 10MB
@@ -197,12 +203,6 @@ function ChatWindow() {
     if (files.length > 0) {
       addFiles(files);
     }
-  };
-
-  const getFileType = (file) => {
-    if (file.type.startsWith('image/')) return 'image';
-    if (file.type.startsWith('video/')) return 'video';
-    return 'file';
   };
 
   const removePendingFile = (index) => {
