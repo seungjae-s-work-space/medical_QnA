@@ -48,8 +48,10 @@ function ChatWindow() {
   const [pendingFiles, setPendingFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const dragCounterRef = useRef(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -91,6 +93,11 @@ function ChatWindow() {
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
+    addFiles(files);
+    e.target.value = '';
+  };
+
+  const addFiles = (files) => {
     if (pendingFiles.length + files.length > 5) {
       alert('최대 5개까지 첨부할 수 있습니다');
       return;
@@ -103,7 +110,42 @@ function ChatWindow() {
     }));
 
     setPendingFiles(prev => [...prev, ...newFiles]);
-    e.target.value = '';
+  };
+
+  // 드래그 앤 드롭 핸들러
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      addFiles(files);
+    }
   };
 
   const getFileType = (file) => {
@@ -394,7 +436,52 @@ function ChatWindow() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative' }}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* 드래그 오버레이 */}
+      {isDragging && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: 'rgba(100, 181, 246, 0.15)',
+            border: '3px dashed #64B5F6',
+            borderRadius: 2,
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <Box
+            sx={{
+              bgcolor: 'rgba(255, 255, 255, 0.95)',
+              px: 4,
+              py: 3,
+              borderRadius: 2,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+              textAlign: 'center',
+            }}
+          >
+            <AddIcon sx={{ fontSize: 48, color: '#64B5F6', mb: 1 }} />
+            <Typography sx={{ fontSize: 16, fontWeight: 500, color: colors.textPrimary }}>
+              파일을 여기에 놓으세요
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: colors.textSecondary, mt: 0.5 }}>
+              최대 5개까지 첨부 가능
+            </Typography>
+          </Box>
+        </Box>
+      )}
       {/* 헤더 */}
       <Box
         sx={{

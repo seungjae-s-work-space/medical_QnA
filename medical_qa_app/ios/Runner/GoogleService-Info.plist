@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.medicalQaApp</string>
+	<string>com.agisungong.nanimtalktalk</string>
 	<key>PROJECT_ID</key>
 	<string>medicalqa-e5313</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:299956056308:ios:f3771d8fce39efc9a9aea1</string>
+	<string>1:299956056308:ios:3f29f483722c499ba9aea1</string>
 </dict>
 </plist>

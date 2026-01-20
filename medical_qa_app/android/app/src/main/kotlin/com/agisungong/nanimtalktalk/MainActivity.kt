@@ -1,4 +1,4 @@
-package com.example.medical_qa_app
+package com.agisungong.nanimtalktalk
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:299956056308:android:a3c65bfde643a5e5a9aea1",
+        "android_client_info": {
+          "package_name": "com.agisungong.nanimtalktalk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCD-tObyqkdjz6WfBFbuNaAqqM5ju0JS0c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:299956056308:android:377044303745afe5a9aea1",
         "android_client_info": {
           "package_name": "com.example.medical_qa_app"
