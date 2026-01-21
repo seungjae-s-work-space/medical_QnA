@@ -42,8 +42,6 @@ jobs:
         run: |
           cd admin-web
           npm run build
-        env:
-          PUBLIC_URL: /medical_QnA
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
