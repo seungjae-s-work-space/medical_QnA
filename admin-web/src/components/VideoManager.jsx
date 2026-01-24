@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -32,6 +32,7 @@ import PlayCircleFilledRoundedIcon from '@mui/icons-material/PlayCircleFilledRou
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
 import {
   collection,
   query,
@@ -66,6 +67,23 @@ const getYoutubeThumbnail = (videoId) => {
   return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 };
 
+// 유튜브 oEmbed API로 메타데이터 가져오기
+const fetchYoutubeMetadata = async (url) => {
+  try {
+    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+    const response = await fetch(oembedUrl);
+    if (!response.ok) throw new Error('Failed to fetch');
+    const data = await response.json();
+    return {
+      title: data.title || '',
+      author: data.author_name || '',
+    };
+  } catch (error) {
+    console.error('YouTube metadata fetch error:', error);
+    return null;
+  }
+};
+
 const ITEMS_PER_PAGE = 17;
 
 function VideoManager() {
@@ -84,10 +102,38 @@ function VideoManager() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [description, setDescription] = useState('');
   const [isPublished, setIsPublished] = useState(true);
+  const [fetchingMetadata, setFetchingMetadata] = useState(false);
 
   // 추출된 유튜브 ID 및 썸네일
   const videoId = extractYoutubeId(youtubeUrl);
   const thumbnailUrl = getYoutubeThumbnail(videoId);
+
+  // 유튜브 URL에서 메타데이터 자동 가져오기
+  const handleFetchMetadata = useCallback(async () => {
+    if (!videoId || fetchingMetadata) return;
+
+    setFetchingMetadata(true);
+    const metadata = await fetchYoutubeMetadata(youtubeUrl);
+    if (metadata) {
+      if (metadata.title && !title) {
+        setTitle(metadata.title);
+      }
+      if (metadata.author && !description) {
+        setDescription(`${metadata.author} 채널의 영상입니다.`);
+      }
+      setSnackbar({ open: true, message: '유튜브 정보를 가져왔습니다', severity: 'success' });
+    } else {
+      setSnackbar({ open: true, message: '유튜브 정보를 가져오지 못했습니다', severity: 'warning' });
+    }
+    setFetchingMetadata(false);
+  }, [videoId, youtubeUrl, title, description, fetchingMetadata]);
+
+  // URL 변경 시 자동으로 메타데이터 가져오기 (새 영상 등록 시에만)
+  useEffect(() => {
+    if (videoId && !editingVideo && !title && !fetchingMetadata) {
+      handleFetchMetadata();
+    }
+  }, [videoId, editingVideo, title, fetchingMetadata, handleFetchMetadata]);
 
   useEffect(() => {
     const q = query(
@@ -628,11 +674,28 @@ function VideoManager() {
               fullWidth
               required
               placeholder="https://www.youtube.com/watch?v=..."
-              helperText={videoId ? `비디오 ID: ${videoId}` : '유튜브 URL을 입력하면 자동으로 썸네일이 추출됩니다'}
+              helperText={videoId ? `비디오 ID: ${videoId}` : '유튜브 URL을 입력하면 자동으로 제목과 설명을 가져옵니다'}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
                     <YouTubeIcon sx={{ color: '#FF0000' }} />
+                  </InputAdornment>
+                ),
+                endAdornment: videoId && (
+                  <InputAdornment position="end">
+                    <Button
+                      size="small"
+                      onClick={handleFetchMetadata}
+                      disabled={fetchingMetadata}
+                      startIcon={fetchingMetadata ? <CircularProgress size={16} /> : <AutoFixHighRoundedIcon />}
+                      sx={{
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap',
+                        fontSize: 12,
+                      }}
+                    >
+                      {fetchingMetadata ? '가져오는 중...' : '정보 가져오기'}
+                    </Button>
                   </InputAdornment>
                 ),
               }}

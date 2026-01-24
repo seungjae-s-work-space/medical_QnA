@@ -51,7 +51,7 @@ class SubscriptionPlan {
       price: 2900,
       currency: 'KRW',
       description: '1개월 동안 무제한 상담',
-      iosProductId: 'com.gukitso.medicalqa.subscription.monthly',
+      iosProductId: 'com.agisungong.nanimtalktalk.monthly',
       androidProductId: 'subscription_monthly',
     ),
     SubscriptionPlan(
@@ -62,7 +62,7 @@ class SubscriptionPlan {
       price: 14900,
       currency: 'KRW',
       description: '17,400원 → 14,900원 (14% 할인)',
-      iosProductId: 'com.gukitso.medicalqa.subscription.6months',
+      iosProductId: 'com.agisungong.nanimtalktalk.6months',
       androidProductId: 'subscription_6months',
     ),
     SubscriptionPlan(
@@ -73,7 +73,7 @@ class SubscriptionPlan {
       price: 19900,
       currency: 'KRW',
       description: '34,800원 → 19,900원 (43% 할인)',
-      iosProductId: 'com.gukitso.medicalqa.subscription.12months',
+      iosProductId: 'com.agisungong.nanimtalktalk.12months',
       androidProductId: 'subscription_12months',
     ),
   ];
