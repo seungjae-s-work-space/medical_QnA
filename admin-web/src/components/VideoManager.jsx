@@ -67,17 +67,29 @@ const getYoutubeThumbnail = (videoId) => {
   return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 };
 
-// 유튜브 oEmbed API로 메타데이터 가져오기
-const fetchYoutubeMetadata = async (url) => {
+// YouTube Data API로 메타데이터 가져오기 (제목 + 설명)
+const fetchYoutubeMetadata = async (videoId) => {
+  const apiKey = process.env.REACT_APP_YOUTUBE_API_KEY;
+  if (!apiKey) {
+    console.error('YouTube API key not found');
+    return null;
+  }
+
   try {
-    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-    const response = await fetch(oembedUrl);
+    const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+    const response = await fetch(apiUrl);
     if (!response.ok) throw new Error('Failed to fetch');
     const data = await response.json();
-    return {
-      title: data.title || '',
-      author: data.author_name || '',
-    };
+
+    if (data.items && data.items.length > 0) {
+      const snippet = data.items[0].snippet;
+      return {
+        title: snippet.title || '',
+        description: snippet.description || '',
+        author: snippet.channelTitle || '',
+      };
+    }
+    return null;
   } catch (error) {
     console.error('YouTube metadata fetch error:', error);
     return null;
@@ -113,20 +125,20 @@ function VideoManager() {
     if (!videoId || fetchingMetadata) return;
 
     setFetchingMetadata(true);
-    const metadata = await fetchYoutubeMetadata(youtubeUrl);
+    const metadata = await fetchYoutubeMetadata(videoId);
     if (metadata) {
       if (metadata.title && !title) {
         setTitle(metadata.title);
       }
-      if (metadata.author && !description) {
-        setDescription(`${metadata.author} 채널의 영상입니다.`);
+      if (metadata.description && !description) {
+        setDescription(metadata.description);
       }
       setSnackbar({ open: true, message: '유튜브 정보를 가져왔습니다', severity: 'success' });
     } else {
       setSnackbar({ open: true, message: '유튜브 정보를 가져오지 못했습니다', severity: 'warning' });
     }
     setFetchingMetadata(false);
-  }, [videoId, youtubeUrl, title, description, fetchingMetadata]);
+  }, [videoId, title, description, fetchingMetadata]);
 
   // URL 변경 시 자동으로 메타데이터 가져오기 (새 영상 등록 시에만)
   useEffect(() => {
