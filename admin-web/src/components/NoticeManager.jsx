@@ -34,6 +34,7 @@ import {
   collection,
   query,
   orderBy,
+  where,
   onSnapshot,
   addDoc,
   updateDoc,
@@ -63,10 +64,17 @@ function NoticeManager({ readOnly = false }) {
   const [isPublished, setIsPublished] = useState(true);
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'notices'),
-      orderBy('createdAt', 'desc')
-    );
+    // readOnly 모드에서는 공개된 콘텐츠만 쿼리 (Firestore 보안 규칙 준수)
+    const q = readOnly
+      ? query(
+          collection(db, 'notices'),
+          where('isPublished', '==', true),
+          orderBy('createdAt', 'desc')
+        )
+      : query(
+          collection(db, 'notices'),
+          orderBy('createdAt', 'desc')
+        );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const noticeList = snapshot.docs.map((doc) => ({
@@ -78,7 +86,7 @@ function NoticeManager({ readOnly = false }) {
     });
 
     return unsubscribe;
-  }, []);
+  }, [readOnly]);
 
   const resetForm = () => {
     setTitle('');

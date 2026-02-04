@@ -40,6 +40,7 @@ import {
   collection,
   query,
   orderBy,
+  where,
   onSnapshot,
   addDoc,
   updateDoc,
@@ -300,10 +301,17 @@ function NewsManager({ readOnly = false }) {
   }, [dialogOpen]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'news'),
-      orderBy('createdAt', 'desc')
-    );
+    // readOnly 모드에서는 공개된 콘텐츠만 쿼리 (Firestore 보안 규칙 준수)
+    const q = readOnly
+      ? query(
+          collection(db, 'news'),
+          where('isPublished', '==', true),
+          orderBy('createdAt', 'desc')
+        )
+      : query(
+          collection(db, 'news'),
+          orderBy('createdAt', 'desc')
+        );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const articleList = snapshot.docs.map((doc) => ({
@@ -315,7 +323,7 @@ function NewsManager({ readOnly = false }) {
     });
 
     return unsubscribe;
-  }, []);
+  }, [readOnly]);
 
   const resetForm = () => {
     setTitle('');

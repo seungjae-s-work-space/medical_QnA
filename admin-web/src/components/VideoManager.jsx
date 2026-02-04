@@ -37,6 +37,7 @@ import {
   collection,
   query,
   orderBy,
+  where,
   onSnapshot,
   addDoc,
   updateDoc,
@@ -148,10 +149,17 @@ function VideoManager({ readOnly = false }) {
   }, [videoId, editingVideo, title, fetchingMetadata, handleFetchMetadata]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'videos'),
-      orderBy('createdAt', 'desc')
-    );
+    // readOnly 모드에서는 공개된 콘텐츠만 쿼리 (Firestore 보안 규칙 준수)
+    const q = readOnly
+      ? query(
+          collection(db, 'videos'),
+          where('isPublished', '==', true),
+          orderBy('createdAt', 'desc')
+        )
+      : query(
+          collection(db, 'videos'),
+          orderBy('createdAt', 'desc')
+        );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const videoList = snapshot.docs.map((doc) => ({
@@ -163,7 +171,7 @@ function VideoManager({ readOnly = false }) {
     });
 
     return unsubscribe;
-  }, []);
+  }, [readOnly]);
 
   const resetForm = () => {
     setTitle('');

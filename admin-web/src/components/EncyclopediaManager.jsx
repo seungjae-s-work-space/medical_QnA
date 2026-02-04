@@ -41,6 +41,7 @@ import {
   collection,
   query,
   orderBy,
+  where,
   onSnapshot,
   addDoc,
   updateDoc,
@@ -303,10 +304,17 @@ function EncyclopediaManager({ readOnly = false }) {
   }, [dialogOpen]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'encyclopedia'),
-      orderBy('createdAt', 'desc')
-    );
+    // readOnly 모드에서는 공개된 콘텐츠만 쿼리 (Firestore 보안 규칙 준수)
+    const q = readOnly
+      ? query(
+          collection(db, 'encyclopedia'),
+          where('isPublished', '==', true),
+          orderBy('createdAt', 'desc')
+        )
+      : query(
+          collection(db, 'encyclopedia'),
+          orderBy('createdAt', 'desc')
+        );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const articleList = snapshot.docs.map((doc) => ({
@@ -318,7 +326,7 @@ function EncyclopediaManager({ readOnly = false }) {
     });
 
     return unsubscribe;
-  }, []);
+  }, [readOnly]);
 
   const resetForm = () => {
     setTitle('');
