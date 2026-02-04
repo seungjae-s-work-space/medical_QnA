@@ -25,7 +25,6 @@ import {
   Typography,
   CircularProgress,
   Dialog,
-  Button,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
@@ -1067,17 +1066,9 @@ function UserChatWindow() {
               구독이 필요합니다
             </Typography>
             <Typography sx={{ fontSize: 12, color: colors.textSecondary }}>
-              상담 서비스를 이용하시려면 구독이 필요합니다.
+              상담 서비스를 이용하시려면 앱에서 구독해 주세요.
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            size="small"
-            sx={{ whiteSpace: 'nowrap' }}
-            onClick={() => window.open('/subscription', '_blank')}
-          >
-            구독하기
-          </Button>
         </Box>
       )}
 
