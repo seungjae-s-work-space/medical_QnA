@@ -48,9 +48,8 @@ service cloud.firestore {
 
     // encyclopedia 컬렉션 (난임백과)
     match /encyclopedia/{articleId} {
-      // 읽기: 공개된 글은 인증된 사용자 모두, 비공개 글은 관리자만
-      allow read: if isAuthenticated() &&
-                     (resource.data.isPublished == true || isAdmin());
+      // 읽기: 공개된 글은 모두(비로그인 포함), 비공개 글은 관리자만
+      allow read: if resource.data.isPublished == true || isAdmin();
       // 생성/삭제: 관리자만
       allow create: if isAdmin();
       // 수정: 관리자이거나, 조회수만 증가시키는 경우 허용
@@ -63,9 +62,8 @@ service cloud.firestore {
 
     // news 컬렉션 (난임&뉴스)
     match /news/{newsId} {
-      // 읽기: 공개된 글은 인증된 사용자 모두, 비공개 글은 관리자만
-      allow read: if isAuthenticated() &&
-                     (resource.data.isPublished == true || isAdmin());
+      // 읽기: 공개된 글은 모두(비로그인 포함), 비공개 글은 관리자만
+      allow read: if resource.data.isPublished == true || isAdmin();
       // 생성/수정/삭제: 관리자만
       allow create: if isAdmin();
       allow update: if isAdmin();
@@ -74,9 +72,8 @@ service cloud.firestore {
 
     // notices 컬렉션 (공지사항)
     match /notices/{noticeId} {
-      // 읽기: 공개된 글은 인증된 사용자 모두, 비공개 글은 관리자만
-      allow read: if isAuthenticated() &&
-                     (resource.data.isPublished == true || isAdmin());
+      // 읽기: 공개된 글은 모두(비로그인 포함), 비공개 글은 관리자만
+      allow read: if resource.data.isPublished == true || isAdmin();
       // 생성/수정/삭제: 관리자만
       allow create: if isAdmin();
       allow update: if isAdmin();
@@ -85,9 +82,8 @@ service cloud.firestore {
 
     // videos 컬렉션 (아기성공TV)
     match /videos/{videoId} {
-      // 읽기: 공개된 글은 인증된 사용자 모두, 비공개 글은 관리자만
-      allow read: if isAuthenticated() &&
-                     (resource.data.isPublished == true || isAdmin());
+      // 읽기: 공개된 글은 모두(비로그인 포함), 비공개 글은 관리자만
+      allow read: if resource.data.isPublished == true || isAdmin();
       // 생성/수정/삭제: 관리자만
       allow create: if isAdmin();
       allow update: if isAdmin();
