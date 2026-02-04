@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/subscription_model.dart';
 import '../../providers/subscription_provider.dart';
 import '../../utils/app_colors.dart';
@@ -364,7 +365,38 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           _buildInfoItem('구매 후 환불은 각 앱스토어 정책을 따릅니다.'),
           _buildInfoItem('구독 기간 중 기기 변경 시 구매 복원을 이용하세요.'),
           _buildInfoItem('문의사항은 고객센터로 연락해 주세요.'),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFE0E0E0)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildLinkButton('이용약관', 'https://sensational-baklava-76afbf.netlify.app/terms/gukitso'),
+              const SizedBox(width: 24),
+              _buildLinkButton('개인정보처리방침', 'https://sensational-baklava-76afbf.netlify.app/privacy/gukitso'),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLinkButton(String text, String url) {
+    return GestureDetector(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFFB87BA8),
+          decoration: TextDecoration.underline,
+          decorationColor: Color(0xFFB87BA8),
+        ),
       ),
     );
   }
