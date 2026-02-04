@@ -66,7 +66,8 @@ function UserChatWindow() {
 
     const initConversation = async () => {
       // 사용자 UID로 대화방 ID 설정 (1:1 매핑)
-      const convId = user.uid;
+      // Firestore 보안 규칙과 일치하도록 'user_' 접두사 사용
+      const convId = 'user_' + user.uid;
       const convRef = doc(db, 'conversations', convId);
       const convDoc = await getDoc(convRef);
 
