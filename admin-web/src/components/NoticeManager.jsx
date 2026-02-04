@@ -390,17 +390,19 @@ function NoticeManager({ readOnly = false }) {
                         mb: 0.5,
                       }}
                     >
-                      <Chip
-                        size="small"
-                        label={notice.isPublished ? '공개' : '비공개'}
-                        sx={{
-                          height: 22,
-                          fontSize: 11,
-                          fontWeight: 600,
-                          bgcolor: notice.isPublished ? colors.successLight : colors.warningLight,
-                          color: notice.isPublished ? colors.success : colors.warning,
-                        }}
-                      />
+                      {!readOnly && (
+                        <Chip
+                          size="small"
+                          label={notice.isPublished ? '공개' : '비공개'}
+                          sx={{
+                            height: 22,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            bgcolor: notice.isPublished ? colors.successLight : colors.warningLight,
+                            color: notice.isPublished ? colors.success : colors.warning,
+                          }}
+                        />
+                      )}
                       <Typography
                         sx={{
                           fontWeight: 600,
@@ -633,15 +635,17 @@ function NoticeManager({ readOnly = false }) {
             <DialogTitle sx={{ pb: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Chip
-                    size="small"
-                    label={viewNotice.isPublished ? '공개' : '비공개'}
-                    sx={{
-                      fontWeight: 600,
-                      bgcolor: viewNotice.isPublished ? colors.successLight : colors.warningLight,
-                      color: viewNotice.isPublished ? colors.success : colors.warning,
-                    }}
-                  />
+                  {!readOnly && (
+                    <Chip
+                      size="small"
+                      label={viewNotice.isPublished ? '공개' : '비공개'}
+                      sx={{
+                        fontWeight: 600,
+                        bgcolor: viewNotice.isPublished ? colors.successLight : colors.warningLight,
+                        color: viewNotice.isPublished ? colors.success : colors.warning,
+                      }}
+                    />
+                  )}
                   <Typography variant="caption" sx={{ color: colors.textTertiary, fontWeight: 500 }}>
                     {formatDate(viewNotice.createdAt)}
                   </Typography>

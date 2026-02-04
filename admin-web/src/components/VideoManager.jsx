@@ -515,17 +515,19 @@ function VideoManager({ readOnly = false }) {
                 </Box>
                 <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
                   <Box display="flex" alignItems="center" gap={1} mb={1.5}>
-                    <Chip
-                      size="small"
-                      label={video.isPublished ? '공개' : '비공개'}
-                      sx={{
-                        height: 24,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        bgcolor: video.isPublished ? colors.successLight : colors.warningLight,
-                        color: video.isPublished ? colors.success : colors.warning,
-                      }}
-                    />
+                    {!readOnly && (
+                      <Chip
+                        size="small"
+                        label={video.isPublished ? '공개' : '비공개'}
+                        sx={{
+                          height: 24,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          bgcolor: video.isPublished ? colors.successLight : colors.warningLight,
+                          color: video.isPublished ? colors.success : colors.warning,
+                        }}
+                      />
+                    )}
                     <Typography variant="caption" sx={{ color: colors.textTertiary, fontWeight: 500 }}>
                       {formatDate(video.createdAt)}
                     </Typography>
@@ -835,15 +837,17 @@ function VideoManager({ readOnly = false }) {
             <DialogTitle sx={{ pb: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Chip
-                    size="small"
-                    label={viewVideo.isPublished ? '공개' : '비공개'}
-                    sx={{
-                      fontWeight: 600,
-                      bgcolor: viewVideo.isPublished ? colors.successLight : colors.warningLight,
-                      color: viewVideo.isPublished ? colors.success : colors.warning,
-                    }}
-                  />
+                  {!readOnly && (
+                    <Chip
+                      size="small"
+                      label={viewVideo.isPublished ? '공개' : '비공개'}
+                      sx={{
+                        fontWeight: 600,
+                        bgcolor: viewVideo.isPublished ? colors.successLight : colors.warningLight,
+                        color: viewVideo.isPublished ? colors.success : colors.warning,
+                      }}
+                    />
+                  )}
                   <Typography variant="caption" sx={{ color: colors.textTertiary, fontWeight: 500 }}>
                     {formatDate(viewVideo.createdAt)}
                   </Typography>

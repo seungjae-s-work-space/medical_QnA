@@ -670,17 +670,19 @@ function EncyclopediaManager({ readOnly = false }) {
                 )}
                 <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
                   <Box display="flex" alignItems="center" gap={1} mb={1.5}>
-                    <Chip
-                      size="small"
-                      label={article.isPublished ? '공개' : '비공개'}
-                      sx={{
-                        height: 24,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        bgcolor: article.isPublished ? colors.successLight : colors.warningLight,
-                        color: article.isPublished ? colors.success : colors.warning,
-                      }}
-                    />
+                    {!readOnly && (
+                      <Chip
+                        size="small"
+                        label={article.isPublished ? '공개' : '비공개'}
+                        sx={{
+                          height: 24,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          bgcolor: article.isPublished ? colors.successLight : colors.warningLight,
+                          color: article.isPublished ? colors.success : colors.warning,
+                        }}
+                      />
+                    )}
                     <Typography variant="caption" sx={{ color: colors.textTertiary }}>
                       {formatDate(article.createdAt)}
                     </Typography>
@@ -1155,15 +1157,17 @@ function EncyclopediaManager({ readOnly = false }) {
             <DialogTitle sx={{ pb: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Chip
-                    size="small"
-                    label={viewArticle.isPublished ? '공개' : '비공개'}
-                    sx={{
-                      fontWeight: 600,
-                      bgcolor: viewArticle.isPublished ? colors.successLight : colors.warningLight,
-                      color: viewArticle.isPublished ? colors.success : colors.warning,
-                    }}
-                  />
+                  {!readOnly && (
+                    <Chip
+                      size="small"
+                      label={viewArticle.isPublished ? '공개' : '비공개'}
+                      sx={{
+                        fontWeight: 600,
+                        bgcolor: viewArticle.isPublished ? colors.successLight : colors.warningLight,
+                        color: viewArticle.isPublished ? colors.success : colors.warning,
+                      }}
+                    />
+                  )}
                   <Typography variant="body2" sx={{ color: colors.textTertiary }}>
                     {formatDate(viewArticle.createdAt)} · 조회 {viewArticle.viewCount || 0}
                   </Typography>
