@@ -3,6 +3,7 @@ import {
   collection,
   query,
   orderBy,
+  where,
   onSnapshot,
   addDoc,
   serverTimestamp,
@@ -11,6 +12,8 @@ import {
   increment,
   getDoc,
   setDoc,
+  getDocs,
+  limit,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from '../firebase';
@@ -22,7 +25,9 @@ import {
   Typography,
   CircularProgress,
   Dialog,
+  Button,
 } from '@mui/material';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import AddIcon from '@mui/icons-material/Add';
@@ -52,6 +57,8 @@ function UserChatWindow() {
   const [previewImage, setPreviewImage] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const dragCounterRef = useRef(0);
@@ -59,6 +66,44 @@ function UserChatWindow() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // 구독 상태 확인
+  useEffect(() => {
+    if (!user) return;
+
+    const checkSubscription = async () => {
+      setSubscriptionLoading(true);
+      try {
+        // subscriptions 컬렉션에서 해당 사용자의 활성 구독 조회
+        const q = query(
+          collection(db, 'subscriptions'),
+          where('userId', '==', user.uid),
+          where('status', '==', 'active'),
+          limit(1)
+        );
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+          const subData = snapshot.docs[0].data();
+          const endDate = subData.endDate?.toDate();
+          // endDate가 현재 날짜 이후인지 확인
+          if (endDate && endDate > new Date()) {
+            setHasActiveSubscription(true);
+          } else {
+            setHasActiveSubscription(false);
+          }
+        } else {
+          setHasActiveSubscription(false);
+        }
+      } catch (error) {
+        console.error('구독 상태 확인 오류:', error);
+        setHasActiveSubscription(false);
+      }
+      setSubscriptionLoading(false);
+    };
+
+    checkSubscription();
+  }, [user]);
 
   // 사용자의 대화방 찾기 또는 생성
   useEffect(() => {
@@ -270,6 +315,12 @@ function UserChatWindow() {
 
     const currentUser = auth.currentUser;
     if (!currentUser) return;
+
+    // 구독 상태 확인
+    if (!hasActiveSubscription) {
+      alert('구독이 필요합니다. 구독 후 상담 서비스를 이용해 주세요.');
+      return;
+    }
 
     setSending(true);
     setUploading(pendingFiles.length > 0);
@@ -997,6 +1048,39 @@ function UserChatWindow() {
         </Box>
       )}
 
+      {/* 구독 필요 안내 (구독이 없을 때) */}
+      {!subscriptionLoading && !hasActiveSubscription && (
+        <Box
+          sx={{
+            px: 3,
+            py: 2,
+            borderTop: `1px solid ${colors.divider}`,
+            bgcolor: colors.warningLight,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <LockOutlinedIcon sx={{ color: colors.warning, fontSize: 24 }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>
+              구독이 필요합니다
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: colors.textSecondary }}>
+              상담 서비스를 이용하시려면 구독이 필요합니다.
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            size="small"
+            sx={{ whiteSpace: 'nowrap' }}
+            onClick={() => window.open('/subscription', '_blank')}
+          >
+            구독하기
+          </Button>
+        </Box>
+      )}
+
       {/* 입력 영역 */}
       <Box
         component="form"
@@ -1009,6 +1093,8 @@ function UserChatWindow() {
           py: 1.5,
           borderTop: `1px solid ${colors.divider}`,
           bgcolor: colors.inputBackground,
+          opacity: hasActiveSubscription ? 1 : 0.5,
+          pointerEvents: hasActiveSubscription ? 'auto' : 'none',
         }}
       >
         <input
@@ -1021,6 +1107,7 @@ function UserChatWindow() {
         />
         <IconButton
           onClick={() => fileInputRef.current?.click()}
+          disabled={!hasActiveSubscription}
           sx={{
             width: 40,
             height: 40,
@@ -1045,9 +1132,10 @@ function UserChatWindow() {
             fullWidth
             multiline
             maxRows={4}
-            placeholder="메시지를 입력하세요"
+            placeholder={hasActiveSubscription ? "메시지를 입력하세요" : "구독 후 이용 가능합니다"}
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
+            disabled={!hasActiveSubscription}
             sx={{
               '& .MuiOutlinedInput-root': {
                 bgcolor: 'transparent',
@@ -1063,11 +1151,11 @@ function UserChatWindow() {
         </Box>
         <IconButton
           type="submit"
-          disabled={sending || (!newMessage.trim() && pendingFiles.length === 0)}
+          disabled={!hasActiveSubscription || sending || (!newMessage.trim() && pendingFiles.length === 0)}
           sx={{
             width: 44,
             height: 44,
-            bgcolor: sending || (!newMessage.trim() && pendingFiles.length === 0)
+            bgcolor: !hasActiveSubscription || sending || (!newMessage.trim() && pendingFiles.length === 0)
               ? colors.divider
               : colors.primary,
             borderRadius: '50%',
