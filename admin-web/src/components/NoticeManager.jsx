@@ -46,7 +46,7 @@ import { colors } from '../theme';
 
 const ITEMS_PER_PAGE = 10;
 
-function NoticeManager() {
+function NoticeManager({ readOnly = false }) {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -178,7 +178,10 @@ function NoticeManager() {
     return date.toLocaleDateString('ko-KR');
   };
 
-  const filteredNotices = notices.filter((notice) => {
+  // readOnly 모드에서는 공개된 콘텐츠만 표시
+  const displayNotices = readOnly ? notices.filter((n) => n.isPublished) : notices;
+
+  const filteredNotices = displayNotices.filter((notice) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -200,8 +203,8 @@ function NoticeManager() {
     setCurrentPage(0);
   };
 
-  const publishedCount = notices.filter((n) => n.isPublished).length;
-  const draftCount = notices.filter((n) => !n.isPublished).length;
+  const publishedCount = displayNotices.filter((n) => n.isPublished).length;
+  const draftCount = displayNotices.filter((n) => !n.isPublished).length;
 
   if (loading) {
     return (
@@ -218,74 +221,78 @@ function NoticeManager() {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box>
             <Typography variant="h4" sx={{ color: colors.textPrimary, mb: 1 }}>
-              공지사항 관리
+              {readOnly ? '공지사항' : '공지사항 관리'}
             </Typography>
             <Typography variant="body1" sx={{ color: colors.textSecondary }}>
-              사용자에게 전달할 공지사항을 작성하고 관리하세요
+              {readOnly ? '중요한 공지사항을 확인하세요' : '사용자에게 전달할 공지사항을 작성하고 관리하세요'}
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            onClick={() => handleOpenDialog()}
-            sx={{ px: 3, py: 1.5 }}
-          >
-            새 공지 작성
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              onClick={() => handleOpenDialog()}
+              sx={{ px: 3, py: 1.5 }}
+            >
+              새 공지 작성
+            </Button>
+          )}
         </Box>
       </Box>
 
-      {/* Stats Cards */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.card,
-            borderRadius: 3,
-            border: `1px solid ${colors.border}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-            전체 공지
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
-            {notices.length}
-          </Typography>
+      {/* Stats Cards - 관리자만 표시 */}
+      {!readOnly && (
+        <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.card,
+              borderRadius: 3,
+              border: `1px solid ${colors.border}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+              전체 공지
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
+              {notices.length}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.successLight,
+              borderRadius: 3,
+              border: `1px solid ${colors.success}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.success, mb: 0.5 }}>
+              공개
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.success, fontWeight: 700 }}>
+              {publishedCount}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.warningLight,
+              borderRadius: 3,
+              border: `1px solid ${colors.warning}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.warning, mb: 0.5 }}>
+              비공개
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.warning, fontWeight: 700 }}>
+              {draftCount}
+            </Typography>
+          </Box>
         </Box>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.successLight,
-            borderRadius: 3,
-            border: `1px solid ${colors.success}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.success, mb: 0.5 }}>
-            공개
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.success, fontWeight: 700 }}>
-            {publishedCount}
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.warningLight,
-            borderRadius: 3,
-            border: `1px solid ${colors.warning}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.warning, mb: 0.5 }}>
-            비공개
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.warning, fontWeight: 700 }}>
-            {draftCount}
-          </Typography>
-        </Box>
-      </Box>
+      )}
 
       {/* Search */}
       <TextField
@@ -429,45 +436,48 @@ function NoticeManager() {
                     >
                       {formatDate(notice.createdAt)}
                     </Typography>
-                    <Box
-                      onClick={(e) => e.stopPropagation()}
-                      sx={{ display: 'flex', gap: 0.5 }}
-                    >
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDialog(notice)}
-                        sx={{
-                          color: colors.textSecondary,
-                          '&:hover': { color: colors.primary, bgcolor: colors.primaryLight },
-                        }}
+                    {/* 관리자 액션 버튼 */}
+                    {!readOnly && (
+                      <Box
+                        onClick={(e) => e.stopPropagation()}
+                        sx={{ display: 'flex', gap: 0.5 }}
                       >
-                        <EditRoundedIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleTogglePublish(notice)}
-                        sx={{
-                          color: colors.textSecondary,
-                          '&:hover': { color: colors.warning, bgcolor: colors.warningLight },
-                        }}
-                      >
-                        {notice.isPublished ? (
-                          <VisibilityOffRoundedIcon fontSize="small" />
-                        ) : (
-                          <VisibilityRoundedIcon fontSize="small" />
-                        )}
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(notice)}
-                        sx={{
-                          color: colors.textSecondary,
-                          '&:hover': { color: colors.error, bgcolor: colors.errorLight },
-                        }}
-                      >
-                        <DeleteRoundedIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDialog(notice)}
+                          sx={{
+                            color: colors.textSecondary,
+                            '&:hover': { color: colors.primary, bgcolor: colors.primaryLight },
+                          }}
+                        >
+                          <EditRoundedIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleTogglePublish(notice)}
+                          sx={{
+                            color: colors.textSecondary,
+                            '&:hover': { color: colors.warning, bgcolor: colors.warningLight },
+                          }}
+                        >
+                          {notice.isPublished ? (
+                            <VisibilityOffRoundedIcon fontSize="small" />
+                          ) : (
+                            <VisibilityRoundedIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(notice)}
+                          sx={{
+                            color: colors.textSecondary,
+                            '&:hover': { color: colors.error, bgcolor: colors.errorLight },
+                          }}
+                        >
+                          <DeleteRoundedIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
                   </Box>
                 </ListItemButton>
               </ListItem>
@@ -656,16 +666,18 @@ function NoticeManager() {
               </Typography>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-              <Button
-                onClick={() => {
-                  setViewNotice(null);
-                  handleOpenDialog(viewNotice);
-                }}
-                startIcon={<EditRoundedIcon />}
-                sx={{ color: colors.textSecondary }}
-              >
-                수정
-              </Button>
+              {!readOnly && (
+                <Button
+                  onClick={() => {
+                    setViewNotice(null);
+                    handleOpenDialog(viewNotice);
+                  }}
+                  startIcon={<EditRoundedIcon />}
+                  sx={{ color: colors.textSecondary }}
+                >
+                  수정
+                </Button>
+              )}
               <Button onClick={() => setViewNotice(null)} variant="contained" sx={{ px: 3 }}>
                 닫기
               </Button>

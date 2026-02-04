@@ -98,7 +98,7 @@ const fetchYoutubeMetadata = async (videoId) => {
 
 const ITEMS_PER_PAGE = 17;
 
-function VideoManager() {
+function VideoManager({ readOnly = false }) {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -277,7 +277,10 @@ function VideoManager() {
     return date.toLocaleDateString('ko-KR');
   };
 
-  const filteredVideos = videos.filter((video) => {
+  // readOnly 모드에서는 공개된 콘텐츠만 표시
+  const displayVideos = readOnly ? videos.filter((v) => v.isPublished) : videos;
+
+  const filteredVideos = displayVideos.filter((video) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -299,8 +302,8 @@ function VideoManager() {
     setCurrentPage(0);
   };
 
-  const publishedCount = videos.filter((v) => v.isPublished).length;
-  const draftCount = videos.filter((v) => !v.isPublished).length;
+  const publishedCount = displayVideos.filter((v) => v.isPublished).length;
+  const draftCount = displayVideos.filter((v) => !v.isPublished).length;
 
   if (loading) {
     return (
@@ -317,74 +320,78 @@ function VideoManager() {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box>
             <Typography variant="h4" sx={{ color: colors.textPrimary, mb: 1 }}>
-              아기성공TV 관리
+              {readOnly ? '아기성공TV' : '아기성공TV 관리'}
             </Typography>
             <Typography variant="body1" sx={{ color: colors.textSecondary }}>
-              유튜브 영상을 등록하고 관리하세요
+              {readOnly ? '난임 관련 유익한 영상을 시청하세요' : '유튜브 영상을 등록하고 관리하세요'}
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            onClick={() => handleOpenDialog()}
-            sx={{ px: 3, py: 1.5 }}
-          >
-            새 영상 등록
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              onClick={() => handleOpenDialog()}
+              sx={{ px: 3, py: 1.5 }}
+            >
+              새 영상 등록
+            </Button>
+          )}
         </Box>
       </Box>
 
-      {/* Stats Cards */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.card,
-            borderRadius: 3,
-            border: `1px solid ${colors.border}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-            전체 영상
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
-            {videos.length}
-          </Typography>
+      {/* Stats Cards - 관리자만 표시 */}
+      {!readOnly && (
+        <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.card,
+              borderRadius: 3,
+              border: `1px solid ${colors.border}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+              전체 영상
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
+              {videos.length}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.successLight,
+              borderRadius: 3,
+              border: `1px solid ${colors.success}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.success, mb: 0.5 }}>
+              공개
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.success, fontWeight: 700 }}>
+              {publishedCount}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.warningLight,
+              borderRadius: 3,
+              border: `1px solid ${colors.warning}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.warning, mb: 0.5 }}>
+              비공개
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.warning, fontWeight: 700 }}>
+              {draftCount}
+            </Typography>
+          </Box>
         </Box>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.successLight,
-            borderRadius: 3,
-            border: `1px solid ${colors.success}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.success, mb: 0.5 }}>
-            공개
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.success, fontWeight: 700 }}>
-            {publishedCount}
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.warningLight,
-            borderRadius: 3,
-            border: `1px solid ${colors.warning}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.warning, mb: 0.5 }}>
-            비공개
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.warning, fontWeight: 700 }}>
-            {draftCount}
-          </Typography>
-        </Box>
-      </Box>
+      )}
 
       {/* Search */}
       <TextField
@@ -544,53 +551,56 @@ function VideoManager() {
                   >
                     {video.description || '설명 없음'}
                   </Typography>
-                  <Box
-                    onClick={(e) => e.stopPropagation()}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                      gap: 0.5,
-                      borderTop: `1px solid ${colors.divider}`,
-                      pt: 1.5,
-                      mt: 'auto',
-                    }}
-                  >
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenDialog(video)}
+                  {/* 관리자 액션 버튼 */}
+                  {!readOnly && (
+                    <Box
+                      onClick={(e) => e.stopPropagation()}
                       sx={{
-                        color: colors.textSecondary,
-                        '&:hover': { color: colors.primary, bgcolor: colors.primaryLight },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        gap: 0.5,
+                        borderTop: `1px solid ${colors.divider}`,
+                        pt: 1.5,
+                        mt: 'auto',
                       }}
                     >
-                      <EditRoundedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleTogglePublish(video)}
-                      sx={{
-                        color: colors.textSecondary,
-                        '&:hover': { color: colors.warning, bgcolor: colors.warningLight },
-                      }}
-                    >
-                      {video.isPublished ? (
-                        <VisibilityOffRoundedIcon fontSize="small" />
-                      ) : (
-                        <VisibilityRoundedIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDelete(video)}
-                      sx={{
-                        color: colors.textSecondary,
-                        '&:hover': { color: colors.error, bgcolor: colors.errorLight },
-                      }}
-                    >
-                      <DeleteRoundedIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenDialog(video)}
+                        sx={{
+                          color: colors.textSecondary,
+                          '&:hover': { color: colors.primary, bgcolor: colors.primaryLight },
+                        }}
+                      >
+                        <EditRoundedIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleTogglePublish(video)}
+                        sx={{
+                          color: colors.textSecondary,
+                          '&:hover': { color: colors.warning, bgcolor: colors.warningLight },
+                        }}
+                      >
+                        {video.isPublished ? (
+                          <VisibilityOffRoundedIcon fontSize="small" />
+                        ) : (
+                          <VisibilityRoundedIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(video)}
+                        sx={{
+                          color: colors.textSecondary,
+                          '&:hover': { color: colors.error, bgcolor: colors.errorLight },
+                        }}
+                      >
+                        <DeleteRoundedIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
@@ -894,16 +904,18 @@ function VideoManager() {
               >
                 YouTube에서 보기
               </Button>
-              <Button
-                onClick={() => {
-                  setViewVideo(null);
-                  handleOpenDialog(viewVideo);
-                }}
-                startIcon={<EditRoundedIcon />}
-                sx={{ color: colors.textSecondary }}
-              >
-                수정
-              </Button>
+              {!readOnly && (
+                <Button
+                  onClick={() => {
+                    setViewVideo(null);
+                    handleOpenDialog(viewVideo);
+                  }}
+                  startIcon={<EditRoundedIcon />}
+                  sx={{ color: colors.textSecondary }}
+                >
+                  수정
+                </Button>
+              )}
               <Button onClick={() => setViewVideo(null)} variant="contained" sx={{ px: 3 }}>
                 닫기
               </Button>

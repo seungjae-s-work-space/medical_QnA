@@ -117,7 +117,7 @@ const mergeConsecutiveBlockquotes = (html) => {
 
 const ITEMS_PER_PAGE = 17;
 
-function EncyclopediaManager() {
+function EncyclopediaManager({ readOnly = false }) {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -455,7 +455,12 @@ function EncyclopediaManager() {
     return date.toLocaleDateString('ko-KR');
   };
 
-  const filteredArticles = articles.filter((article) => {
+  // readOnly 모드에서는 공개된 콘텐츠만 표시
+  const displayArticles = readOnly
+    ? articles.filter((a) => a.isPublished)
+    : articles;
+
+  const filteredArticles = displayArticles.filter((article) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -494,73 +499,77 @@ function EncyclopediaManager() {
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 4 }}>
         <Box>
           <Typography variant="h4" sx={{ color: colors.textPrimary, mb: 1 }}>
-            난임백과 관리
+            {readOnly ? '난임백과' : '난임백과 관리'}
           </Typography>
           <Typography variant="body1" sx={{ color: colors.textSecondary }}>
-            난임 관련 정보를 작성하고 관리하세요
+            {readOnly ? '난임 관련 정보를 확인하세요' : '난임 관련 정보를 작성하고 관리하세요'}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddRoundedIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={{ px: 3 }}
-        >
-          새 글 작성
-        </Button>
+        {!readOnly && (
+          <Button
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            onClick={() => handleOpenDialog()}
+            sx={{ px: 3 }}
+          >
+            새 글 작성
+          </Button>
+        )}
       </Box>
 
-      {/* Stats Cards */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.card,
-            borderRadius: 3,
-            border: `1px solid ${colors.border}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-            전체 글
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
-            {articles.length}
-          </Typography>
+      {/* Stats Cards - 관리자만 표시 */}
+      {!readOnly && (
+        <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.card,
+              borderRadius: 3,
+              border: `1px solid ${colors.border}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+              전체 글
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
+              {articles.length}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.successLight,
+              borderRadius: 3,
+              border: `1px solid ${colors.success}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.success, mb: 0.5 }}>
+              공개
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.success, fontWeight: 700 }}>
+              {publishedCount}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.warningLight,
+              borderRadius: 3,
+              border: `1px solid ${colors.warning}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.warning, mb: 0.5 }}>
+              비공개
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.warning, fontWeight: 700 }}>
+              {draftCount}
+            </Typography>
+          </Box>
         </Box>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.successLight,
-            borderRadius: 3,
-            border: `1px solid ${colors.success}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.success, mb: 0.5 }}>
-            공개
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.success, fontWeight: 700 }}>
-            {publishedCount}
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.warningLight,
-            borderRadius: 3,
-            border: `1px solid ${colors.warning}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.warning, mb: 0.5 }}>
-            비공개
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.warning, fontWeight: 700 }}>
-            {draftCount}
-          </Typography>
-        </Box>
-      </Box>
+      )}
 
       {/* Search */}
       <TextField
@@ -702,33 +711,35 @@ function EncyclopediaManager() {
                         {article.viewCount || 0}
                       </Typography>
                     </Box>
-                    <Box onClick={(e) => e.stopPropagation()}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDialog(article)}
-                        sx={{ color: colors.textSecondary }}
-                      >
-                        <EditRoundedIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleTogglePublish(article)}
-                        sx={{ color: colors.textSecondary }}
-                      >
-                        {article.isPublished ? (
-                          <VisibilityOffRoundedIcon fontSize="small" />
-                        ) : (
-                          <VisibilityRoundedIcon fontSize="small" />
-                        )}
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(article)}
-                        sx={{ color: colors.error }}
-                      >
-                        <DeleteRoundedIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
+                    {!readOnly && (
+                      <Box onClick={(e) => e.stopPropagation()}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDialog(article)}
+                          sx={{ color: colors.textSecondary }}
+                        >
+                          <EditRoundedIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleTogglePublish(article)}
+                          sx={{ color: colors.textSecondary }}
+                        >
+                          {article.isPublished ? (
+                            <VisibilityOffRoundedIcon fontSize="small" />
+                          ) : (
+                            <VisibilityRoundedIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(article)}
+                          sx={{ color: colors.error }}
+                        >
+                          <DeleteRoundedIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
                   </Box>
                 </CardContent>
               </Card>
@@ -1186,16 +1197,18 @@ function EncyclopediaManager() {
               />
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-              <Button
-                onClick={() => {
-                  setViewArticle(null);
-                  handleOpenDialog(viewArticle);
-                }}
-                startIcon={<EditRoundedIcon />}
-                variant="outlined"
-              >
-                수정
-              </Button>
+              {!readOnly && (
+                <Button
+                  onClick={() => {
+                    setViewArticle(null);
+                    handleOpenDialog(viewArticle);
+                  }}
+                  startIcon={<EditRoundedIcon />}
+                  variant="outlined"
+                >
+                  수정
+                </Button>
+              )}
               <Button onClick={() => setViewArticle(null)} variant="contained">
                 닫기
               </Button>

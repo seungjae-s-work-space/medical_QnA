@@ -116,7 +116,7 @@ const mergeConsecutiveBlockquotes = (html) => {
 
 const ITEMS_PER_PAGE = 17;
 
-function NewsManager() {
+function NewsManager({ readOnly = false }) {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -443,7 +443,10 @@ function NewsManager() {
     return date.toLocaleDateString('ko-KR');
   };
 
-  const filteredArticles = articles.filter((article) => {
+  // readOnly 모드에서는 공개된 콘텐츠만 표시
+  const displayArticles = readOnly ? articles.filter((a) => a.isPublished) : articles;
+
+  const filteredArticles = displayArticles.filter((article) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -465,8 +468,8 @@ function NewsManager() {
     setCurrentPage(0);
   };
 
-  const publishedCount = articles.filter((a) => a.isPublished).length;
-  const draftCount = articles.filter((a) => !a.isPublished).length;
+  const publishedCount = displayArticles.filter((a) => a.isPublished).length;
+  const draftCount = displayArticles.filter((a) => !a.isPublished).length;
 
   if (loading) {
     return (
@@ -483,74 +486,78 @@ function NewsManager() {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box>
             <Typography variant="h4" sx={{ color: colors.textPrimary, mb: 1 }}>
-              뉴스 관리
+              {readOnly ? '뉴스' : '뉴스 관리'}
             </Typography>
             <Typography variant="body1" sx={{ color: colors.textSecondary }}>
-              난임 관련 뉴스를 작성하고 관리하세요
+              {readOnly ? '난임 관련 최신 뉴스를 확인하세요' : '난임 관련 뉴스를 작성하고 관리하세요'}
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            onClick={() => handleOpenDialog()}
-            sx={{ px: 3, py: 1.5 }}
-          >
-            새 뉴스 작성
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              onClick={() => handleOpenDialog()}
+              sx={{ px: 3, py: 1.5 }}
+            >
+              새 뉴스 작성
+            </Button>
+          )}
         </Box>
       </Box>
 
-      {/* Stats Cards */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.card,
-            borderRadius: 3,
-            border: `1px solid ${colors.border}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
-            전체 글
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
-            {articles.length}
-          </Typography>
+      {/* Stats Cards - 관리자만 표시 */}
+      {!readOnly && (
+        <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.card,
+              borderRadius: 3,
+              border: `1px solid ${colors.border}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
+              전체 글
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
+              {articles.length}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.successLight,
+              borderRadius: 3,
+              border: `1px solid ${colors.success}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.success, mb: 0.5 }}>
+              공개
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.success, fontWeight: 700 }}>
+              {publishedCount}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              p: 3,
+              bgcolor: colors.warningLight,
+              borderRadius: 3,
+              border: `1px solid ${colors.warning}`,
+            }}
+          >
+            <Typography variant="body2" sx={{ color: colors.warning, mb: 0.5 }}>
+              비공개
+            </Typography>
+            <Typography variant="h4" sx={{ color: colors.warning, fontWeight: 700 }}>
+              {draftCount}
+            </Typography>
+          </Box>
         </Box>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.successLight,
-            borderRadius: 3,
-            border: `1px solid ${colors.success}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.success, mb: 0.5 }}>
-            공개
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.success, fontWeight: 700 }}>
-            {publishedCount}
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: colors.warningLight,
-            borderRadius: 3,
-            border: `1px solid ${colors.warning}`,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: colors.warning, mb: 0.5 }}>
-            비공개
-          </Typography>
-          <Typography variant="h4" sx={{ color: colors.warning, fontWeight: 700 }}>
-            {draftCount}
-          </Typography>
-        </Box>
-      </Box>
+      )}
 
       {/* Search */}
       <TextField
@@ -689,53 +696,56 @@ function NewsManager() {
                   >
                     {stripHtml(article.content)}
                   </Typography>
-                  <Box
-                    onClick={(e) => e.stopPropagation()}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                      gap: 0.5,
-                      borderTop: `1px solid ${colors.divider}`,
-                      pt: 1.5,
-                      mt: 'auto',
-                    }}
-                  >
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenDialog(article)}
+                  {/* 관리자 액션 버튼 */}
+                  {!readOnly && (
+                    <Box
+                      onClick={(e) => e.stopPropagation()}
                       sx={{
-                        color: colors.textSecondary,
-                        '&:hover': { color: colors.primary, bgcolor: colors.primaryLight },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        gap: 0.5,
+                        borderTop: `1px solid ${colors.divider}`,
+                        pt: 1.5,
+                        mt: 'auto',
                       }}
                     >
-                      <EditRoundedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleTogglePublish(article)}
-                      sx={{
-                        color: colors.textSecondary,
-                        '&:hover': { color: colors.warning, bgcolor: colors.warningLight },
-                      }}
-                    >
-                      {article.isPublished ? (
-                        <VisibilityOffRoundedIcon fontSize="small" />
-                      ) : (
-                        <VisibilityRoundedIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDelete(article)}
-                      sx={{
-                        color: colors.textSecondary,
-                        '&:hover': { color: colors.error, bgcolor: colors.errorLight },
-                      }}
-                    >
-                      <DeleteRoundedIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenDialog(article)}
+                        sx={{
+                          color: colors.textSecondary,
+                          '&:hover': { color: colors.primary, bgcolor: colors.primaryLight },
+                        }}
+                      >
+                        <EditRoundedIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleTogglePublish(article)}
+                        sx={{
+                          color: colors.textSecondary,
+                          '&:hover': { color: colors.warning, bgcolor: colors.warningLight },
+                        }}
+                      >
+                        {article.isPublished ? (
+                          <VisibilityOffRoundedIcon fontSize="small" />
+                        ) : (
+                          <VisibilityRoundedIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(article)}
+                        sx={{
+                          color: colors.textSecondary,
+                          '&:hover': { color: colors.error, bgcolor: colors.errorLight },
+                        }}
+                      >
+                        <DeleteRoundedIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
@@ -1188,16 +1198,18 @@ function NewsManager() {
               />
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-              <Button
-                onClick={() => {
-                  setViewArticle(null);
-                  handleOpenDialog(viewArticle);
-                }}
-                startIcon={<EditRoundedIcon />}
-                sx={{ color: colors.textSecondary }}
-              >
-                수정
-              </Button>
+              {!readOnly && (
+                <Button
+                  onClick={() => {
+                    setViewArticle(null);
+                    handleOpenDialog(viewArticle);
+                  }}
+                  startIcon={<EditRoundedIcon />}
+                  sx={{ color: colors.textSecondary }}
+                >
+                  수정
+                </Button>
+              )}
               <Button onClick={() => setViewArticle(null)} variant="contained" sx={{ px: 3 }}>
                 닫기
               </Button>

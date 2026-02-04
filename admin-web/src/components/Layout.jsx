@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { collection, query, onSnapshot, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
   Drawer,
@@ -23,6 +24,7 @@ import CampaignRoundedIcon from '@mui/icons-material/CampaignRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import CardMembershipRoundedIcon from '@mui/icons-material/CardMembershipRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
 import { colors } from '../theme';
 
 const DRAWER_WIDTH = 280;
@@ -30,10 +32,16 @@ const DRAWER_WIDTH = 280;
 function Layout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAdmin, isLoggedIn } = useAuth();
   const [unreadChatCount, setUnreadChatCount] = useState(0);
 
-  // 안 읽은 채팅방 개수 실시간 구독
+  // 안 읽은 채팅방 개수 실시간 구독 (관리자만)
   useEffect(() => {
+    if (!isAdmin) {
+      setUnreadChatCount(0);
+      return;
+    }
+
     const q = query(
       collection(db, 'conversations'),
       where('unreadByAdmin', '>', 0)
@@ -44,19 +52,80 @@ function Layout({ children }) {
     });
 
     return unsubscribe;
-  }, []);
+  }, [isAdmin]);
 
-  const menuItems = [
-    { path: '/', label: '상담 채팅', icon: <ChatBubbleOutlineRoundedIcon />, description: '사용자 문의 관리', badge: unreadChatCount },
-    { path: '/notice', label: '공지사항', icon: <CampaignRoundedIcon />, description: '공지사항 관리', badge: 0 },
-    { path: '/encyclopedia', label: '난임백과', icon: <AutoStoriesRoundedIcon />, description: '정보 콘텐츠 관리', badge: 0 },
-    { path: '/news', label: '뉴스', icon: <ArticleRoundedIcon />, description: '뉴스 콘텐츠 관리', badge: 0 },
-    { path: '/video', label: '아기성공TV', icon: <YouTubeIcon />, description: '유튜브 영상 관리', badge: 0 },
-    { path: '/subscription', label: '구독 관리', icon: <CardMembershipRoundedIcon />, description: '구독자 현황 관리', badge: 0 },
-  ];
+  // 역할에 따른 메뉴 구성
+  const getMenuItems = () => {
+    const allMenuItems = [
+      {
+        path: '/',
+        label: isAdmin ? '상담 채팅' : '상담하기',
+        icon: <ChatBubbleOutlineRoundedIcon />,
+        description: isAdmin ? '사용자 문의 관리' : '전문가 상담',
+        badge: isAdmin ? unreadChatCount : 0,
+        visible: isLoggedIn, // 로그인 사용자만
+      },
+      {
+        path: '/notice',
+        label: '공지사항',
+        icon: <CampaignRoundedIcon />,
+        description: isAdmin ? '공지사항 관리' : '공지사항 보기',
+        badge: 0,
+        visible: true, // 모든 사용자
+      },
+      {
+        path: '/encyclopedia',
+        label: '난임백과',
+        icon: <AutoStoriesRoundedIcon />,
+        description: isAdmin ? '정보 콘텐츠 관리' : '난임 정보 보기',
+        badge: 0,
+        visible: true, // 모든 사용자
+      },
+      {
+        path: '/news',
+        label: '뉴스',
+        icon: <ArticleRoundedIcon />,
+        description: isAdmin ? '뉴스 콘텐츠 관리' : '뉴스 보기',
+        badge: 0,
+        visible: true, // 모든 사용자
+      },
+      {
+        path: '/video',
+        label: '아기성공TV',
+        icon: <YouTubeIcon />,
+        description: isAdmin ? '유튜브 영상 관리' : '영상 보기',
+        badge: 0,
+        visible: true, // 모든 사용자
+      },
+      {
+        path: '/subscription',
+        label: '구독 관리',
+        icon: <CardMembershipRoundedIcon />,
+        description: '구독자 현황 관리',
+        badge: 0,
+        visible: isAdmin, // 관리자만
+      },
+    ];
+
+    return allMenuItems.filter(item => item.visible);
+  };
+
+  const menuItems = getMenuItems();
 
   const handleLogout = async () => {
     await signOut(auth);
+    navigate('/encyclopedia');
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+  };
+
+  // 타이틀 결정
+  const getSubtitle = () => {
+    if (isAdmin) return '관리자 대시보드';
+    if (isLoggedIn) return '난임 정보 포털';
+    return '난임 정보 포털';
   };
 
   return (
@@ -116,7 +185,7 @@ function Layout({ children }) {
                 fontSize: 12,
               }}
             >
-              관리자 대시보드
+              {getSubtitle()}
             </Typography>
           </Box>
         </Box>
@@ -198,38 +267,71 @@ function Layout({ children }) {
           })}
         </List>
 
-        {/* Logout */}
+        {/* Login / Logout */}
         <Box sx={{ p: 2 }}>
           <Divider sx={{ mb: 2 }} />
-          <ListItemButton
-            onClick={handleLogout}
-            sx={{
-              borderRadius: 2.5,
-              py: 1.5,
-              px: 2,
-              '&:hover': {
-                bgcolor: colors.errorLight,
-                '& .MuiListItemIcon-root': {
-                  color: colors.error,
+          {isLoggedIn ? (
+            <ListItemButton
+              onClick={handleLogout}
+              sx={{
+                borderRadius: 2.5,
+                py: 1.5,
+                px: 2,
+                '&:hover': {
+                  bgcolor: colors.errorLight,
+                  '& .MuiListItemIcon-root': {
+                    color: colors.error,
+                  },
+                  '& .MuiListItemText-primary': {
+                    color: colors.error,
+                  },
                 },
-                '& .MuiListItemText-primary': {
-                  color: colors.error,
-                },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 44, color: colors.textSecondary }}>
-              <LogoutRoundedIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="로그아웃"
-              primaryTypographyProps={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: colors.textSecondary,
               }}
-            />
-          </ListItemButton>
+            >
+              <ListItemIcon sx={{ minWidth: 44, color: colors.textSecondary }}>
+                <LogoutRoundedIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="로그아웃"
+                primaryTypographyProps={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: colors.textSecondary,
+                }}
+              />
+            </ListItemButton>
+          ) : (
+            <ListItemButton
+              onClick={handleLogin}
+              sx={{
+                borderRadius: 2.5,
+                py: 1.5,
+                px: 2,
+                bgcolor: colors.primaryLight,
+                '&:hover': {
+                  bgcolor: colors.primary,
+                  '& .MuiListItemIcon-root': {
+                    color: 'white',
+                  },
+                  '& .MuiListItemText-primary': {
+                    color: 'white',
+                  },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 44, color: colors.primary }}>
+                <LoginRoundedIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="로그인"
+                primaryTypographyProps={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: colors.primary,
+                }}
+              />
+            </ListItemButton>
+          )}
         </Box>
       </Drawer>
 
