@@ -135,6 +135,8 @@ function EncyclopediaManager() {
   const [selectedImageUrl, setSelectedImageUrl] = useState(null);
   const [customThumbnail, setCustomThumbnail] = useState(null);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [references, setReferences] = useState(''); // 의학적 참고자료
+  const [sourceUrl, setSourceUrl] = useState(''); // 기사 원문 링크
   const quillRef = useRef(null);
   const thumbnailInputRef = useRef(null);
 
@@ -324,6 +326,8 @@ function EncyclopediaManager() {
     setIsPublished(true);
     setSelectedImageUrl(null);
     setCustomThumbnail(null);
+    setReferences('');
+    setSourceUrl('');
     setEditingArticle(null);
   };
 
@@ -333,6 +337,8 @@ function EncyclopediaManager() {
       setTitle(article.title || '');
       setContent(article.content || '');
       setIsPublished(article.isPublished !== false);
+      setReferences(article.references || '');
+      setSourceUrl(article.sourceUrl || '');
       // 기존 이미지가 본문에 없으면 커스텀 썸네일로 설정
       const existingImages = extractImagesFromContent(article.content || '');
       if (article.imageUrl && !existingImages.includes(article.imageUrl)) {
@@ -385,6 +391,8 @@ function EncyclopediaManager() {
           content: convertedContent,
           imageUrl,
           isPublished,
+          references: references.trim(),
+          sourceUrl: sourceUrl.trim(),
           updatedAt: serverTimestamp(),
         });
         setSnackbar({ open: true, message: '글이 수정되었습니다', severity: 'success' });
@@ -394,6 +402,8 @@ function EncyclopediaManager() {
           content: convertedContent,
           imageUrl,
           isPublished,
+          references: references.trim(),
+          sourceUrl: sourceUrl.trim(),
           authorId: user?.uid || '',
           authorName: '관리자',
           viewCount: 0,
@@ -1058,6 +1068,35 @@ function EncyclopediaManager() {
                 })}
               </Box>
             </Box>
+
+            {/* 의학적 참고자료 */}
+            <Box>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: colors.textPrimary, mb: 1 }}
+              >
+                의학적 참고자료 (출처)
+              </Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="예시:&#10;대한산부인과학회 난임 가이드라인&#10;WHO – Infertility Fact Sheet&#10;ESHRE Clinical Practice Guidelines"
+                value={references}
+                onChange={(e) => setReferences(e.target.value)}
+                helperText="앱스토어 의료정보 가이드라인 준수를 위해 출처를 입력해주세요 (줄바꿈으로 구분)"
+              />
+            </Box>
+
+            {/* 기사 원문 링크 */}
+            <TextField
+              label="기사/논문 원문 링크"
+              placeholder="https://..."
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              fullWidth
+              helperText="참고한 기사나 논문의 원문 URL을 입력해주세요"
+            />
 
             <FormControlLabel
               control={

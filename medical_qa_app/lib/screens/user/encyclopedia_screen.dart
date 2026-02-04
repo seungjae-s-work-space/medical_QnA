@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/encyclopedia_model.dart';
 import '../../services/encyclopedia_service.dart';
 import '../../utils/app_colors.dart';
@@ -629,6 +630,120 @@ class _PageButton extends StatelessWidget {
   }
 }
 
+// 참고자료 및 출처 섹션 위젯
+class _ReferencesSection extends StatelessWidget {
+  final String? references;
+  final String? sourceUrl;
+
+  const _ReferencesSection({
+    this.references,
+    this.sourceUrl,
+  });
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 32),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE9ECEF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 헤더
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '참고자료 및 출처',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // 참고자료 목록
+          if (references != null && references!.isNotEmpty) ...[
+            ...references!.split('\n').where((line) => line.trim().isNotEmpty).map(
+              (ref) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '• ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        ref.trim(),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          // 원문 링크
+          if (sourceUrl != null && sourceUrl!.isNotEmpty) ...[
+            if (references != null && references!.isNotEmpty)
+              const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _launchUrl(sourceUrl!),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.link,
+                    size: 16,
+                    color: Colors.blue[600],
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '원문 보기',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue[600],
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 // HTML 정리 함수 - 빈 태그 제거 및 연속 blockquote 병합
 String _cleanHtmlContent(String html) {
   if (html.isEmpty) return html;
@@ -829,6 +944,13 @@ class EncyclopediaDetailScreen extends StatelessWidget {
                       ),
                     },
                   ),
+                  // 참고자료 및 출처 섹션
+                  if (article.references != null && article.references!.isNotEmpty ||
+                      article.sourceUrl != null && article.sourceUrl!.isNotEmpty)
+                    _ReferencesSection(
+                      references: article.references,
+                      sourceUrl: article.sourceUrl,
+                    ),
                   const SizedBox(height: 40),
                 ],
               ),

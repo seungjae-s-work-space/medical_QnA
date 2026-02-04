@@ -11,6 +11,8 @@ class EncyclopediaModel {
   final DateTime updatedAt;
   final bool isPublished;
   final int viewCount;
+  final String? references; // 의학적 참고자료
+  final String? sourceUrl; // 기사 원문 링크
 
   EncyclopediaModel({
     required this.id,
@@ -23,6 +25,8 @@ class EncyclopediaModel {
     required this.updatedAt,
     required this.isPublished,
     this.viewCount = 0,
+    this.references,
+    this.sourceUrl,
   });
 
   factory EncyclopediaModel.fromFirestore(DocumentSnapshot doc) {
@@ -38,6 +42,8 @@ class EncyclopediaModel {
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isPublished: data['isPublished'] ?? true,
       viewCount: data['viewCount'] ?? 0,
+      references: data['references'],
+      sourceUrl: data['sourceUrl'],
     );
   }
 
@@ -52,6 +58,8 @@ class EncyclopediaModel {
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isPublished': isPublished,
       'viewCount': viewCount,
+      'references': references,
+      'sourceUrl': sourceUrl,
     };
   }
 
@@ -66,6 +74,8 @@ class EncyclopediaModel {
     DateTime? updatedAt,
     bool? isPublished,
     int? viewCount,
+    String? references,
+    String? sourceUrl,
   }) {
     return EncyclopediaModel(
       id: id ?? this.id,
@@ -78,6 +88,8 @@ class EncyclopediaModel {
       updatedAt: updatedAt ?? this.updatedAt,
       isPublished: isPublished ?? this.isPublished,
       viewCount: viewCount ?? this.viewCount,
+      references: references ?? this.references,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
     );
   }
 }
