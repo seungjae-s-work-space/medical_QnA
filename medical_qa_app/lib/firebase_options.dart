@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCD-tObyqkdjz6WfBFbuNaAqqM5ju0JS0c',
-    appId: '1:299956056308:android:a3c65bfde643a5e5a9aea1',
+    appId: '1:299956056308:android:e67a6f3ed1c2654ba9aea1',
     messagingSenderId: '299956056308',
     projectId: 'medicalqa-e5313',
     storageBucket: 'medicalqa-e5313.firebasestorage.app',
@@ -60,11 +60,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAvmHMAK8BKz7xO_5hf3YwQCO8VtNyWVJE',
-    appId: '1:299956056308:ios:3f29f483722c499ba9aea1',
+    appId: '1:299956056308:ios:7f04829930a2a640a9aea1',
     messagingSenderId: '299956056308',
     projectId: 'medicalqa-e5313',
     storageBucket: 'medicalqa-e5313.firebasestorage.app',
-    iosBundleId: 'com.agisungong.nanimtalktalk',
+    iosBundleId: 'net.agisungong.nanimtalktalk',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

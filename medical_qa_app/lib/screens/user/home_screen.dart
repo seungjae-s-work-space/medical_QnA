@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
+import '../../services/notice_service.dart';
+import '../../models/notice_model.dart';
 import '../../utils/app_colors.dart';
 import 'chat_screen.dart';
 import 'encyclopedia_screen.dart';
@@ -20,9 +22,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final NotificationService _notificationService = NotificationService();
+  final NoticeService _noticeService = NoticeService();
   bool _notificationsEnabled = true;
   int _currentIndex = 0;
   DateTime? _lastBackPressTime;
+  NoticeModel? _latestNotice;
 
   // 추천 전문의 리스트
   final List<Map<String, String>> _doctors = const [
@@ -64,6 +68,17 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadNotificationSetting();
+    _loadLatestNotice();
+  }
+
+  void _loadLatestNotice() {
+    _noticeService.getPublishedNotices().listen((notices) {
+      if (mounted && notices.isNotEmpty) {
+        setState(() {
+          _latestNotice = notices.first;
+        });
+      }
+    });
   }
 
   Future<void> _loadNotificationSetting() async {
@@ -340,6 +355,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildLogoSection(),
           const SizedBox(height: 24),
 
+          // 공지사항 배너
+          _buildNoticeBanner(),
+          const SizedBox(height: 12),
+
           // 상단 2개 메뉴 (난임백과, 난임톡톡 소개)
           Row(
             children: [
@@ -368,57 +387,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
 
-          // 하단 메뉴 (공지사항, 난임뉴스)
+          // 난임뉴스 (왼쪽) + 아기성공TV, 무제한상담 (오른쪽 Column)
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 왼쪽: 난임뉴스 (큰 카드)
               Expanded(
-                child: _SmallMenuCard(
-                  title: '공지사항',
-                  icon: Icons.campaign_rounded,
-                  color: const Color(0xFFFFE0B2),
-                  iconColor: const Color(0xFFFF9800),
-                  textColor: const Color(0xFFE65100),
-                  arrowColor: Colors.white,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                          backgroundColor: AppColors.background,
-                          appBar: AppBar(
-                            backgroundColor: AppColors.background,
-                            elevation: 0,
-                            leading: IconButton(
-                              icon: const Icon(Icons.arrow_back,
-                                  color: AppColors.textPrimary),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            title: const Text(
-                              '공지사항',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            centerTitle: true,
-                          ),
-                          body: const NoticeScreen(),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _SmallMenuCard(
+                child: _NewMenuCard(
                   title: '난임뉴스',
                   icon: Icons.public,
-                  color: const Color(0x8087C5FF),
-                  iconColor: const Color(0xFF759BBE),
-                  textColor: const Color(0xFF577DA1),
-                  arrowColor: Colors.white,
+                  color: const Color(0xFF87C6FF),
+                  iconColor: const Color(0xFF5A83CF),
+                  buttonBorderColor: Colors.white,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -450,57 +430,57 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // 아기성공TV, 정회원 무제한채팅
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: _SmallMenuCard(
-                  title: '아기성공TV',
-                  icon: Icons.play_circle_filled,
-                  color: const Color(0xFFFFCDD2),
-                  iconColor: const Color(0xFFFF0000),
-                  textColor: const Color(0xFFC62828),
-                  arrowColor: Colors.white,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                          backgroundColor: AppColors.background,
-                          appBar: AppBar(
-                            backgroundColor: AppColors.background,
-                            elevation: 0,
-                            leading: IconButton(
-                              icon: const Icon(Icons.arrow_back,
-                                  color: AppColors.textPrimary),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            title: const Text(
-                              '아기성공TV',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            centerTitle: true,
-                          ),
-                          body: const VideoScreen(),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
               const SizedBox(width: 12),
+              // 오른쪽: 아기성공TV + 무제한상담 (Column)
               Expanded(
-                flex: 3,
-                child: _SubscriptionMenuCard(
-                  onTap: () => _openSubscriptionScreen(),
+                child: Column(
+                  children: [
+                    _MiniMenuCard(
+                      title: '아기성공TV',
+                      icon: Icons.play_circle_filled,
+                      color: const Color(0xFFFFCDD2),
+                      iconColor: const Color(0xFFFF0000),
+                      textColor: const Color(0xFFC62828),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              backgroundColor: AppColors.background,
+                              appBar: AppBar(
+                                backgroundColor: AppColors.background,
+                                elevation: 0,
+                                leading: IconButton(
+                                  icon: const Icon(Icons.arrow_back,
+                                      color: AppColors.textPrimary),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                                title: const Text(
+                                  '아기성공TV',
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                centerTitle: true,
+                              ),
+                              body: const VideoScreen(),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _MiniMenuCard(
+                      title: '무제한 상담',
+                      icon: Icons.coffee_outlined,
+                      color: const Color(0xFFECC2E3),
+                      iconColor: const Color(0xFF9F7395),
+                      textColor: const Color(0xFF8A5B80),
+                      onTap: () => _openSubscriptionScreen(),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -515,6 +495,82 @@ class _HomeScreenState extends State<HomeScreen> {
       'assets/images/loggo_section4x.png',
       width: double.infinity,
       fit: BoxFit.contain,
+    );
+  }
+
+  Widget _buildNoticeBanner() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Scaffold(
+              backgroundColor: AppColors.background,
+              appBar: AppBar(
+                backgroundColor: AppColors.background,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                title: const Text(
+                  '공지사항',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                centerTitle: true,
+              ),
+              body: const NoticeScreen(),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFE0B2),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF9800),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.campaign_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _latestNotice?.content ?? '공지사항을 확인해주세요',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFE65100),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: Color(0xFFE65100),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1003,23 +1059,21 @@ class _NewMenuCard extends StatelessWidget {
   }
 }
 
-// 작은 메뉴 카드 (난임뉴스)
-class _SmallMenuCard extends StatelessWidget {
+// 미니 메뉴 카드 (오른쪽 Column용)
+class _MiniMenuCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Color color;
   final Color iconColor;
-  final Color? textColor;
-  final Color? arrowColor;
+  final Color textColor;
   final VoidCallback onTap;
 
-  const _SmallMenuCard({
+  const _MiniMenuCard({
     required this.title,
     required this.icon,
     required this.color,
     required this.iconColor,
-    this.textColor,
-    this.arrowColor,
+    required this.textColor,
     required this.onTap,
   });
 
@@ -1028,53 +1082,34 @@ class _SmallMenuCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 100,
-        padding: const EdgeInsets.all(14),
+        height: 64,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Icon(
+              icon,
+              size: 20,
+              color: iconColor,
+            ),
+            const SizedBox(width: 10),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Icon(
-                    icon,
-                    size: 24,
-                    color: iconColor,
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: textColor ?? iconColor,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        ' ',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
               ),
             ),
             Icon(
               Icons.chevron_right,
-              color: arrowColor ?? iconColor,
-              size: 24,
+              color: textColor.withValues(alpha: 0.6),
+              size: 18,
             ),
           ],
         ),
@@ -1083,69 +1118,3 @@ class _SmallMenuCard extends StatelessWidget {
   }
 }
 
-// 구독 메뉴 카드
-class _SubscriptionMenuCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _SubscriptionMenuCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 100,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFECC2E3),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: const Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Icon(
-                    Icons.coffee_outlined,
-                    size: 24,
-                    color: Color(0xFF9F7395),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '무제한 상담 이용권',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF8A5B80),
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        '월 2,900원부터',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.white,
-              size: 24,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

@@ -26,9 +26,9 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:299956056308:android:377044303745afe5a9aea1",
+        "mobilesdk_app_id": "1:299956056308:android:e67a6f3ed1c2654ba9aea1",
         "android_client_info": {
-          "package_name": "com.example.medical_qa_app"
+          "package_name": "net.agisungong.nanimtalktalk"
         }
       },
       "oauth_client": [],

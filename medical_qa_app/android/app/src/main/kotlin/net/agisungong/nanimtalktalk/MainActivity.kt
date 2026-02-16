@@ -1,4 +1,4 @@
-package com.agisungong.nanimtalktalk
+package net.agisungong.nanimtalktalk
 
 import io.flutter.embedding.android.FlutterActivity
 
