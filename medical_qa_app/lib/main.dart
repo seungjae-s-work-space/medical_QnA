@@ -154,12 +154,19 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
-    if (!authProvider.isAuthenticated) {
+    // 로그인도 안 되어 있고, 게스트도 아닌 경우 → 로그인 화면
+    if (!authProvider.canAccessHome) {
       _notificationInitialized = false;
       _notificationService.stopListening();
       return const LoginScreen();
     }
 
+    // 게스트 모드인 경우 → 홈 화면 (알림 초기화 없음)
+    if (authProvider.isGuest) {
+      return const HomeScreen();
+    }
+
+    // 로그인된 사용자
     // 알림 초기화 (한 번만)
     if (!_notificationInitialized) {
       _notificationInitialized = true;

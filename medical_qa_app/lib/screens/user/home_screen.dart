@@ -28,6 +28,72 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _lastBackPressTime;
   NoticeModel? _latestNotice;
 
+  /// 게스트 모드에서 로그인 필요 기능 접근 시 로그인 유도 다이얼로그
+  void _showLoginRequiredDialog(String feature) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          '로그인이 필요합니다',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF333333),
+          ),
+        ),
+        content: Text(
+          '$feature 기능을 이용하시려면\n로그인이 필요합니다.',
+          style: const TextStyle(
+            fontSize: 16,
+            color: Color(0xFF666666),
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '취소',
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF888888),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              authProvider.exitGuestMode();
+            },
+            child: const Text(
+              '로그인하기',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFB87BA8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 게스트 모드 체크 후 기능 실행
+  bool _checkGuestAndShowLogin(String feature) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isGuest) {
+      _showLoginRequiredDialog(feature);
+      return true; // 게스트임
+    }
+    return false; // 게스트 아님
+  }
+
   // 추천 전문의 리스트
   final List<Map<String, String>> _doctors = const [
     {'name': '허창영', 'hospital': '마리아에스'},
@@ -316,6 +382,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openSubscriptionScreen() {
+    if (_checkGuestAndShowLogin('무제한 상담')) return;
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final subscriptionProvider =
         Provider.of<SubscriptionProvider>(context, listen: false);
@@ -501,6 +569,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNoticeBanner() {
     return GestureDetector(
       onTap: () {
+        if (_checkGuestAndShowLogin('공지사항')) return;
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -831,6 +900,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToChat() {
+    if (_checkGuestAndShowLogin('채팅')) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -844,7 +914,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         if (index == 2) {
+          // 채팅
           _navigateToChat();
+        } else if (index == 3) {
+          // 마이페이지 - 게스트 체크
+          if (_checkGuestAndShowLogin('마이페이지')) return;
+          setState(() => _currentIndex = index);
         } else {
           setState(() => _currentIndex = index);
         }

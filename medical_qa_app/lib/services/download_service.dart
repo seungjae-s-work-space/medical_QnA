@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
@@ -24,7 +24,7 @@ class DownloadService {
       );
 
       // 갤러리에 저장
-      final result = await ImageGallerySaver.saveImage(
+      final result = await ImageGallerySaverPlus.saveImage(
         response.data,
         quality: 100,
         name: fileName,
@@ -68,7 +68,7 @@ class DownloadService {
       );
 
       // 갤러리에 저장
-      final result = await ImageGallerySaver.saveFile(tempPath);
+      final result = await ImageGallerySaverPlus.saveFile(tempPath);
 
       // 임시 파일 삭제
       final tempFile = File(tempPath);

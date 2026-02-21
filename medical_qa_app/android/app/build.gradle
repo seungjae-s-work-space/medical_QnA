@@ -56,6 +56,13 @@ android {
             shrinkResources false
         }
     }
+
+    // 16KB 페이지 크기 지원 (Android 15+)
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 flutter {

@@ -221,7 +221,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 16),
+
+                  // 둘러보기 버튼 (게스트 모드)
+                  TextButton(
+                    onPressed: () {
+                      authProvider.enterGuestMode();
+                    },
+                    child: const Text(
+                      '로그인 없이 둘러보기',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textTertiary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
                 ],
               ),
             ),

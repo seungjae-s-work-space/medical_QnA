@@ -9,12 +9,17 @@ class AuthProvider with ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isGuest = false;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
   bool get isAdmin => _currentUser?.isAdmin ?? false;
+  bool get isGuest => _isGuest;
+
+  /// 로그인된 사용자 또는 게스트 (홈 화면 접근 가능 여부)
+  bool get canAccessHome => _currentUser != null || _isGuest;
 
   AuthProvider() {
     _init();
@@ -118,6 +123,20 @@ class AuthProvider with ChangeNotifier {
   Future<void> signOut() async {
     await _authService.signOut();
     _currentUser = null;
+    _isGuest = false;
+    notifyListeners();
+  }
+
+  // 게스트 모드로 진입
+  void enterGuestMode() {
+    _isGuest = true;
+    _currentUser = null;
+    notifyListeners();
+  }
+
+  // 게스트 모드 종료 (로그인 화면으로)
+  void exitGuestMode() {
+    _isGuest = false;
     notifyListeners();
   }
 
