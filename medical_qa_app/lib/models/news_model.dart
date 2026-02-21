@@ -5,6 +5,7 @@ class NewsModel {
   final String title;
   final String content;
   final String? imageUrl;
+  final String? sourceUrl;
   final String authorId;
   final String authorName;
   final DateTime createdAt;
@@ -16,6 +17,7 @@ class NewsModel {
     required this.title,
     required this.content,
     this.imageUrl,
+    this.sourceUrl,
     required this.authorId,
     required this.authorName,
     required this.createdAt,
@@ -30,6 +32,7 @@ class NewsModel {
       title: data['title'] ?? '',
       content: data['content'] ?? '',
       imageUrl: data['imageUrl'],
+      sourceUrl: data['sourceUrl'],
       authorId: data['authorId'] ?? '',
       authorName: data['authorName'] ?? '관리자',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -43,6 +46,7 @@ class NewsModel {
       'title': title,
       'content': content,
       'imageUrl': imageUrl,
+      'sourceUrl': sourceUrl,
       'authorId': authorId,
       'authorName': authorName,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -56,6 +60,7 @@ class NewsModel {
     String? title,
     String? content,
     String? imageUrl,
+    String? sourceUrl,
     String? authorId,
     String? authorName,
     DateTime? createdAt,
@@ -67,6 +72,7 @@ class NewsModel {
       title: title ?? this.title,
       content: content ?? this.content,
       imageUrl: imageUrl ?? this.imageUrl,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
       authorId: authorId ?? this.authorId,
       authorName: authorName ?? this.authorName,
       createdAt: createdAt ?? this.createdAt,

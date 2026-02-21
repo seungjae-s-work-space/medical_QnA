@@ -135,6 +135,7 @@ function NewsManager({ readOnly = false }) {
   const [selectedImageUrl, setSelectedImageUrl] = useState(null);
   const [customThumbnail, setCustomThumbnail] = useState(null); // 별도 업로드한 썸네일
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState(''); // 기사 원문 링크
   const quillRef = useRef(null);
   const thumbnailInputRef = useRef(null);
 
@@ -331,6 +332,7 @@ function NewsManager({ readOnly = false }) {
     setIsPublished(true);
     setSelectedImageUrl(null);
     setCustomThumbnail(null);
+    setSourceUrl('');
     setEditingArticle(null);
   };
 
@@ -340,6 +342,7 @@ function NewsManager({ readOnly = false }) {
       setTitle(article.title || '');
       setContent(article.content || '');
       setIsPublished(article.isPublished !== false);
+      setSourceUrl(article.sourceUrl || '');
       // 기존 이미지가 본문에 없으면 커스텀 썸네일로 설정
       const existingImages = extractImagesFromContent(article.content || '');
       if (article.imageUrl && !existingImages.includes(article.imageUrl)) {
@@ -392,6 +395,7 @@ function NewsManager({ readOnly = false }) {
           content: convertedContent,
           imageUrl,
           isPublished,
+          sourceUrl: sourceUrl.trim(),
           updatedAt: serverTimestamp(),
         });
         setSnackbar({ open: true, message: '뉴스가 수정되었습니다', severity: 'success' });
@@ -401,6 +405,7 @@ function NewsManager({ readOnly = false }) {
           content: convertedContent,
           imageUrl,
           isPublished,
+          sourceUrl: sourceUrl.trim(),
           authorId: user?.uid || '',
           authorName: '관리자',
           createdAt: serverTimestamp(),
@@ -1103,6 +1108,16 @@ function NewsManager({ readOnly = false }) {
                 })}
               </Box>
             </Box>
+
+            {/* 기사 원문 링크 */}
+            <TextField
+              label="기사 원문 링크"
+              placeholder="https://..."
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              fullWidth
+              helperText="참고한 기사의 원문 URL을 입력해주세요"
+            />
 
             <FormControlLabel
               control={

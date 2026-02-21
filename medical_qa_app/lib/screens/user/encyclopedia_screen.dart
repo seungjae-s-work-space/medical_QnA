@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 import '../../models/encyclopedia_model.dart';
 import '../../services/encyclopedia_service.dart';
+import '../../providers/auth_provider.dart';
 import '../../utils/app_colors.dart';
 import 'package:intl/intl.dart';
 
@@ -322,7 +324,11 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   }
 
   void _openArticleDetail(EncyclopediaModel article) {
-    _service.incrementViewCount(article.id);
+    // 게스트 모드가 아닐 때만 조회수 증가
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isGuest) {
+      _service.incrementViewCount(article.id);
+    }
 
     Navigator.push(
       context,

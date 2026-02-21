@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/news_model.dart';
 import '../../services/news_service.dart';
 import '../../utils/app_colors.dart';
@@ -444,6 +445,52 @@ class NewsDetailScreen extends StatelessWidget {
                   const Divider(color: AppColors.divider),
                   const SizedBox(height: 24),
                   // 본문 (HTML 렌더링)
+                  // 출처 링크
+                  if (news.sourceUrl != null && news.sourceUrl!.isNotEmpty) ...[
+                    GestureDetector(
+                      onTap: () async {
+                        final uri = Uri.parse(news.sourceUrl!);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F5F5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.link,
+                              size: 20,
+                              color: Color(0xFF5B8BA8),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                news.sourceUrl!,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF5B8BA8),
+                                  decoration: TextDecoration.underline,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.open_in_new,
+                              size: 18,
+                              color: Color(0xFF5B8BA8),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   Html(
                     data: _cleanHtmlContent(news.content),
                     extensions: [
