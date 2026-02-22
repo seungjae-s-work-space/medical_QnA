@@ -52,7 +52,7 @@ class SubscriptionPlan {
       currency: 'KRW',
       description: '1개월 동안 무제한 상담',
       iosProductId: 'net.agisungong.nanimtalktalk.monthly',
-      androidProductId: 'subscription_monthly',
+      androidProductId: 'subscription-monthly',
     ),
     SubscriptionPlan(
       id: 'plan_6months',
@@ -63,7 +63,7 @@ class SubscriptionPlan {
       currency: 'KRW',
       description: '17,400원 → 14,900원 (14% 할인)',
       iosProductId: 'net.agisungong.nanimtalktalk.6months',
-      androidProductId: 'subscription_6months',
+      androidProductId: 'subscription-6months',
     ),
     SubscriptionPlan(
       id: 'plan_12months',
@@ -74,7 +74,7 @@ class SubscriptionPlan {
       currency: 'KRW',
       description: '34,800원 → 19,900원 (43% 할인)',
       iosProductId: 'net.agisungong.nanimtalktalk.12months',
-      androidProductId: 'subscription_12months',
+      androidProductId: 'subscription-12months',
     ),
   ];
 
