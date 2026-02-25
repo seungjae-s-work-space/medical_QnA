@@ -77,10 +77,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
                   // 구매 버튼
                   _buildPurchaseButton(provider),
-                  const SizedBox(height: 16),
-
-                  // 구매 복원 버튼
-                  _buildRestoreButton(provider),
                 ],
 
                 const SizedBox(height: 24),
@@ -319,25 +315,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   color: Colors.white,
                 ),
               ),
-      ),
-    );
-  }
-
-  Widget _buildRestoreButton(SubscriptionProvider provider) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: TextButton(
-        onPressed: provider.isLoading
-            ? null
-            : () => provider.restorePurchases(),
-        child: const Text(
-          '이전 구매 복원',
-          style: TextStyle(
-            fontSize: 16,
-            color: AppColors.textSecondary,
-          ),
-        ),
       ),
     );
   }
