@@ -182,19 +182,39 @@ class SubscriptionService {
 
   // 사용자의 현재 구독 정보 가져오기
   Future<SubscriptionModel?> getCurrentSubscription(String userId) async {
-    final querySnapshot = await _firestore
-        .collection('subscriptions')
-        .where('userId', isEqualTo: userId)
-        .where('status', whereIn: ['active', 'cancelled'])
-        .orderBy('endDate', descending: true)
-        .limit(1)
-        .get();
+    try {
+      // 해당 사용자의 모든 구독 가져오기 (복합 인덱스 문제 회피)
+      final querySnapshot = await _firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: userId)
+          .get();
 
-    if (querySnapshot.docs.isEmpty) {
+      if (querySnapshot.docs.isEmpty) {
+        debugPrint('No subscriptions found for user: $userId');
+        return null;
+      }
+
+      // 활성/취소 상태인 구독 중 만료일이 가장 늦은 것 선택
+      final validSubs = querySnapshot.docs
+          .map((doc) => SubscriptionModel.fromFirestore(doc))
+          .where((sub) => sub.status == SubscriptionStatus.active ||
+                          sub.status == SubscriptionStatus.cancelled)
+          .toList();
+
+      if (validSubs.isEmpty) {
+        debugPrint('No active/cancelled subscriptions for user: $userId');
+        return null;
+      }
+
+      // 만료일 기준 내림차순 정렬 후 첫 번째 선택
+      validSubs.sort((a, b) => b.endDate.compareTo(a.endDate));
+
+      debugPrint('Found subscription: ${validSubs.first.planId}, endDate: ${validSubs.first.endDate}');
+      return validSubs.first;
+    } catch (e) {
+      debugPrint('Error fetching subscription: $e');
       return null;
     }
-
-    return SubscriptionModel.fromFirestore(querySnapshot.docs.first);
   }
 
   // 구독 상태 확인 및 업데이트

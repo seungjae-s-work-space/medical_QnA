@@ -60,24 +60,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 const SizedBox(height: 24),
 
                 // 구독 플랜 선택
-                if (!provider.hasActiveSubscription) ...[
-                  const Text(
-                    '구독 플랜 선택',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                Text(
+                  provider.hasActiveSubscription ? '추가 구매' : '구독 플랜 선택',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
                   ),
-                  const SizedBox(height: 16),
-                  ...SubscriptionPlan.defaultPlans.map(
-                    (plan) => _buildPlanCard(plan, provider),
-                  ),
-                  const SizedBox(height: 24),
+                ),
+                const SizedBox(height: 16),
+                ...SubscriptionPlan.defaultPlans.map(
+                  (plan) => _buildPlanCard(plan, provider),
+                ),
+                const SizedBox(height: 24),
 
-                  // 구매 버튼
-                  _buildPurchaseButton(provider),
-                ],
+                // 구매 버튼
+                _buildPurchaseButton(provider),
 
                 const SizedBox(height: 24),
 
@@ -340,7 +338,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const SizedBox(height: 12),
           _buildInfoItem('구독은 자동으로 갱신되지 않습니다.'),
           _buildInfoItem('구매 후 환불은 각 앱스토어 정책을 따릅니다.'),
-          _buildInfoItem('구독 기간 중 기기 변경 시 구매 복원을 이용하세요.'),
+          _buildInfoItem('구독은 계정에 연결되어 같은 계정으로 로그인하면 자동 적용됩니다.'),
           _buildInfoItem('문의사항은 고객센터로 연락해 주세요.'),
           const SizedBox(height: 16),
           const Divider(height: 1, color: Color(0xFFE0E0E0)),
