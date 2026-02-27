@@ -53,17 +53,33 @@ class SubscriptionService {
 
   // 상품 정보 로드
   Future<void> loadProducts() async {
-    if (!_isAvailable) return;
+    debugPrint('=== Loading IAP Products ===');
+    debugPrint('IAP Available: $_isAvailable');
+    debugPrint('Product IDs to query: $_productIds');
+
+    if (!_isAvailable) {
+      debugPrint('IAP not available, skipping product load');
+      return;
+    }
 
     final ProductDetailsResponse response =
         await _iap.queryProductDetails(_productIds);
 
+    debugPrint('Query response - Found: ${response.productDetails.length}, Not found: ${response.notFoundIDs.length}');
+
     if (response.notFoundIDs.isNotEmpty) {
-      debugPrint('Products not found: ${response.notFoundIDs}');
+      debugPrint('Products NOT found: ${response.notFoundIDs}');
+    }
+
+    if (response.error != null) {
+      debugPrint('Query error: ${response.error}');
     }
 
     _products = response.productDetails;
-    debugPrint('Loaded ${_products.length} products');
+    for (final product in _products) {
+      debugPrint('Product loaded: ${product.id} - ${product.title} - ${product.price}');
+    }
+    debugPrint('=== Total ${_products.length} products loaded ===');
   }
 
   // 구매 스트림 리스닝 시작
@@ -115,7 +131,8 @@ class SubscriptionService {
     );
 
     try {
-      return await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+      // App Store Connect에서 소모품(Consumable)으로 설정된 경우 buyConsumable 사용
+      return await _iap.buyConsumable(purchaseParam: purchaseParam);
     } catch (e) {
       debugPrint('Purchase error: $e');
       return false;
@@ -141,7 +158,19 @@ class SubscriptionService {
     required PurchaseDetails purchaseDetails,
   }) async {
     final now = DateTime.now();
-    final endDate = now.add(Duration(days: plan.durationMonths * 30));
+
+    // 기존 구독 확인 - 잔여 기간이 있으면 그 이후부터 추가
+    final currentSubscription = await getCurrentSubscription(userId);
+    DateTime baseDate = now;
+
+    if (currentSubscription != null && currentSubscription.endDate.isAfter(now)) {
+      // 기존 구독의 만료일이 아직 남아있으면 그 날짜부터 추가
+      baseDate = currentSubscription.endDate;
+      debugPrint('Extending from existing subscription end date: $baseDate');
+    }
+
+    final endDate = baseDate.add(Duration(days: plan.durationMonths * 30));
+    debugPrint('New subscription end date: $endDate');
 
     final subscription = SubscriptionModel(
       id: '', // Firestore에서 자동 생성
