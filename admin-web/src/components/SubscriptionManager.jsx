@@ -43,6 +43,9 @@ import {
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import BlockIcon from '@mui/icons-material/Block';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import HistoryIcon from '@mui/icons-material/History';
 import { colors } from '../theme';
 
 const SUBSCRIPTION_PLANS = {
@@ -79,6 +82,9 @@ function SubscriptionManager() {
 
   // Snackbar
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  // 펼쳐진 사용자 히스토리
+  const [expandedUsers, setExpandedUsers] = useState({});
 
   // 전체 사용자 목록 가져오기
   useEffect(() => {
@@ -135,20 +141,80 @@ function SubscriptionManager() {
     return true;
   });
 
-  // 통계 계산 (allSubscriptions 기반)
-  useEffect(() => {
-    let active = 0;
-    let expired = 0;
+  // 사용자별로 구독 그룹화
+  const groupedSubscriptions = subscriptions.reduce((acc, sub) => {
+    const userId = sub.userId;
+    if (!acc[userId]) {
+      acc[userId] = [];
+    }
+    acc[userId].push(sub);
+    return acc;
+  }, {});
 
-    allSubscriptions.forEach((sub) => {
-      if (isActuallyActive(sub)) {
-        active++;
+  // 각 사용자별 최신 만료일 계산 (가장 늦은 만료일)
+  const getUserSummary = (userSubs) => {
+    // 만료일 기준 내림차순 정렬
+    const sorted = [...userSubs].sort((a, b) => {
+      const aDate = a.endDate?.toDate() || new Date(0);
+      const bDate = b.endDate?.toDate() || new Date(0);
+      return bDate - aDate;
+    });
+
+    // 가장 늦은 만료일
+    const latestEndDate = sorted[0]?.endDate;
+
+    // 활성 구독이 있는지
+    const hasActive = sorted.some(s => isActuallyActive(s));
+
+    // 최근 플랜 (가장 마지막 구매)
+    const sortedByCreated = [...userSubs].sort((a, b) => {
+      const aDate = a.createdAt?.toDate() || new Date(0);
+      const bDate = b.createdAt?.toDate() || new Date(0);
+      return bDate - aDate;
+    });
+    const latestPlan = sortedByCreated[0];
+
+    return {
+      latestEndDate,
+      hasActive,
+      latestPlan,
+      totalSubscriptions: userSubs.length,
+    };
+  };
+
+  // 사용자 히스토리 토글
+  const toggleUserExpand = (userId) => {
+    setExpandedUsers(prev => ({
+      ...prev,
+      [userId]: !prev[userId],
+    }));
+  };
+
+  // 통계 계산 (사용자 수 기준)
+  useEffect(() => {
+    // 사용자별로 그룹화
+    const userGroups = allSubscriptions.reduce((acc, sub) => {
+      if (!acc[sub.userId]) {
+        acc[sub.userId] = [];
+      }
+      acc[sub.userId].push(sub);
+      return acc;
+    }, {});
+
+    let activeUsers = 0;
+    let expiredUsers = 0;
+
+    Object.values(userGroups).forEach((userSubs) => {
+      const hasActive = userSubs.some(s => isActuallyActive(s));
+      if (hasActive) {
+        activeUsers++;
       } else {
-        expired++;
+        expiredUsers++;
       }
     });
 
-    setStats({ total: allSubscriptions.length, active, expired });
+    const totalUsers = Object.keys(userGroups).length;
+    setStats({ total: totalUsers, active: activeUsers, expired: expiredUsers });
   }, [allSubscriptions]);
 
   // 구독이 없는 사용자 필터링 (admin 계정 제외)
@@ -467,84 +533,186 @@ function SubscriptionManager() {
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: '#FAFAFA' }}>
+                  <TableCell sx={{ fontWeight: 600, width: 40 }}></TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>사용자</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>플랜</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>상태</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>플랫폼</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>시작일</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>만료일</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>남은 기간</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>관리</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {subscriptions.length === 0 ? (
+                {Object.keys(groupedSubscriptions).length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} align="center" sx={{ py: 8, color: colors.textSecondary }}>
                       구독 내역이 없습니다
                     </TableCell>
                   </TableRow>
                 ) : (
-                  subscriptions.map((subscription) => {
-                    const user = users[subscription.userId];
-                    const endDate = subscription.endDate?.toDate();
-                    const isActive = subscription.status === 'active' && endDate && endDate > new Date();
-                    const remainingDays = getRemainingDays(subscription.endDate);
+                  Object.entries(groupedSubscriptions).map(([userId, userSubs]) => {
+                    const user = users[userId];
+                    const summary = getUserSummary(userSubs);
+                    const isExpanded = expandedUsers[userId];
+                    const remainingDays = getRemainingDays(summary.latestEndDate);
+                    const latestSub = summary.latestPlan;
 
                     return (
-                      <TableRow key={subscription.id} hover>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                              {user?.name || '알 수 없음'}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: colors.textSecondary }}>
-                              {user?.email || ''}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          {SUBSCRIPTION_PLANS[subscription.planId] || subscription.planId || '-'}
-                        </TableCell>
-                        <TableCell>{getStatusChip(subscription)}</TableCell>
-                        <TableCell sx={{ textTransform: 'uppercase' }}>
-                          {subscription.platform || '-'}
-                        </TableCell>
-                        <TableCell>{formatDate(subscription.startDate)}</TableCell>
-                        <TableCell>{formatDate(subscription.endDate)}</TableCell>
-                        <TableCell>
-                          {isActive ? (
-                            <Chip
-                              label={`${remainingDays}일`}
-                              size="small"
-                              sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', fontWeight: 600 }}
-                            />
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleExtendOpen(subscription)}
-                              sx={{ color: '#4CAF50' }}
-                              title="기간 연장"
-                            >
-                              <AddCircleOutlineIcon />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleBlockOpen(subscription)}
-                              disabled={!isActive}
-                              sx={{ color: isActive ? '#F44336' : '#E0E0E0' }}
-                              title="이용 차단"
-                            >
-                              <BlockIcon />
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
+                      <>
+                        {/* 사용자 메인 행 */}
+                        <TableRow key={userId} hover sx={{ bgcolor: isExpanded ? '#F5F5F5' : 'inherit' }}>
+                          <TableCell>
+                            {userSubs.length > 1 && (
+                              <IconButton
+                                size="small"
+                                onClick={() => toggleUserExpand(userId)}
+                                sx={{ p: 0.5 }}
+                              >
+                                {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                              </IconButton>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {user?.name || '알 수 없음'}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: colors.textSecondary }}>
+                                {user?.email || ''}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {SUBSCRIPTION_PLANS[latestSub?.planId] || latestSub?.planId || '-'}
+                              {userSubs.length > 1 && (
+                                <Chip
+                                  icon={<HistoryIcon sx={{ fontSize: 14 }} />}
+                                  label={`${userSubs.length}건`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#E3F2FD',
+                                    color: '#1976D2',
+                                    fontSize: 11,
+                                    height: 20,
+                                    cursor: 'pointer',
+                                    '& .MuiChip-icon': { color: '#1976D2' }
+                                  }}
+                                  onClick={() => toggleUserExpand(userId)}
+                                />
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            {summary.hasActive ? (
+                              <Chip label="활성" size="small" sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', fontWeight: 600 }} />
+                            ) : (
+                              <Chip label="만료" size="small" sx={{ bgcolor: '#FFF3E0', color: '#FF9800', fontWeight: 600 }} />
+                            )}
+                          </TableCell>
+                          <TableCell sx={{ textTransform: 'uppercase' }}>
+                            {latestSub?.platform || '-'}
+                          </TableCell>
+                          <TableCell>{formatDate(summary.latestEndDate)}</TableCell>
+                          <TableCell>
+                            {summary.hasActive ? (
+                              <Chip
+                                label={`${remainingDays}일`}
+                                size="small"
+                                sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', fontWeight: 600 }}
+                              />
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleExtendOpen(latestSub)}
+                                sx={{ color: '#4CAF50' }}
+                                title="기간 연장"
+                              >
+                                <AddCircleOutlineIcon />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleBlockOpen(latestSub)}
+                                disabled={!summary.hasActive}
+                                sx={{ color: summary.hasActive ? '#F44336' : '#E0E0E0' }}
+                                title="이용 차단"
+                              >
+                                <BlockIcon />
+                              </IconButton>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* 히스토리 행들 (펼쳤을 때) */}
+                        {isExpanded && userSubs.map((subscription, idx) => (
+                          <TableRow
+                            key={subscription.id}
+                            sx={{
+                              bgcolor: '#FAFAFA',
+                              '& td': { borderBottom: idx === userSubs.length - 1 ? '2px solid #E0E0E0' : undefined }
+                            }}
+                          >
+                            <TableCell></TableCell>
+                            <TableCell>
+                              <Typography variant="caption" sx={{ color: colors.textSecondary, pl: 2 }}>
+                                └ {formatDate(subscription.createdAt)} 구매
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" sx={{ color: colors.textSecondary }}>
+                                {SUBSCRIPTION_PLANS[subscription.planId] || subscription.planId || '-'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>{getStatusChip(subscription)}</TableCell>
+                            <TableCell sx={{ textTransform: 'uppercase', color: colors.textSecondary }}>
+                              {subscription.platform || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" sx={{ color: colors.textSecondary }}>
+                                {formatDate(subscription.endDate)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              {isActuallyActive(subscription) ? (
+                                <Chip
+                                  label={`${getRemainingDays(subscription.endDate)}일`}
+                                  size="small"
+                                  sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', fontWeight: 600, fontSize: 11 }}
+                                />
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', gap: 1 }}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleExtendOpen(subscription)}
+                                  sx={{ color: '#4CAF50', fontSize: 18 }}
+                                  title="기간 연장"
+                                >
+                                  <AddCircleOutlineIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleBlockOpen(subscription)}
+                                  disabled={!isActuallyActive(subscription)}
+                                  sx={{ color: isActuallyActive(subscription) ? '#F44336' : '#E0E0E0' }}
+                                  title="이용 차단"
+                                >
+                                  <BlockIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </>
                     );
                   })
                 )}

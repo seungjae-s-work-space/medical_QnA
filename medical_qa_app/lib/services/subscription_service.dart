@@ -131,8 +131,12 @@ class SubscriptionService {
     );
 
     try {
-      // App Store Connect에서 소모품(Consumable)으로 설정된 경우 buyConsumable 사용
-      return await _iap.buyConsumable(purchaseParam: purchaseParam);
+      // 소모품(Consumable)으로 설정된 경우 buyConsumable 사용
+      // autoConsume: false로 설정하여 직접 소비 처리 (Firestore 저장 후)
+      return await _iap.buyConsumable(
+        purchaseParam: purchaseParam,
+        autoConsume: false,
+      );
     } catch (e) {
       debugPrint('Purchase error: $e');
       return false;
