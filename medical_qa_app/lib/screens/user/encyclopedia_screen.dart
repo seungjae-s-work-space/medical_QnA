@@ -6,8 +6,10 @@ import 'package:provider/provider.dart';
 import '../../models/encyclopedia_model.dart';
 import '../../services/encyclopedia_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/subscription_provider.dart';
 import '../../utils/app_colors.dart';
 import 'package:intl/intl.dart';
+import 'subscription_screen.dart';
 
 class EncyclopediaScreen extends StatefulWidget {
   const EncyclopediaScreen({super.key});
@@ -324,6 +326,12 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   }
 
   void _openArticleDetail(EncyclopediaModel article) {
+    final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+    if (!subscriptionProvider.hasActiveSubscription) {
+      _showSubscriptionRequiredSheet();
+      return;
+    }
+
     // 게스트 모드가 아닐 때만 조회수 증가
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (!authProvider.isGuest) {
@@ -334,6 +342,110 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => EncyclopediaDetailScreen(article: article),
+      ),
+    );
+  }
+
+  void _showSubscriptionRequiredSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.of(context).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0E0E0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0D8E8),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Icon(
+                Icons.workspace_premium,
+                size: 40,
+                color: Color(0xFFB87BA8),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              '이용권이 필요해요',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF333333),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '글을 보시려면\n이용권이 필요합니다.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF888888),
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SubscriptionScreen(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFB87BA8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  '이용권 구매하기',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                '나중에 할게요',
+                style: TextStyle(fontSize: 16, color: Color(0xFF888888)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

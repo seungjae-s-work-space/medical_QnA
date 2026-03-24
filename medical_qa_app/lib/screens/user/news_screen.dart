@@ -242,70 +242,6 @@ class _NewsScreenState extends State<NewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final subscriptionProvider = Provider.of<SubscriptionProvider>(context);
-
-    if (!subscriptionProvider.hasActiveSubscription) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0D8E8),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Icon(
-                Icons.workspace_premium,
-                size: 40,
-                color: Color(0xFFB87BA8),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              '이용권이 필요해요',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF333333),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '뉴스를 보시려면\n이용권이 필요합니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Color(0xFF888888),
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _showSubscriptionRequiredSheet,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB87BA8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              ),
-              child: const Text(
-                '이용권 구매하기',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return Column(
       children: [
         // 검색 바
@@ -479,6 +415,11 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   void _openNewsDetail(NewsModel news) {
+    final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+    if (!subscriptionProvider.hasActiveSubscription) {
+      _showSubscriptionRequiredSheet();
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
