@@ -1,6 +1,6 @@
-# 의료 Q&A 앱 - 완성!
+# 난임상담톡톡 (gukitso)
 
-의료 전문가와 일반 사용자 간 1:1 Q&A 채팅 시스템
+난임 전문가와 일반 사용자 간 1:1 상담 채팅 서비스
 
 ## 프로젝트 구조
 
@@ -10,78 +10,80 @@ gukitso/
 ├── medical_qa_app/             # Flutter 앱 (사용자 + 관리자)
 │   ├── lib/
 │   │   ├── main.dart
-│   │   ├── models/             # User, Conversation, Message 모델
-│   │   ├── services/           # Firebase Auth, Firestore, Storage
-│   │   ├── providers/          # AuthProvider (상태관리)
+│   │   ├── models/             # User, Subscription, Message, News, Encyclopedia 모델
+│   │   ├── services/           # Firebase Auth, Firestore, Storage, IAP, News, Encyclopedia
+│   │   ├── providers/          # AuthProvider, SubscriptionProvider
 │   │   ├── screens/
 │   │   │   ├── auth/           # 로그인, 회원가입
-│   │   │   ├── user/           # 사용자 채팅 화면
-│   │   │   └── admin/          # 관리자 질문 목록 + 채팅
-│   │   └── widgets/            # MessageBubble, ConversationTile
+│   │   │   ├── user/           # 채팅, 구독, 뉴스, 백과, 공지
+│   │   │   └── admin/          # 관리자 채팅, 뉴스/백과/공지 관리
+│   │   └── widgets/
 │   ├── pubspec.yaml
-│   └── firestore.rules         # Firestore 보안 규칙
+│   └── firestore.rules
 │
-└── admin-web/                  # React 웹 (관리자 전용)
-    ├── src/
-    │   ├── App.jsx
-    │   ├── firebase.js
-    │   └── components/
-    │       ├── Login.jsx
-    │       ├── ConversationList.jsx
-    │       └── ChatWindow.jsx
-    └── package.json
+├── admin-web/                  # React 웹 (관리자 전용)
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── firebase.js
+│   │   └── components/
+│   │       ├── Login.jsx
+│   │       ├── ConversationList.jsx
+│   │       ├── ChatWindow.jsx
+│   │       ├── SubscriptionManager.jsx
+│   │       ├── NewsManager.jsx
+│   │       ├── EncyclopediaManager.jsx
+│   │       ├── NoticeManager.jsx
+│   │       └── VideoManager.jsx
+│   └── package.json
+│
+└── functions/                  # Firebase Cloud Functions
 ```
 
 ## 주요 기능
 
-### Flutter 앱
-- ✅ **일반 사용자**: 의료 전문가와 1:1 채팅
-- ✅ **관리자**: 모든 질문 목록 확인 및 응답
-- ✅ 실시간 메시지 전송/수신
-- ✅ 이미지 첨부 기능
-- ✅ 읽지 않은 메시지 카운트
-- ✅ role 기반 UI 자동 전환 (user/admin)
+### Flutter 앱 (사용자)
+- ✅ **1:1 채팅** - 난임 전문가와 실시간 상담 (구독 필요)
+- ✅ **인앱결제 (IAP)** - iOS App Store / Android Google Play
+  - 월간 이용권 (1개월), 6개월 이용권, 12개월 이용권
+  - 구독 기간 누적 (잔여 기간 + 새 기간)
+- ✅ **난임뉴스** - 목록 무료 공개, 개별 글 구독 필요
+- ✅ **난임백과** - 목록 무료 공개, 개별 글 구독 필요
+- ✅ **공지사항** - 전체 공개
+- ✅ **게스트 모드** - 로그인 없이 일부 기능 이용
+- ✅ **이미지 첨부** - 채팅 내 이미지/파일 전송
+
+### Flutter 앱 (관리자)
+- ✅ 상담 목록 확인 및 응답
+- ✅ 뉴스/백과/공지 콘텐츠 관리
 
 ### 관리자 웹
-- ✅ 관리자 로그인
-- ✅ 질문 목록 (미읽음 뱃지)
+- ✅ 구독자 관리 (사용자별 그룹화, 히스토리 조회)
+- ✅ 구독 부여/연장/만료 처리
+- ✅ 미구독 사용자 목록 및 구독 부여
+- ✅ 뉴스 / 백과 / 공지 / 영상 콘텐츠 관리
 - ✅ 실시간 채팅
-- ✅ 반응형 디자인
 
-## 시작하기
+## 인앱결제 상품 ID
 
-### 1. Firebase 설정 (필수!)
+| 플랜 | iOS (App Store) | Android (Google Play) |
+|------|----------------|----------------------|
+| 월간 | `net.agisungong.nanimtalktalk.monthly` | `subscription_monthly` |
+| 6개월 | `net.agisungong.nanimtalktalk.6months` | `subscription_6months` |
+| 12개월 | `net.agisungong.nanimtalktalk.12months` | `subscription_12months` |
 
-[SETUP_GUIDE.md](./SETUP_GUIDE.md)를 참고하여 Firebase 프로젝트를 생성하고 설정하세요.
+- iOS: 소모품(Consumable) 타입
+- Android: 일회성 제품(One-time product) 타입
 
-### 2. Flutter 앱 실행
+## 구독 접근 제어
 
-```bash
-cd medical_qa_app
-
-# Flutter 프로젝트와 Firebase 연결
-flutterfire configure
-
-# 패키지 설치
-flutter pub get
-
-# 실행
-flutter run
-```
-
-### 3. 관리자 웹 실행
-
-```bash
-cd admin-web
-
-# 패키지 설치
-npm install
-
-# src/firebase.js 파일에 Firebase 설정 입력
-
-# 개발 서버 실행
-npm start
-```
+| 기능 | 비구독 | 구독 |
+|------|-------|------|
+| 채팅 | 메시지 전송 불가 | ✅ |
+| 뉴스 목록 | ✅ | ✅ |
+| 뉴스 상세 | 구독 유도 | ✅ |
+| 백과 목록 | ✅ | ✅ |
+| 백과 상세 | 구독 유도 | ✅ |
+| 공지사항 | ✅ | ✅ |
 
 ## 데이터베이스 구조
 
@@ -93,10 +95,26 @@ users/
     - role: "user" | "admin"
     - name: string
     - email: string
+    - subscriptionId: string
+    - subscriptionStatus: "free" | "active" | "expired" | "cancelled"
+    - subscriptionEndDate: Timestamp
     - createdAt: Timestamp
 
+subscriptions/
+  {subscriptionId}
+    - userId: string
+    - planId: "plan_monthly" | "plan_6months" | "plan_12months" | "admin_grant"
+    - status: "active" | "expired" | "cancelled"
+    - platform: "ios" | "android" | "admin"
+    - platformProductId: string
+    - transactionId: string
+    - startDate: Timestamp
+    - endDate: Timestamp
+    - createdAt: Timestamp
+    - updatedAt: Timestamp
+
 conversations/
-  user_{userId}  # conversationId
+  user_{userId}
     - userId: string
     - userName: string
     - lastMessage: string
@@ -108,116 +126,88 @@ conversations/
       {messageId}
         - senderId: string
         - senderRole: "user" | "admin"
-        - senderName: string
         - text: string
-        - imageUrl: string | null
+        - attachments: []
         - isRead: boolean
         - createdAt: Timestamp
+
+news/
+  {newsId}
+    - title: string
+    - content: string (HTML)
+    - authorName: string
+    - imageUrl: string | null
+    - sourceUrl: string | null
+    - isPublished: boolean
+    - createdAt: Timestamp
+
+encyclopedia/
+  {articleId}
+    - title: string
+    - content: string (HTML)
+    - authorName: string
+    - imageUrl: string | null
+    - references: string | null
+    - sourceUrl: string | null
+    - viewCount: number
+    - isPublished: boolean
+    - createdAt: Timestamp
 ```
 
-## 보안 규칙
+## 시작하기
 
-Firestore Security Rules:
-- ✅ 사용자는 자신의 대화방만 접근 가능
-- ✅ 관리자는 모든 대화방 접근 가능
-- ✅ 메시지는 해당 대화방 참여자만 읽기 가능
+### 1. Firebase 설정
+[SETUP_GUIDE.md](./SETUP_GUIDE.md) 참고
 
-## 첫 관리자 계정 생성
-
-### 방법 1: Firebase Console
-1. Authentication → 사용자 → 사용자 추가
-2. 이메일/비밀번호 입력
-3. Firestore Database → users → 문서 추가:
-   ```
-   {
-     "userId": "{생성된 UID}",
-     "role": "admin",
-     "name": "관리자",
-     "email": "admin@example.com",
-     "createdAt": {현재 시간}
-   }
-   ```
-
-### 방법 2: 앱에서 회원가입 후
-1. 앱에서 일반 회원가입
-2. Firestore에서 해당 user의 `role`을 `admin`으로 변경
-3. 앱 재시작 → 자동으로 관리자 화면 표시
-
-## 비용 예상 (일 1000건)
-
-- Firestore 읽기: ~$5/월
-- Storage: ~$2/월
-- Authentication: 무료
-- Hosting (웹): 무료
-- **총: ~$7/월**
-
-## 배포
-
-### Android APK 빌드
+### 2. Flutter 앱 실행
 ```bash
 cd medical_qa_app
-flutter build apk --release
+flutter pub get
+flutter run
 ```
 
-### iOS 빌드 (Mac 필요)
-```bash
-flutter build ios --release
-```
-
-### 웹 배포 (Firebase Hosting)
+### 3. 관리자 웹 실행
 ```bash
 cd admin-web
-npm run build
-firebase init hosting
-firebase deploy --only hosting
+npm install
+npm start
 ```
 
 ## 기술 스택
 
 ### Flutter 앱
 - Flutter 3.0+
-- Firebase (Core, Auth, Firestore, Storage, Messaging)
+- Firebase (Core, Auth, Firestore, Storage)
+- in_app_purchase (iOS/Android IAP)
 - Provider (상태관리)
-- cached_network_image
-- image_picker
+- flutter_html, cached_network_image
 
 ### 관리자 웹
 - React 18
 - Firebase JS SDK
 - Material-UI (MUI)
-- React Router
 
-## 문제 해결
+### Backend
+- Firebase Cloud Functions
+- Firestore
+- Firebase Storage
 
-### "FirebaseOptions cannot be null"
+## 배포
+
+### Android
 ```bash
-flutterfire configure
+cd medical_qa_app
+flutter build appbundle --release
 ```
 
-### Android 빌드 실패
-```gradle
-// android/app/build.gradle
-minSdk = 23
+### iOS
+```bash
+flutter build ios --release
 ```
 
-### 웹에서 Firebase 연결 안됨
-`admin-web/src/firebase.js` 파일에 Firebase 설정 정보를 올바르게 입력했는지 확인
-
-## 다음 단계
-
-### 추가 기능 아이디어
-- [ ] 푸시 알림 (FCM)
-- [ ] 프로필 이미지 업로드
-- [ ] 통계 대시보드 (일일/주간 질문 수)
-- [ ] 대화방 검색 기능
-- [ ] 메시지 삭제/수정
-- [ ] 다국어 지원
-
-## 라이선스
-
-이 프로젝트는 학습 및 개인 사용을 위한 샘플 코드입니다.
-
----
-
-**제작**: 의료 Q&A 앱
-**문의**: Firebase 설정은 [SETUP_GUIDE.md](./SETUP_GUIDE.md) 참고
+### 관리자 웹 (Firebase Hosting)
+```bash
+cd admin-web
+npm run build
+firebase deploy --only hosting
+```
