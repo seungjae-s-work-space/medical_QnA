@@ -67,7 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final authProvider =
+                  Provider.of<AuthProvider>(context, listen: false);
               authProvider.exitGuestMode();
             },
             child: const Text(
@@ -409,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // 앱바 이미지
           Image.asset(
-            'assets/images/appbar_section4x.png',
+            'assets/images/appbar_section4xreal.png',
             height: 65,
             fit: BoxFit.contain,
           ),
@@ -432,41 +433,12 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: _NewMenuCard(
-                  title: '난임백과',
-                  icon: Icons.menu_book_rounded,
-                  color: const Color(0xFFFFC77D),
-                  iconColor: const Color(0xFFBC843D),
-                  buttonBorderColor: Colors.white,
-                  onTap: () => setState(() => _currentIndex = 1),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _NewMenuCard(
-                  title: '난임톡톡 소개',
-                  icon: Icons.assignment_outlined,
-                  color: const Color(0xFF87C6FF),
-                  iconColor: const Color(0xFF5A83CF),
-                  buttonBorderColor: Colors.white,
-                  onTap: _showAboutSheet,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // 난임뉴스 (왼쪽) + 아기성공TV, 무제한상담 (오른쪽 Column)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 왼쪽: 난임뉴스 (큰 카드)
-              Expanded(
-                child: _NewMenuCard(
                   title: '난임뉴스',
+                  titleColor: const Color(0xFFBC843D),
                   icon: Icons.public,
-                  color: const Color(0xFF87C6FF),
-                  iconColor: const Color(0xFF5A83CF),
-                  buttonBorderColor: Colors.white,
+                  color: const Color(0xFFFBF2D1),
+                  iconColor: const Color(0xFFBC843D),
+                  buttonBorderColor: const Color(0xFFBC843D),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -499,6 +471,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 12),
+              Expanded(
+                child: _NewMenuCard(
+                  title: '난임톡톡 소개',
+                  titleColor: const Color(0xFF5288B1),
+                  icon: Icons.assignment_outlined,
+                  color: const Color(0xFFDCEFFF),
+                  iconColor: const Color(0xFF5288B1),
+                  buttonBorderColor: const Color(0xFF5288B1),
+                  onTap: _showAboutSheet,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // 난임뉴스 (왼쪽) + 아기성공TV, 무제한상담 (오른쪽 Column)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 왼쪽: 난임뉴스 (큰 카드)
+              Expanded(
+                child: _NewMenuCard(
+                  title: '난임백과',
+                  titleColor: const Color(0xFF5288B1),
+                  icon: Icons.menu_book_rounded,
+                  color: const Color(0xFFDCEFFF),
+                  iconColor: const Color(0xFF5288B1),
+                  buttonBorderColor: const Color(0xFF5288B1),
+                  onTap: () => setState(() => _currentIndex = 1),
+                ),
+              ),
+              const SizedBox(width: 12),
               // 오른쪽: 아기성공TV + 무제한상담 (Column)
               Expanded(
                 child: Column(
@@ -507,8 +511,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: '아기성공TV',
                       icon: Icons.play_circle_filled,
                       color: const Color(0xFFFFCDD2),
-                      iconColor: const Color(0xFFFF0000),
-                      textColor: const Color(0xFFC62828),
+                      iconColor: const Color(0xFFE62B83),
+                      textColor: const Color(0xFFE62B83),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -544,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: '무제한 상담',
                       icon: Icons.coffee_outlined,
                       color: const Color(0xFFECC2E3),
-                      iconColor: const Color(0xFF9F7395),
+                      iconColor: const Color(0xFF8A5B80),
                       textColor: const Color(0xFF8A5B80),
                       onTap: () => _openSubscriptionScreen(),
                     ),
@@ -579,7 +583,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: AppColors.background,
                 elevation: 0,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                  icon: const Icon(Icons.arrow_back,
+                      color: AppColors.textPrimary),
                   onPressed: () => Navigator.pop(context),
                 ),
                 title: const Text(
@@ -601,7 +606,7 @@ class _HomeScreenState extends State<HomeScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFE0B2),
+          color: const Color(0xFFFCF8ED),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -610,12 +615,12 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9800),
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.campaign_rounded,
-                color: Colors.white,
+                color: Color(0xffE62B83),
                 size: 18,
               ),
             ),
@@ -626,7 +631,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFE65100),
+                  color: Color(0xFF696969),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -634,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const Icon(
               Icons.chevron_right,
-              color: Color(0xFFE65100),
+              color: Color(0xFF696969),
               size: 20,
             ),
           ],
@@ -968,7 +973,8 @@ class _HomeScreenState extends State<HomeScreen> {
           // 홈 탭에서는 더블탭으로 종료
           final now = DateTime.now();
           if (_lastBackPressTime == null ||
-              now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+              now.difference(_lastBackPressTime!) >
+                  const Duration(seconds: 2)) {
             _lastBackPressTime = now;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -986,54 +992,69 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.background,
         extendBody: true,
         appBar: _currentIndex != 0
-          ? AppBar(
-              backgroundColor: AppColors.background,
-              elevation: 0,
-              title: Text(
-                _getAppBarTitle(),
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
+            ? AppBar(
+                backgroundColor: AppColors.background,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                  onPressed: () => setState(() => _currentIndex = 0),
                 ),
-              ),
-              centerTitle: true,
-            )
-          : null,
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(
-          index: _currentIndex == 2 ? 0 : _currentIndex, // 채팅은 별도 화면으로 이동
-          children: [
-            _buildHomeContent(),
-            _buildEncyclopediaContent(),
-            _buildHomeContent(), // placeholder (채팅은 Navigator로 이동)
-            _buildMyPageContent(),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: const BoxDecoration(
-          color: Colors.transparent,
-        ),
-        child: Container(
-          height: 64,
-          decoration: BoxDecoration(
-            color: const Color(0xFF2C2C2C),
-            borderRadius: BorderRadius.circular(32),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                title: Text(
+                  _getAppBarTitle(),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                centerTitle: true,
+              )
+            : null,
+        body: SafeArea(
+          bottom: false,
+          child: IndexedStack(
+            index: _currentIndex == 2 ? 0 : _currentIndex, // 채팅은 별도 화면으로 이동
             children: [
-              _buildNavItem(0, Icons.home_outlined, Icons.home),
-              _buildNavItem(1, Icons.grid_view_outlined, Icons.grid_view),
-              _buildNavItem(2, Icons.chat_bubble_outline, Icons.chat_bubble),
-              _buildNavItem(3, Icons.person_outline, Icons.person),
+              _buildHomeContent(),
+              _buildEncyclopediaContent(),
+              _buildHomeContent(), // placeholder (채팅은 Navigator로 이동)
+              _buildMyPageContent(),
             ],
           ),
         ),
-      ),
+        floatingActionButton: _currentIndex == 0
+            ? FloatingActionButton(
+                onPressed: () {
+                  if (_checkGuestAndShowLogin('마이페이지')) return;
+                  setState(() => _currentIndex = 3);
+                },
+                backgroundColor: const Color(0xFF2C2C2C),
+                child: const Icon(Icons.person_outline, color: Colors.white),
+              )
+            : null,
+        // bottomNavigationBar: Container(
+        //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        //   decoration: const BoxDecoration(
+        //     color: Colors.transparent,
+        //   ),
+        //   child: Container(
+        //     height: 64,
+        //     decoration: BoxDecoration(
+        //       color: const Color(0xFF2C2C2C),
+        //       borderRadius: BorderRadius.circular(32),
+        //     ),
+        //     child: Row(
+        //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        //       children: [
+        //         _buildNavItem(0, Icons.home_outlined, Icons.home),
+        //         _buildNavItem(1, Icons.grid_view_outlined, Icons.grid_view),
+        //         _buildNavItem(2, Icons.chat_bubble_outline, Icons.chat_bubble),
+        //         _buildNavItem(3, Icons.person_outline, Icons.person),
+        //       ],
+        //     ),
+        //   ),
+        // ),
+
       ),
     );
   }
@@ -1052,7 +1073,7 @@ class _ChatBanner extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Image.asset(
-          'assets/images/chatting4x.png',
+          'assets/images/chatting4xreal.png',
           width: double.infinity,
           fit: BoxFit.contain,
         ),
@@ -1068,6 +1089,7 @@ class _NewMenuCard extends StatelessWidget {
   final Color color;
   final Color iconColor;
   final Color buttonBorderColor;
+  final Color titleColor;
   final VoidCallback onTap;
 
   const _NewMenuCard({
@@ -1076,6 +1098,7 @@ class _NewMenuCard extends StatelessWidget {
     required this.color,
     required this.iconColor,
     required this.buttonBorderColor,
+    this.titleColor = AppColors.textPrimary,
     required this.onTap,
   });
 
@@ -1103,16 +1126,16 @@ class _NewMenuCard extends StatelessWidget {
             // 타이틀
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
+                color: titleColor,
               ),
             ),
             const SizedBox(height: 10),
             // view 버튼 (테두리 스타일)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
               decoration: BoxDecoration(
                 color: Colors.transparent,
                 border: Border.all(color: buttonBorderColor, width: 1.5),
@@ -1176,14 +1199,14 @@ class _MiniMenuCard extends StatelessWidget {
                 title,
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w900,
                   color: textColor,
                 ),
               ),
             ),
             Icon(
               Icons.chevron_right,
-              color: textColor.withValues(alpha: 0.6),
+              color: iconColor,
               size: 18,
             ),
           ],
@@ -1192,4 +1215,3 @@ class _MiniMenuCard extends StatelessWidget {
     );
   }
 }
-

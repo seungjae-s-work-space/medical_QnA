@@ -646,7 +646,7 @@ class _PaginationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(top: 16, bottom: 100, left: 16, right: 16),
+      padding: const EdgeInsets.only(top: 16, bottom: 50, left: 16, right: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
