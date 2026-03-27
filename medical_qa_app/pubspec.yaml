@@ -3,7 +3,7 @@ description: 의료 전문가 Q&A 앱
 
 publish_to: 'none'
 
-version: 1.0.0+3
+version: 1.0.3+7
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -68,9 +68,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo/logoFinal.png"
+  image_path: "assets/logo/logo4xreal.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/logo/logoFinal.png"
+  adaptive_icon_foreground: "assets/logo/logo4xreal.png"
   remove_alpha_ios: true
 
 flutter:
