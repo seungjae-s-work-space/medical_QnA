@@ -75,8 +75,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // 로고 이미지
                   Image.asset(
-                    'assets/images/appbar_section4x.png',
-                    height: 60,
+                    'assets/images/loginlogo4xreal.png',
+                    height: 80,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 24),
