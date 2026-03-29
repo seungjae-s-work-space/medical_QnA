@@ -195,10 +195,14 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
     }
 
     // 로그인된 사용자
-    // 알림 초기화 (한 번만)
+    // 알림 및 구독 초기화 (한 번만)
     if (!_notificationInitialized) {
       _notificationInitialized = true;
       _notificationService.initialize();
+
+      // 구독 프로바이더 초기화
+      final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+      subscriptionProvider.initialize(authProvider.currentUser!.userId);
 
       // Windows 관리자: Firestore 리스너 시작
       if (Platform.isWindows && authProvider.isAdmin) {

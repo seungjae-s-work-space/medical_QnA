@@ -174,8 +174,12 @@ function SubscriptionManager() {
     });
     const latestPlan = sortedByCreated[0];
 
+    // 만료일이 가장 늦은 구독 (연장/차단 대상)
+    const latestEndDateSub = sorted[0];
+
     return {
       latestEndDate,
+      latestEndDateSub,
       hasActive,
       latestPlan,
       totalSubscriptions: userSubs.length,
@@ -242,7 +246,7 @@ function SubscriptionManager() {
   };
 
   const handleExtend = async () => {
-    if (!selectedSubscription) return;
+    if (!selectedSubscription?.id) return;
 
     try {
       const currentEndDate = selectedSubscription.endDate?.toDate() || new Date();
@@ -254,6 +258,14 @@ function SubscriptionManager() {
         status: 'active',
         updatedAt: Timestamp.now(),
       });
+
+      // users 문서도 업데이트 (앱에서 구독 상태 인식용)
+      if (selectedSubscription.userId) {
+        await updateDoc(doc(db, 'users', selectedSubscription.userId), {
+          subscriptionStatus: 'active',
+          subscriptionEndDate: Timestamp.fromDate(newEndDate),
+        });
+      }
 
       setSnackbar({
         open: true,
@@ -271,7 +283,7 @@ function SubscriptionManager() {
   };
 
   const handleBlock = async () => {
-    if (!selectedSubscription) return;
+    if (!selectedSubscription?.id) return;
 
     try {
       await updateDoc(doc(db, 'subscriptions', selectedSubscription.id), {
@@ -279,6 +291,14 @@ function SubscriptionManager() {
         endDate: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
+
+      // users 문서도 업데이트
+      if (selectedSubscription.userId) {
+        await updateDoc(doc(db, 'users', selectedSubscription.userId), {
+          subscriptionStatus: 'expired',
+          subscriptionEndDate: Timestamp.now(),
+        });
+      }
 
       setSnackbar({
         open: true,
@@ -315,6 +335,13 @@ function SubscriptionManager() {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         grantedBy: 'admin',
+      });
+
+      // users 문서도 업데이트
+      await updateDoc(doc(db, 'users', selectedUser.id), {
+        subscriptionId: subscriptionId,
+        subscriptionStatus: 'active',
+        subscriptionEndDate: Timestamp.fromDate(endDate),
       });
 
       setSnackbar({
@@ -361,6 +388,13 @@ function SubscriptionManager() {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         grantedBy: 'admin',
+      });
+
+      // users 문서도 업데이트
+      await updateDoc(doc(db, 'users', user.id), {
+        subscriptionId: subscriptionId,
+        subscriptionStatus: 'active',
+        subscriptionEndDate: Timestamp.fromDate(endDate),
       });
 
       setSnackbar({
@@ -630,7 +664,7 @@ function SubscriptionManager() {
                             <Box sx={{ display: 'flex', gap: 1 }}>
                               <IconButton
                                 size="small"
-                                onClick={() => handleExtendOpen(latestSub)}
+                                onClick={() => handleExtendOpen(summary.latestEndDateSub)}
                                 sx={{ color: '#4CAF50' }}
                                 title="기간 연장"
                               >
@@ -638,7 +672,7 @@ function SubscriptionManager() {
                               </IconButton>
                               <IconButton
                                 size="small"
-                                onClick={() => handleBlockOpen(latestSub)}
+                                onClick={() => handleBlockOpen(summary.latestEndDateSub)}
                                 disabled={!summary.hasActive}
                                 sx={{ color: summary.hasActive ? '#F44336' : '#E0E0E0' }}
                                 title="이용 차단"
