@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
@@ -5,14 +6,17 @@ import '../services/auth_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
+  StreamSubscription<User?>? _authSubscription;
 
   UserModel? _currentUser;
   bool _isLoading = false;
+  bool _isInitialized = false;
   String? _errorMessage;
   bool _isGuest = false;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
+  bool get isInitialized => _isInitialized;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
   bool get isAdmin => _currentUser?.isAdmin ?? false;
@@ -29,10 +33,11 @@ class AuthProvider with ChangeNotifier {
   void _init() async {
     // 로컬 저장소에서 사용자 정보 확인
     _currentUser = await _authService.getLocalUser();
+    _isInitialized = true;
     notifyListeners();
 
     // Firebase Auth 상태 변화 리스닝
-    _authService.authStateChanges.listen((User? user) async {
+    _authSubscription = _authService.authStateChanges.listen((User? user) async {
       if (user == null) {
         _currentUser = null;
         notifyListeners();
@@ -192,6 +197,12 @@ class AuthProvider with ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   // 회원 탈퇴

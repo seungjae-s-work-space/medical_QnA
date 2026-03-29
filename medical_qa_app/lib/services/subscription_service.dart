@@ -161,6 +161,19 @@ class SubscriptionService {
     required SubscriptionPlan plan,
     required PurchaseDetails purchaseDetails,
   }) async {
+    // 중복 구매 방지 - 동일 transactionId가 이미 저장되어 있으면 스킵
+    if (purchaseDetails.purchaseID != null) {
+      final existing = await _firestore
+          .collection('subscriptions')
+          .where('transactionId', isEqualTo: purchaseDetails.purchaseID)
+          .limit(1)
+          .get();
+      if (existing.docs.isNotEmpty) {
+        debugPrint('Duplicate purchase detected, skipping: ${purchaseDetails.purchaseID}');
+        return;
+      }
+    }
+
     final now = DateTime.now();
 
     // 기존 구독 확인 - 잔여 기간이 있으면 그 이후부터 추가

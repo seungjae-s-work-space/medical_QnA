@@ -30,7 +30,8 @@ service cloud.firestore {
       // 문서가 존재하지 않을 경우에도 허용 (생성 전 확인용)
       allow read: if isAuthenticated() &&
                      (isAdmin() || conversationId == 'user_' + request.auth.uid);
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() &&
                        (isAdmin() || resource.data.userId == request.auth.uid);
       allow delete: if isAdmin();
@@ -40,8 +41,12 @@ service cloud.firestore {
         allow read: if isAuthenticated() &&
                        (isAdmin() ||
                         get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId == request.auth.uid);
-        allow create: if isAuthenticated();
-        allow update: if isAuthenticated();
+        allow create: if isAuthenticated() &&
+                         (isAdmin() ||
+                          get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId == request.auth.uid);
+        allow update: if isAuthenticated() &&
+                         (isAdmin() ||
+                          get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId == request.auth.uid);
         allow delete: if isAdmin();
       }
     }
@@ -95,8 +100,9 @@ service cloud.firestore {
       // 읽기: 본인 구독 정보 또는 관리자
       allow read: if isAuthenticated() &&
                      (resource.data.userId == request.auth.uid || isAdmin());
-      // 생성: 인증된 사용자 (인앱결제 시스템에서 생성)
-      allow create: if isAuthenticated();
+      // 생성: 인증된 사용자 (본인 구독만 생성 가능)
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
       // 수정: 관리자만 (기간 연장, 차단 등)
       allow update: if isAdmin();
       // 삭제: 관리자만

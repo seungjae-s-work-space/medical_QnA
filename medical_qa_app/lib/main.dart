@@ -154,6 +154,34 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
+    // 초기화 중 → Splash 화면
+    if (!authProvider.isInitialized) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFDF6F9),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/loginlogo4xreal.png',
+                height: 80,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 24),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFFB87BA8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     // 로그인도 안 되어 있고, 게스트도 아닌 경우 → 로그인 화면
     if (!authProvider.canAccessHome) {
       _notificationInitialized = false;

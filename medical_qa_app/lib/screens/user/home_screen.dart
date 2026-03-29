@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -27,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   DateTime? _lastBackPressTime;
   NoticeModel? _latestNotice;
+  StreamSubscription? _noticeSubscription;
 
   /// 게스트 모드에서 로그인 필요 기능 접근 시 로그인 유도 다이얼로그
   void _showLoginRequiredDialog(String feature) {
@@ -138,14 +140,25 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadLatestNotice();
   }
 
+  @override
+  void dispose() {
+    _noticeSubscription?.cancel();
+    super.dispose();
+  }
+
   void _loadLatestNotice() {
-    _noticeService.getPublishedNotices().listen((notices) {
-      if (mounted && notices.isNotEmpty) {
-        setState(() {
-          _latestNotice = notices.first;
-        });
-      }
-    });
+    _noticeSubscription = _noticeService.getPublishedNotices().listen(
+      (notices) {
+        if (mounted && notices.isNotEmpty) {
+          setState(() {
+            _latestNotice = notices.first;
+          });
+        }
+      },
+      onError: (e) {
+        debugPrint('Notice stream error: $e');
+      },
+    );
   }
 
   Future<void> _loadNotificationSetting() async {
@@ -910,38 +923,6 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => const ChatScreen(),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData icon, IconData activeIcon) {
-    final isSelected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () {
-        if (index == 2) {
-          // 채팅
-          _navigateToChat();
-        } else if (index == 3) {
-          // 마이페이지 - 게스트 체크
-          if (_checkGuestAndShowLogin('마이페이지')) return;
-          setState(() => _currentIndex = index);
-        } else {
-          setState(() => _currentIndex = index);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          isSelected ? activeIcon : icon,
-          color: isSelected ? const Color(0xFF2C2C2C) : Colors.white54,
-          size: 24,
-        ),
       ),
     );
   }

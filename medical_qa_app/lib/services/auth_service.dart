@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -46,7 +47,7 @@ class AuthService {
 
       return userModel;
     } catch (e) {
-      print('회원가입 오류: $e');
+      debugPrint('회원가입 오류: $e');
       rethrow;
     }
   }
@@ -83,7 +84,7 @@ class AuthService {
 
       return UserModel.fromFirestore(doc);
     } catch (e) {
-      print('로그인 오류: $e');
+      debugPrint('로그인 오류: $e');
       rethrow;
     }
   }
@@ -100,7 +101,7 @@ class AuthService {
       if (!doc.exists) return null;
       return UserModel.fromFirestore(doc);
     } catch (e) {
-      print('사용자 정보 가져오기 오류: $e');
+      debugPrint('사용자 정보 가져오기 오류: $e');
       return null;
     }
   }
@@ -178,27 +179,29 @@ class AuthService {
         return existingUser;
       }
 
-      // 3. 새 사용자 - 닉네임 중복 확인
-      final nicknameQuery = await _db
-          .collection('users')
-          .where('name', isEqualTo: nickname)
-          .limit(1)
-          .get();
+      // 3. 새 사용자 - 닉네임 중복 확인 + 저장 (트랜잭션으로 race condition 방지)
+      final userModel = await _db.runTransaction<UserModel>((transaction) async {
+        final nicknameQuery = await _db
+            .collection('users')
+            .where('name', isEqualTo: nickname)
+            .limit(1)
+            .get();
 
-      if (nicknameQuery.docs.isNotEmpty) {
-        throw Exception('이미 사용 중인 닉네임입니다');
-      }
+        if (nicknameQuery.docs.isNotEmpty) {
+          throw Exception('이미 사용 중인 닉네임입니다');
+        }
 
-      // 4. Firestore에 사용자 정보 저장
-      final userModel = UserModel(
-        userId: user.uid,
-        role: 'user',
-        name: nickname,
-        email: '',
-        createdAt: DateTime.now(),
-      );
+        final model = UserModel(
+          userId: user!.uid,
+          role: 'user',
+          name: nickname,
+          email: '',
+          createdAt: DateTime.now(),
+        );
 
-      await _db.collection('users').doc(user.uid).set(userModel.toMap());
+        transaction.set(_db.collection('users').doc(user.uid), model.toMap());
+        return model;
+      });
 
       // 5. 로컬에 정보 저장
       await prefs.setString('userId', user.uid);
@@ -206,7 +209,7 @@ class AuthService {
 
       return userModel;
     } catch (e) {
-      print('닉네임 로그인 오류: $e');
+      debugPrint('닉네임 로그인 오류: $e');
       rethrow;
     }
   }
@@ -230,7 +233,7 @@ class AuthService {
 
       return UserModel.fromFirestore(doc);
     } catch (e) {
-      print('로컬 사용자 가져오기 오류: $e');
+      debugPrint('로컬 사용자 가져오기 오류: $e');
       return null;
     }
   }
@@ -297,7 +300,7 @@ class AuthService {
         await user.delete();
       }
     } catch (e) {
-      print('회원 탈퇴 오류: $e');
+      debugPrint('회원 탈퇴 오류: $e');
       rethrow;
     }
   }
