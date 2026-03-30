@@ -229,6 +229,8 @@ function SubscriptionManager() {
   });
 
   const handleExtendOpen = (subscription) => {
+    console.log('handleExtendOpen - subscription:', subscription);
+    console.log('handleExtendOpen - id:', subscription?.id);
     setSelectedSubscription(subscription);
     setExtendDays(30);
     setExtendDialogOpen(true);
@@ -246,7 +248,14 @@ function SubscriptionManager() {
   };
 
   const handleExtend = async () => {
-    if (!selectedSubscription?.id) return;
+    console.log('handleExtend - selectedSubscription:', selectedSubscription);
+    console.log('handleExtend - id:', selectedSubscription?.id);
+    if (!selectedSubscription?.id) {
+      console.error('handleExtend - subscription id is missing!');
+      setSnackbar({ open: true, message: '구독 정보가 올바르지 않습니다 (id 누락)', severity: 'error' });
+      setExtendDialogOpen(false);
+      return;
+    }
 
     try {
       const currentEndDate = selectedSubscription.endDate?.toDate() || new Date();
@@ -827,7 +836,7 @@ function SubscriptionManager() {
       )}
 
       {/* Extend Dialog */}
-      <Dialog open={extendDialogOpen} onClose={() => setExtendDialogOpen(false)}>
+      <Dialog open={extendDialogOpen} onClose={() => setExtendDialogOpen(false)} disableRestoreFocus>
         <DialogTitle>구독 기간 연장</DialogTitle>
         <DialogContent sx={{ minWidth: 300 }}>
           <Typography variant="body2" sx={{ mb: 2, color: colors.textSecondary }}>

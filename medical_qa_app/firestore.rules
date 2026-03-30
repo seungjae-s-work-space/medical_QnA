@@ -100,9 +100,9 @@ service cloud.firestore {
       // 읽기: 본인 구독 정보 또는 관리자
       allow read: if isAuthenticated() &&
                      (resource.data.userId == request.auth.uid || isAdmin());
-      // 생성: 인증된 사용자 (본인 구독만 생성 가능)
+      // 생성: 본인 구독 또는 관리자가 부여
       allow create: if isAuthenticated() &&
-                       request.resource.data.userId == request.auth.uid;
+                       (request.resource.data.userId == request.auth.uid || isAdmin());
       // 수정: 관리자만 (기간 연장, 차단 등)
       allow update: if isAdmin();
       // 삭제: 관리자만
