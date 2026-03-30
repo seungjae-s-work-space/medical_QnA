@@ -111,8 +111,8 @@ function SubscriptionManager() {
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const subs = snapshot.docs.map((doc) => ({
-        id: doc.id,
         ...doc.data(),
+        id: doc.id,
       }));
 
       setAllSubscriptions(subs);
@@ -229,8 +229,6 @@ function SubscriptionManager() {
   });
 
   const handleExtendOpen = (subscription) => {
-    console.log('handleExtendOpen - subscription:', subscription);
-    console.log('handleExtendOpen - id:', subscription?.id);
     setSelectedSubscription(subscription);
     setExtendDays(30);
     setExtendDialogOpen(true);
@@ -248,14 +246,7 @@ function SubscriptionManager() {
   };
 
   const handleExtend = async () => {
-    console.log('handleExtend - selectedSubscription:', selectedSubscription);
-    console.log('handleExtend - id:', selectedSubscription?.id);
-    if (!selectedSubscription?.id) {
-      console.error('handleExtend - subscription id is missing!');
-      setSnackbar({ open: true, message: '구독 정보가 올바르지 않습니다 (id 누락)', severity: 'error' });
-      setExtendDialogOpen(false);
-      return;
-    }
+    if (!selectedSubscription?.id) return;
 
     try {
       const currentEndDate = selectedSubscription.endDate?.toDate() || new Date();
