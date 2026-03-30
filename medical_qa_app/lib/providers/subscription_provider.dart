@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../models/subscription_model.dart';
@@ -5,6 +6,7 @@ import '../services/subscription_service.dart';
 
 class SubscriptionProvider with ChangeNotifier {
   final SubscriptionService _service = SubscriptionService();
+  StreamSubscription<SubscriptionModel?>? _subscriptionStreamSub;
 
   SubscriptionModel? _currentSubscription;
   List<ProductDetails> _products = [];
@@ -44,8 +46,9 @@ class SubscriptionProvider with ChangeNotifier {
       // 구매 이벤트 리스닝
       _service.startListening(_handlePurchaseUpdate);
 
-      // 현재 구독 정보 로드
+      // 현재 구독 정보 로드 + 실시간 리스닝
       await loadCurrentSubscription();
+      _startSubscriptionListener(userId);
 
       // 구독 상태 확인
       await _service.checkAndUpdateSubscriptionStatus(userId);
@@ -56,6 +59,20 @@ class SubscriptionProvider with ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  // 구독 정보 실시간 리스닝
+  void _startSubscriptionListener(String userId) {
+    _subscriptionStreamSub?.cancel();
+    _subscriptionStreamSub = _service.subscriptionStream(userId).listen(
+      (subscription) {
+        _currentSubscription = subscription;
+        notifyListeners();
+      },
+      onError: (e) {
+        debugPrint('Subscription stream error: $e');
+      },
+    );
   }
 
   // 현재 구독 정보 로드
@@ -191,6 +208,7 @@ class SubscriptionProvider with ChangeNotifier {
   // 리소스 정리
   @override
   void dispose() {
+    _subscriptionStreamSub?.cancel();
     _service.dispose();
     super.dispose();
   }

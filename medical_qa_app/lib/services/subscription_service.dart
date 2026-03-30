@@ -226,6 +226,28 @@ class SubscriptionService {
     return null;
   }
 
+  // 사용자의 구독 정보 실시간 리스닝
+  Stream<SubscriptionModel?> subscriptionStream(String userId) {
+    return _firestore
+        .collection('subscriptions')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) return null;
+
+      final validSubs = snapshot.docs
+          .map((doc) => SubscriptionModel.fromFirestore(doc))
+          .where((sub) => sub.status == SubscriptionStatus.active ||
+                          sub.status == SubscriptionStatus.cancelled)
+          .toList();
+
+      if (validSubs.isEmpty) return null;
+
+      validSubs.sort((a, b) => b.endDate.compareTo(a.endDate));
+      return validSubs.first;
+    });
+  }
+
   // 사용자의 현재 구독 정보 가져오기
   Future<SubscriptionModel?> getCurrentSubscription(String userId) async {
     try {
