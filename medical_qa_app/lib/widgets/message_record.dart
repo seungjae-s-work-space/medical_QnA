@@ -43,21 +43,34 @@ class _MessageRecordState extends State<MessageRecord> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!widget.isUser) ...[
-            // 상담사 아이콘
-            Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: _adminIconBg,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.support_agent,
-                size: 18,
-                color: _adminIconColor,
-              ),
+            // 상담사 아이콘 + 이름
+            Column(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: _adminIconBg,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.support_agent,
+                    size: 18,
+                    color: _adminIconColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  '이승주',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF999999),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(width: 8),
           ],
           // 말풍선
           Flexible(

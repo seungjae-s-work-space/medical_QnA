@@ -407,7 +407,7 @@ function NewsManager({ readOnly = false }) {
           isPublished,
           sourceUrl: sourceUrl.trim(),
           authorId: user?.uid || '',
-          authorName: '관리자',
+          authorName: '이승주',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });

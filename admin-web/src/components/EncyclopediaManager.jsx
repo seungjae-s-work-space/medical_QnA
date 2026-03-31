@@ -413,7 +413,7 @@ function EncyclopediaManager({ readOnly = false }) {
           references: references.trim(),
           sourceUrl: sourceUrl.trim(),
           authorId: user?.uid || '',
-          authorName: '관리자',
+          authorName: '이승주',
           viewCount: 0,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),

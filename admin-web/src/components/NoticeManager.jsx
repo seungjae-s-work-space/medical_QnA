@@ -137,7 +137,7 @@ function NoticeManager({ readOnly = false }) {
           content: content.trim(),
           isPublished,
           authorId: user?.uid || '',
-          authorName: '관리자',
+          authorName: '이승주',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
