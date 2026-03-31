@@ -9,6 +9,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/user/home_screen.dart';
 import 'screens/admin/admin_conversations_screen.dart';
 import 'services/notification_service.dart';
+import 'services/force_update_service.dart';
 
 // 모바일 전용 import
 import 'package:firebase_messaging/firebase_messaging.dart'
@@ -93,6 +94,7 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
   bool _notificationInitialized = false;
   final NotificationService _notificationService = NotificationService();
+  final ForceUpdateService _forceUpdateService = ForceUpdateService();
 
   @override
   void initState() {
@@ -100,6 +102,19 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
     if (Platform.isWindows) {
       trayManager.addListener(this);
       _initSystemTray();
+    }
+    _checkForUpdate();
+  }
+
+  Future<void> _checkForUpdate() async {
+    await _forceUpdateService.loadCurrentVersion();
+    await _forceUpdateService.initialize();
+    if (mounted) {
+      if (_forceUpdateService.needsUpdate) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _forceUpdateService.showUpdateDialog(context);
+        });
+      }
     }
   }
 
@@ -200,9 +215,11 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
       _notificationInitialized = true;
       _notificationService.initialize();
 
-      // 구독 프로바이더 초기화
-      final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
-      subscriptionProvider.initialize(authProvider.currentUser!.userId);
+      // 구독 프로바이더 초기화 (build 중 notifyListeners 방지)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+        subscriptionProvider.initialize(authProvider.currentUser!.userId);
+      });
 
       // Windows 관리자: Firestore 리스너 시작
       if (Platform.isWindows && authProvider.isAdmin) {
