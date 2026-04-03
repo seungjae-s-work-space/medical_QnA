@@ -63,7 +63,7 @@ function Layout({ children }) {
         icon: <ChatBubbleOutlineRoundedIcon />,
         description: isAdmin ? '사용자 문의 관리' : '전문가 상담',
         badge: isAdmin ? unreadChatCount : 0,
-        visible: isLoggedIn, // 로그인 사용자만
+        visible: true, // 모든 사용자 (비로그인도 탭 보임)
       },
       {
         path: '/notice',

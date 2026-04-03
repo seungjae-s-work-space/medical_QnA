@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   collection,
   query,
@@ -46,7 +47,8 @@ import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineR
 import { colors } from '../theme';
 
 function UserChatWindow() {
-  const { user } = useAuth();
+  const { user, isLoggedIn, hasActiveSubscription: contextSubscription } = useAuth();
+  const navigate = useNavigate();
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -654,6 +656,46 @@ function UserChatWindow() {
       </>
     );
   };
+
+  // 비로그인 시 로그인 안내
+  if (!isLoggedIn) {
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        sx={{ bgcolor: colors.background, gap: 3 }}
+      >
+        <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 64, color: colors.textTertiary }} />
+        <Typography sx={{ fontSize: 20, fontWeight: 600, color: colors.textPrimary }}>
+          전문가 상담 서비스
+        </Typography>
+        <Typography sx={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 1.8 }}>
+          난임 전문가와 1:1 상담을 받으실 수 있습니다.<br />
+          로그인 후 이용해 주세요.
+        </Typography>
+        <Box
+          component="button"
+          onClick={() => navigate('/login')}
+          sx={{
+            px: 4, py: 1.5,
+            bgcolor: colors.primary,
+            color: 'white',
+            border: 'none',
+            borderRadius: 2,
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: 'pointer',
+            '&:hover': { bgcolor: '#5558E6' },
+          }}
+        >
+          로그인하기
+        </Box>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (

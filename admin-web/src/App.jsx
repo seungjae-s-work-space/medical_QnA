@@ -140,12 +140,10 @@ function AppRoutes() {
               <Layout>
                 <ConversationList />
               </Layout>
-            ) : isLoggedIn ? (
+            ) : (
               <Layout>
                 <UserChatWindow />
               </Layout>
-            ) : (
-              <Navigate to="/encyclopedia" />
             )
           }
         />

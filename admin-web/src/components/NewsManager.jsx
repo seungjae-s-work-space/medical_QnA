@@ -50,6 +50,10 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import PhoneIphoneRoundedIcon from '@mui/icons-material/PhoneIphoneRounded';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -118,6 +122,8 @@ const mergeConsecutiveBlockquotes = (html) => {
 const ITEMS_PER_PAGE = 17;
 
 function NewsManager({ readOnly = false }) {
+  const { isLoggedIn, isAdmin, hasActiveSubscription } = useAuth();
+  const navigate = useNavigate();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -127,6 +133,7 @@ function NewsManager({ readOnly = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewArticle, setViewArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [accessModal, setAccessModal] = useState(null); // 'login' | 'subscribe' | null
 
   // Form state
   const [title, setTitle] = useState('');
@@ -625,7 +632,15 @@ function NewsManager({ readOnly = false }) {
           {paginatedArticles.map((article) => (
             <Grid item xs={12} sm={6} md={4} key={article.id}>
               <Card
-                onClick={() => setViewArticle(article)}
+                onClick={() => {
+                  if (readOnly && !isLoggedIn) {
+                    setAccessModal('login');
+                  } else if (readOnly && !isAdmin && !hasActiveSubscription) {
+                    setAccessModal('subscribe');
+                  } else {
+                    setViewArticle(article);
+                  }
+                }}
                 sx={{
                   height: '100%',
                   display: 'flex',
@@ -1255,6 +1270,34 @@ function NewsManager({ readOnly = false }) {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* 로그인 필요 모달 */}
+      <Dialog open={accessModal === 'login'} onClose={() => setAccessModal(null)} maxWidth="xs" fullWidth>
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <LockOutlinedIcon sx={{ fontSize: 48, color: colors.primary, mb: 2 }} />
+          <Typography sx={{ fontSize: 18, fontWeight: 600, mb: 1 }}>로그인이 필요합니다</Typography>
+          <Typography sx={{ fontSize: 14, color: colors.textSecondary, mb: 3 }}>
+            글을 보시려면 로그인해 주세요.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+            <Button variant="outlined" onClick={() => setAccessModal(null)}>닫기</Button>
+            <Button variant="contained" onClick={() => navigate('/login')}>로그인하기</Button>
+          </Box>
+        </Box>
+      </Dialog>
+
+      {/* 구독 필요 모달 */}
+      <Dialog open={accessModal === 'subscribe'} onClose={() => setAccessModal(null)} maxWidth="xs" fullWidth>
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <PhoneIphoneRoundedIcon sx={{ fontSize: 48, color: colors.primary, mb: 2 }} />
+          <Typography sx={{ fontSize: 18, fontWeight: 600, mb: 1 }}>이용권이 필요합니다</Typography>
+          <Typography sx={{ fontSize: 14, color: colors.textSecondary, mb: 3, lineHeight: 1.8 }}>
+            이 콘텐츠는 구독자 전용입니다.<br />
+            난임상담톡톡 앱에서 이용권을 구매해 주세요.
+          </Typography>
+          <Button variant="contained" onClick={() => setAccessModal(null)}>확인</Button>
+        </Box>
+      </Dialog>
     </Box>
   );
 }

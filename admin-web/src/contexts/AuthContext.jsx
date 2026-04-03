@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const AuthContext = createContext(null);
@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null); // 'admin' | 'user' | null
   const [loading, setLoading] = useState(true);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -27,12 +28,39 @@ export function AuthProvider({ children }) {
       } else {
         setUser(null);
         setUserRole(null);
+        setHasActiveSubscription(false);
       }
       setLoading(false);
     });
 
     return unsubscribe;
   }, []);
+
+  // 구독 상태 실시간 리스닝
+  useEffect(() => {
+    if (!user || userRole === 'admin') {
+      if (userRole === 'admin') setHasActiveSubscription(true);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'subscriptions'),
+      where('userId', '==', user.uid),
+      where('status', '==', 'active')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const now = new Date();
+      const hasValid = snapshot.docs.some((doc) => {
+        const data = doc.data();
+        const endDate = data.endDate?.toDate?.() || new Date(0);
+        return endDate > now;
+      });
+      setHasActiveSubscription(hasValid);
+    });
+
+    return unsubscribe;
+  }, [user, userRole]);
 
   // 계산된 권한
   const isAdmin = userRole === 'admin';
@@ -44,6 +72,7 @@ export function AuthProvider({ children }) {
     loading,
     isAdmin,
     isLoggedIn,
+    hasActiveSubscription,
   };
 
   return (
