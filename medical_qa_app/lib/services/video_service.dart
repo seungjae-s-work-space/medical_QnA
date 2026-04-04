@@ -5,16 +5,16 @@ class VideoService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collection = 'videos';
 
-  // 공개된 영상 목록 가져오기 (실시간)
-  Stream<List<VideoModel>> getPublishedVideos() {
-    return _firestore
+  // 공개된 영상 목록 가져오기 (일회성)
+  Future<List<VideoModel>> getPublishedVideos() async {
+    final snapshot = await _firestore
         .collection(_collection)
         .where('isPublished', isEqualTo: true)
         .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => VideoModel.fromFirestore(doc))
-            .toList());
+        .get();
+    return snapshot.docs
+        .map((doc) => VideoModel.fromFirestore(doc))
+        .toList();
   }
 
   // 단일 영상 가져오기

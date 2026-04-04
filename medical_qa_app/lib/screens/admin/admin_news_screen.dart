@@ -44,8 +44,8 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        StreamBuilder<List<NewsModel>>(
-          stream: _service.getAllNews(),
+        FutureBuilder<List<NewsModel>>(
+          future: _service.getAllNews(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());

@@ -21,19 +21,21 @@ class _NoticeScreenState extends State<NoticeScreen> {
   @override
   void initState() {
     super.initState();
-    _service.getPublishedNotices().listen((notices) {
-      if (mounted) {
-        setState(() {
-          _noticeList = notices;
-          _isLoading = false;
-          // 현재 페이지가 범위를 벗어나면 첫 페이지로
-          final totalPages = (_noticeList.length / _itemsPerPage).ceil();
-          if (_currentPage >= totalPages && totalPages > 0) {
-            _currentPage = totalPages - 1;
-          }
-        });
-      }
-    });
+    _loadNotices();
+  }
+
+  Future<void> _loadNotices() async {
+    final notices = await _service.getPublishedNotices();
+    if (mounted) {
+      setState(() {
+        _noticeList = notices;
+        _isLoading = false;
+        final totalPages = (_noticeList.length / _itemsPerPage).ceil();
+        if (_currentPage >= totalPages && totalPages > 0) {
+          _currentPage = totalPages - 1;
+        }
+      });
+    }
   }
 
   void _changePage(int page) {

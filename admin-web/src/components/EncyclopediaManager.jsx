@@ -43,6 +43,7 @@ import {
   orderBy,
   where,
   onSnapshot,
+  getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -310,8 +311,8 @@ function EncyclopediaManager({ readOnly = false }) {
     }
   }, [dialogOpen]);
 
-  useEffect(() => {
-    // readOnly 모드에서는 공개된 콘텐츠만 쿼리 (Firestore 보안 규칙 준수)
+  // 데이터 로드 함수
+  const loadArticles = async () => {
     const q = readOnly
       ? query(
           collection(db, 'encyclopedia'),
@@ -323,16 +324,31 @@ function EncyclopediaManager({ readOnly = false }) {
           orderBy('createdAt', 'desc')
         );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    if (readOnly) {
+      // 일반 사용자: 일회성 조회 (read 수 절약)
+      const snapshot = await getDocs(q);
       const articleList = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       setArticles(articleList);
       setLoading(false);
-    });
+    } else {
+      // 관리자: 실시간 리스너 (CRUD 반영)
+      return onSnapshot(q, (snapshot) => {
+        const articleList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setArticles(articleList);
+        setLoading(false);
+      });
+    }
+  };
 
-    return unsubscribe;
+  useEffect(() => {
+    const unsubscribe = loadArticles();
+    return () => { if (unsubscribe && typeof unsubscribe.then === 'undefined') unsubscribe(); };
   }, [readOnly]);
 
   const resetForm = () => {

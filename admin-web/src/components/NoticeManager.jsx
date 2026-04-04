@@ -36,6 +36,7 @@ import {
   orderBy,
   where,
   onSnapshot,
+  getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -63,8 +64,7 @@ function NoticeManager({ readOnly = false }) {
   const [content, setContent] = useState('');
   const [isPublished, setIsPublished] = useState(true);
 
-  useEffect(() => {
-    // readOnly 모드에서는 공개된 콘텐츠만 쿼리 (Firestore 보안 규칙 준수)
+  const loadNotices = async () => {
     const q = readOnly
       ? query(
           collection(db, 'notices'),
@@ -76,16 +76,29 @@ function NoticeManager({ readOnly = false }) {
           orderBy('createdAt', 'desc')
         );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    if (readOnly) {
+      const snapshot = await getDocs(q);
       const noticeList = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       setNotices(noticeList);
       setLoading(false);
-    });
+    } else {
+      return onSnapshot(q, (snapshot) => {
+        const noticeList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setNotices(noticeList);
+        setLoading(false);
+      });
+    }
+  };
 
-    return unsubscribe;
+  useEffect(() => {
+    const unsubscribe = loadNotices();
+    return () => { if (unsubscribe && typeof unsubscribe.then === 'undefined') unsubscribe(); };
   }, [readOnly]);
 
   const resetForm = () => {

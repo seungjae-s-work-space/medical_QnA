@@ -5,31 +5,27 @@ class NewsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collection = 'news';
 
-  // 뉴스 목록 조회 (사용자용 - 공개된 글만)
-  Stream<List<NewsModel>> getPublishedNews() {
-    return _firestore
+  // 뉴스 목록 조회 (사용자용 - 공개된 글만, 일회성)
+  Future<List<NewsModel>> getPublishedNews() async {
+    final snapshot = await _firestore
         .collection(_collection)
         .where('isPublished', isEqualTo: true)
         .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => NewsModel.fromFirestore(doc))
-          .toList();
-    });
+        .get();
+    return snapshot.docs
+        .map((doc) => NewsModel.fromFirestore(doc))
+        .toList();
   }
 
-  // 뉴스 목록 조회 (관리자용 - 모든 글)
-  Stream<List<NewsModel>> getAllNews() {
-    return _firestore
+  // 뉴스 목록 조회 (관리자용 - 모든 글, 일회성)
+  Future<List<NewsModel>> getAllNews() async {
+    final snapshot = await _firestore
         .collection(_collection)
         .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => NewsModel.fromFirestore(doc))
-          .toList();
-    });
+        .get();
+    return snapshot.docs
+        .map((doc) => NewsModel.fromFirestore(doc))
+        .toList();
   }
 
   // 단일 뉴스 조회

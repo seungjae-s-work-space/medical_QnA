@@ -37,18 +37,21 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   void initState() {
     super.initState();
-    _service.getPublishedNews().listen((news) {
-      if (mounted) {
-        setState(() {
-          _newsList = news;
-          _isLoading = false;
-          final totalPages = (_newsList.length / _itemsPerPage).ceil();
-          if (_currentPage >= totalPages && totalPages > 0) {
-            _currentPage = totalPages - 1;
-          }
-        });
-      }
-    });
+    _loadNews();
+  }
+
+  Future<void> _loadNews() async {
+    final news = await _service.getPublishedNews();
+    if (mounted) {
+      setState(() {
+        _newsList = news;
+        _isLoading = false;
+        final totalPages = (_newsList.length / _itemsPerPage).ceil();
+        if (_currentPage >= totalPages && totalPages > 0) {
+          _currentPage = totalPages - 1;
+        }
+      });
+    }
   }
 
   @override

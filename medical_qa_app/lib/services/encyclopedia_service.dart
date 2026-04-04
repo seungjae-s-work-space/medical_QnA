@@ -5,31 +5,27 @@ class EncyclopediaService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collection = 'encyclopedia';
 
-  // 게시글 목록 조회 (사용자용 - 공개된 글만)
-  Stream<List<EncyclopediaModel>> getPublishedArticles() {
-    return _firestore
+  // 게시글 목록 조회 (사용자용 - 공개된 글만, 일회성)
+  Future<List<EncyclopediaModel>> getPublishedArticles() async {
+    final snapshot = await _firestore
         .collection(_collection)
         .where('isPublished', isEqualTo: true)
         .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => EncyclopediaModel.fromFirestore(doc))
-          .toList();
-    });
+        .get();
+    return snapshot.docs
+        .map((doc) => EncyclopediaModel.fromFirestore(doc))
+        .toList();
   }
 
-  // 게시글 목록 조회 (관리자용 - 모든 글)
-  Stream<List<EncyclopediaModel>> getAllArticles() {
-    return _firestore
+  // 게시글 목록 조회 (관리자용 - 모든 글, 일회성)
+  Future<List<EncyclopediaModel>> getAllArticles() async {
+    final snapshot = await _firestore
         .collection(_collection)
         .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => EncyclopediaModel.fromFirestore(doc))
-          .toList();
-    });
+        .get();
+    return snapshot.docs
+        .map((doc) => EncyclopediaModel.fromFirestore(doc))
+        .toList();
   }
 
   // 단일 게시글 조회

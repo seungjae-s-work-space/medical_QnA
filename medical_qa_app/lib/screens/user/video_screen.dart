@@ -22,19 +22,21 @@ class _VideoScreenState extends State<VideoScreen> {
   @override
   void initState() {
     super.initState();
-    _service.getPublishedVideos().listen((videos) {
-      if (mounted) {
-        setState(() {
-          _videoList = videos;
-          _isLoading = false;
-          // 현재 페이지가 범위를 벗어나면 첫 페이지로
-          final totalPages = (_videoList.length / _itemsPerPage).ceil();
-          if (_currentPage >= totalPages && totalPages > 0) {
-            _currentPage = totalPages - 1;
-          }
-        });
-      }
-    });
+    _loadVideos();
+  }
+
+  Future<void> _loadVideos() async {
+    final videos = await _service.getPublishedVideos();
+    if (mounted) {
+      setState(() {
+        _videoList = videos;
+        _isLoading = false;
+        final totalPages = (_videoList.length / _itemsPerPage).ceil();
+        if (_currentPage >= totalPages && totalPages > 0) {
+          _currentPage = totalPages - 1;
+        }
+      });
+    }
   }
 
   void _changePage(int page) {

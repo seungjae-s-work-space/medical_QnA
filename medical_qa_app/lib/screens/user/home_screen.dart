@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -28,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   DateTime? _lastBackPressTime;
   NoticeModel? _latestNotice;
-  StreamSubscription? _noticeSubscription;
 
   /// 게스트 모드에서 로그인 필요 기능 접근 시 로그인 유도 다이얼로그
   void _showLoginRequiredDialog(String feature) {
@@ -142,23 +140,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _noticeSubscription?.cancel();
     super.dispose();
   }
 
-  void _loadLatestNotice() {
-    _noticeSubscription = _noticeService.getPublishedNotices().listen(
-      (notices) {
-        if (mounted && notices.isNotEmpty) {
-          setState(() {
-            _latestNotice = notices.first;
-          });
-        }
-      },
-      onError: (e) {
-        debugPrint('Notice stream error: $e');
-      },
-    );
+  Future<void> _loadLatestNotice() async {
+    try {
+      final notices = await _noticeService.getPublishedNotices();
+      if (mounted && notices.isNotEmpty) {
+        setState(() {
+          _latestNotice = notices.first;
+        });
+      }
+    } catch (e) {
+      debugPrint('Notice load error: $e');
+    }
   }
 
   Future<void> _loadNotificationSetting() async {

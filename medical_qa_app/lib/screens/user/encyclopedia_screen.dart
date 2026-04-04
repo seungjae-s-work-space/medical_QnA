@@ -40,19 +40,21 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   @override
   void initState() {
     super.initState();
-    _service.getPublishedArticles().listen((articles) {
-      if (mounted) {
-        setState(() {
-          _allArticles = articles;
-          _isLoading = false;
-          // 현재 페이지가 범위를 벗어나면 첫 페이지로
-          final totalPages = (_allArticles.length / _itemsPerPage).ceil();
-          if (_currentPage >= totalPages && totalPages > 0) {
-            _currentPage = totalPages - 1;
-          }
-        });
-      }
-    });
+    _loadArticles();
+  }
+
+  Future<void> _loadArticles() async {
+    final articles = await _service.getPublishedArticles();
+    if (mounted) {
+      setState(() {
+        _allArticles = articles;
+        _isLoading = false;
+        final totalPages = (_allArticles.length / _itemsPerPage).ceil();
+        if (_currentPage >= totalPages && totalPages > 0) {
+          _currentPage = totalPages - 1;
+        }
+      });
+    }
   }
 
   @override

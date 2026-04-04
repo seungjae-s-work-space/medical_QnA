@@ -5,31 +5,27 @@ class NoticeService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collection = 'notices';
 
-  // 공지사항 목록 조회 (사용자용 - 공개된 글만)
-  Stream<List<NoticeModel>> getPublishedNotices() {
-    return _firestore
+  // 공지사항 목록 조회 (사용자용 - 공개된 글만, 일회성)
+  Future<List<NoticeModel>> getPublishedNotices() async {
+    final snapshot = await _firestore
         .collection(_collection)
         .where('isPublished', isEqualTo: true)
         .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => NoticeModel.fromFirestore(doc))
-          .toList();
-    });
+        .get();
+    return snapshot.docs
+        .map((doc) => NoticeModel.fromFirestore(doc))
+        .toList();
   }
 
-  // 공지사항 목록 조회 (관리자용 - 모든 글)
-  Stream<List<NoticeModel>> getAllNotices() {
-    return _firestore
+  // 공지사항 목록 조회 (관리자용 - 모든 글, 일회성)
+  Future<List<NoticeModel>> getAllNotices() async {
+    final snapshot = await _firestore
         .collection(_collection)
         .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => NoticeModel.fromFirestore(doc))
-          .toList();
-    });
+        .get();
+    return snapshot.docs
+        .map((doc) => NoticeModel.fromFirestore(doc))
+        .toList();
   }
 
   // 단일 공지사항 조회

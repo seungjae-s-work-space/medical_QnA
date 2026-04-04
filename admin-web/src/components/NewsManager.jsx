@@ -42,6 +42,7 @@ import {
   orderBy,
   where,
   onSnapshot,
+  getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -308,8 +309,7 @@ function NewsManager({ readOnly = false }) {
     }
   }, [dialogOpen]);
 
-  useEffect(() => {
-    // readOnly 모드에서는 공개된 콘텐츠만 쿼리 (Firestore 보안 규칙 준수)
+  const loadArticles = async () => {
     const q = readOnly
       ? query(
           collection(db, 'news'),
@@ -321,16 +321,29 @@ function NewsManager({ readOnly = false }) {
           orderBy('createdAt', 'desc')
         );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    if (readOnly) {
+      const snapshot = await getDocs(q);
       const articleList = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       setArticles(articleList);
       setLoading(false);
-    });
+    } else {
+      return onSnapshot(q, (snapshot) => {
+        const articleList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setArticles(articleList);
+        setLoading(false);
+      });
+    }
+  };
 
-    return unsubscribe;
+  useEffect(() => {
+    const unsubscribe = loadArticles();
+    return () => { if (unsubscribe && typeof unsubscribe.then === 'undefined') unsubscribe(); };
   }, [readOnly]);
 
   const resetForm = () => {

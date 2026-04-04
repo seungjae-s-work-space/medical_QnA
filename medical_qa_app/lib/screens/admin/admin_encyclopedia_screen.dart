@@ -44,8 +44,8 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        StreamBuilder<List<EncyclopediaModel>>(
-        stream: _service.getAllArticles(),
+        FutureBuilder<List<EncyclopediaModel>>(
+        future: _service.getAllArticles(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
