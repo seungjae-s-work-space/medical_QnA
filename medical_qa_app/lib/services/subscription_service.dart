@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import '../models/subscription_model.dart';
 
 class SubscriptionService {
@@ -147,6 +148,14 @@ class SubscriptionService {
   Future<void> completePurchase(PurchaseDetails purchaseDetails) async {
     if (purchaseDetails.pendingCompletePurchase) {
       await _iap.completePurchase(purchaseDetails);
+    }
+
+    // Android: 소모품 consume 처리 (재구매 가능하게)
+    if (Platform.isAndroid) {
+      final androidAddition =
+          _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
+      await androidAddition.consumePurchase(purchaseDetails);
+      debugPrint('Android: purchase consumed for ${purchaseDetails.productID}');
     }
   }
 

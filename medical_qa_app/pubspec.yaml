@@ -47,6 +47,7 @@ dependencies:
   # 인앱결제
   in_app_purchase: ^3.2.0
   in_app_purchase_storekit: ^0.3.18
+  in_app_purchase_android: ^0.3.6
 
   # Remote Config (강제 업데이트)
   firebase_remote_config: ^5.1.3
