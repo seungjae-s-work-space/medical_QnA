@@ -181,6 +181,7 @@ function VideoManager({ readOnly = false }) {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const unsubscribe = loadVideos();
     return () => { if (unsubscribe && typeof unsubscribe.then === 'undefined') unsubscribe(); };

@@ -47,7 +47,7 @@ import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineR
 import { colors } from '../theme';
 
 function UserChatWindow() {
-  const { user, isLoggedIn, hasActiveSubscription: contextSubscription } = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const navigate = useNavigate();
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);

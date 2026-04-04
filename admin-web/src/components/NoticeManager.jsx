@@ -96,6 +96,7 @@ function NoticeManager({ readOnly = false }) {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const unsubscribe = loadNotices();
     return () => { if (unsubscribe && typeof unsubscribe.then === 'undefined') unsubscribe(); };
