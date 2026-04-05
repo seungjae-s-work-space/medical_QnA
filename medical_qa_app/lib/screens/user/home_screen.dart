@@ -11,6 +11,7 @@ import 'news_screen.dart';
 import 'notice_screen.dart';
 import 'video_screen.dart';
 import 'subscription_screen.dart';
+import 'notification_settings_screen.dart';
 import '../../providers/subscription_provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -162,24 +163,6 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _notificationsEnabled = enabled;
       });
-    }
-  }
-
-  Future<void> _toggleNotification() async {
-    final newValue = !_notificationsEnabled;
-    setState(() {
-      _notificationsEnabled = newValue;
-    });
-    await _notificationService.setNotificationEnabled(newValue);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(newValue ? '알림이 켜졌습니다' : '알림이 꺼졌습니다'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: AppColors.textPrimary,
-        ),
-      );
     }
   }
 
@@ -733,11 +716,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       : Icons.notifications_off_outlined,
                   title: '알림 설정',
                   iconColor: const Color(0xFF5B8BA8),
-                  trailing: Switch(
-                    value: _notificationsEnabled,
-                    onChanged: (_) => _toggleNotification(),
-                    activeColor: const Color(0xFF5B8BA8),
-                  ),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationSettingsScreen(),
+                      ),
+                    );
+                    _loadNotificationSetting();
+                  },
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),

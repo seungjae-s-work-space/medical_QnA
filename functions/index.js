@@ -1,6 +1,7 @@
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 
 initializeApp();
@@ -9,79 +10,67 @@ const db = getFirestore();
 const messaging = getMessaging();
 
 /**
+ * 알림 카테고리
+ * - chat: 상담 알림 (채팅 메시지)
+ * - content: 콘텐츠 알림 (뉴스/공지/백과/영상)
+ * - subscription: 구독 알림 (결제 완료, 만료 임박, 만료)
+ */
+
+/**
+ * 카테고리별 알림 활성 여부 확인
+ * - notificationsEnabled: 마스터 스위치 (기본 true)
+ * - notification<Category>: 카테고리별 스위치 (기본 true)
+ */
+function isNotificationEnabled(userData, category) {
+  if (userData.notificationsEnabled === false) return false;
+  const categoryKey = `notification${category.charAt(0).toUpperCase() + category.slice(1)}`;
+  return userData[categoryKey] !== false;
+}
+
+// ==================== 채팅 메시지 알림 ====================
+
+/**
  * 새 메시지가 생성되면 상대방에게 푸시 알림 전송
- * - 관리자 → 사용자: 해당 사용자에게 알림
- * - 사용자 → 관리자: 모든 관리자에게 알림
  */
 exports.sendMessageNotification = onDocumentCreated(
   "conversations/{conversationId}/messages/{messageId}",
   async (event) => {
     const snapshot = event.data;
-    if (!snapshot) {
-      console.log("No data associated with the event");
-      return;
-    }
+    if (!snapshot) return;
 
     const message = snapshot.data();
-    const { conversationId } = event.params;
+    const { conversationId, messageId } = event.params;
 
     try {
-      // 대화 정보 가져오기
       const convDoc = await db.collection("conversations").doc(conversationId).get();
-      if (!convDoc.exists) {
-        console.log("Conversation not found");
-        return;
-      }
+      if (!convDoc.exists) return;
 
       const conversation = convDoc.data();
       const userName = conversation.userName || "익명";
 
       if (message.senderRole === "admin") {
-        // 관리자가 보낸 메시지 → 사용자에게 알림
-        await sendNotificationToUser(conversation.userId, message, conversationId, event.params.messageId);
+        await sendNotificationToUser(conversation.userId, message, conversationId, messageId);
       } else {
-        // 사용자가 보낸 메시지 → 모든 관리자에게 알림
-        await sendNotificationToAdmins(userName, message, conversationId, event.params.messageId);
+        await sendNotificationToAdmins(userName, message, conversationId, messageId);
       }
-
     } catch (error) {
-      console.error("Error sending notification:", error);
+      console.error("Error sending message notification:", error);
     }
   }
 );
 
-/**
- * 사용자에게 알림 전송
- */
 async function sendNotificationToUser(userId, message, conversationId, messageId) {
-  if (!userId) {
-    console.log("No userId in conversation");
-    return;
-  }
+  if (!userId) return;
 
   const userDoc = await db.collection("users").doc(userId).get();
-  if (!userDoc.exists) {
-    console.log("User not found");
-    return;
-  }
+  if (!userDoc.exists) return;
 
   const userData = userDoc.data();
-  const fcmToken = userData.fcmToken;
-
-  // 알림 설정 확인 (기본값 true)
-  const notificationsEnabled = userData.notificationsEnabled !== false;
-  if (!notificationsEnabled) {
-    console.log("User has notifications disabled");
-    return;
-  }
-
-  if (!fcmToken) {
-    console.log("No FCM token for user");
-    return;
-  }
+  if (!isNotificationEnabled(userData, "chat")) return;
+  if (!userData.fcmToken) return;
 
   const notification = {
-    token: fcmToken,
+    token: userData.fcmToken,
     notification: {
       title: "난임&상담톡",
       body: message.text.length > 100
@@ -89,210 +78,280 @@ async function sendNotificationToUser(userId, message, conversationId, messageId
         : message.text,
     },
     data: {
-      conversationId: conversationId,
-      messageId: messageId,
+      conversationId,
+      messageId,
       type: "new_message",
     },
-    android: {
-      priority: "high",
-      notification: {
-        channelId: "chat_messages",
-        sound: "default",
-      },
-    },
-    apns: {
-      payload: {
-        aps: {
-          badge: 1,
-          sound: "default",
-        },
-      },
-    },
+    android: { priority: "high", notification: { channelId: "chat_messages", sound: "default" } },
+    apns: { payload: { aps: { badge: 1, sound: "default" } } },
   };
 
-  const response = await messaging.send(notification);
-  console.log("Successfully sent notification to user:", response);
+  await messaging.send(notification);
 }
 
-/**
- * 모든 관리자에게 알림 전송
- */
 async function sendNotificationToAdmins(userName, message, conversationId, messageId) {
-  // role이 'admin'인 모든 사용자 조회
-  const adminsSnapshot = await db.collection("users")
-    .where("role", "==", "admin")
-    .get();
-
-  if (adminsSnapshot.empty) {
-    console.log("No admins found");
-    return;
-  }
+  const adminsSnapshot = await db.collection("users").where("role", "==", "admin").get();
+  if (adminsSnapshot.empty) return;
 
   const tokens = [];
   adminsSnapshot.forEach((doc) => {
     const adminData = doc.data();
-    // 알림 설정 확인 (기본값 true)
-    const notificationsEnabled = adminData.notificationsEnabled !== false;
-    if (adminData.fcmToken && notificationsEnabled) {
+    if (isNotificationEnabled(adminData, "chat") && adminData.fcmToken) {
       tokens.push(adminData.fcmToken);
     }
   });
 
-  if (tokens.length === 0) {
-    console.log("No admin FCM tokens found (or all disabled)");
-    return;
-  }
+  if (tokens.length === 0) return;
 
-  // 각 관리자에게 알림 전송
   const notifications = tokens.map((token) => ({
-    token: token,
+    token,
     notification: {
       title: `${userName}님의 새 질문`,
       body: message.text.length > 100
         ? message.text.substring(0, 100) + "..."
         : message.text,
     },
-    data: {
-      conversationId: conversationId,
-      messageId: messageId,
-      type: "new_question",
-    },
-    android: {
-      priority: "high",
-      notification: {
-        channelId: "chat_messages",
-        sound: "default",
-      },
-    },
-    apns: {
-      payload: {
-        aps: {
-          badge: 1,
-          sound: "default",
-        },
-      },
-    },
+    data: { conversationId, messageId, type: "new_question" },
+    android: { priority: "high", notification: { channelId: "chat_messages", sound: "default" } },
+    apns: { payload: { aps: { badge: 1, sound: "default" } } },
   }));
 
-  // 병렬로 모든 알림 전송
-  const results = await Promise.allSettled(
-    notifications.map((n) => messaging.send(n))
-  );
-
-  const successCount = results.filter((r) => r.status === "fulfilled").length;
-  console.log(`Successfully sent notifications to ${successCount}/${tokens.length} admins`);
+  await Promise.allSettled(notifications.map((n) => messaging.send(n)));
 }
 
-/**
- * 새 뉴스가 공개되면 모든 사용자에게 푸시 알림 전송
- * - 새 뉴스 생성 시 isPublished가 true인 경우
- * - 기존 뉴스가 비공개→공개로 변경된 경우
- */
-exports.sendNewsNotification = onDocumentCreated(
-  "news/{newsId}",
-  async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) {
-      console.log("No data associated with the event");
-      return;
-    }
-
-    const news = snapshot.data();
-
-    // 비공개 글은 알림 안 보냄
-    if (!news.isPublished) {
-      console.log("News is not published, skipping notification");
-      return;
-    }
-
-    await sendNewsNotificationToAllUsers(news, event.params.newsId);
-  }
-);
+// ==================== 콘텐츠 알림 (뉴스/공지/백과/영상) ====================
 
 /**
- * 뉴스가 비공개→공개로 변경되면 알림 전송
+ * 전체 유저에게 콘텐츠 알림 전송 (관리자 제외)
  */
-exports.sendNewsPublishedNotification = onDocumentUpdated(
-  "news/{newsId}",
-  async (event) => {
-    const before = event.data.before.data();
-    const after = event.data.after.data();
-
-    // 비공개 → 공개로 변경된 경우에만 알림
-    if (!before.isPublished && after.isPublished) {
-      console.log("News published, sending notification");
-      await sendNewsNotificationToAllUsers(after, event.params.newsId);
-    }
-  }
-);
-
-/**
- * 모든 사용자에게 뉴스 알림 전송 (관리자 제외)
- */
-async function sendNewsNotificationToAllUsers(news, newsId) {
-  // role이 'admin'이 아닌 모든 사용자 조회
-  const usersSnapshot = await db.collection("users")
-    .where("role", "!=", "admin")
-    .get();
-
-  if (usersSnapshot.empty) {
-    console.log("No users found");
-    return;
-  }
+async function sendContentNotificationToAllUsers({ title, body, data, channelId }) {
+  const usersSnapshot = await db.collection("users").where("role", "!=", "admin").get();
+  if (usersSnapshot.empty) return;
 
   const tokens = [];
   usersSnapshot.forEach((doc) => {
     const userData = doc.data();
-    // 알림 설정 확인 (기본값 true)
-    const notificationsEnabled = userData.notificationsEnabled !== false;
-    if (userData.fcmToken && notificationsEnabled) {
+    if (isNotificationEnabled(userData, "content") && userData.fcmToken) {
       tokens.push(userData.fcmToken);
     }
   });
 
-  if (tokens.length === 0) {
-    console.log("No user FCM tokens found (or all disabled)");
-    return;
-  }
+  if (tokens.length === 0) return;
 
-  // 뉴스 제목 줄이기
-  const title = news.title.length > 50
-    ? news.title.substring(0, 50) + "..."
-    : news.title;
-
-  // 각 사용자에게 알림 전송
   const notifications = tokens.map((token) => ({
-    token: token,
-    notification: {
-      title: "📰 새로운 난임&뉴스",
-      body: title,
-    },
-    data: {
-      newsId: newsId,
-      type: "new_news",
-    },
-    android: {
-      priority: "high",
-      notification: {
-        channelId: "news",
-        sound: "default",
-      },
-    },
-    apns: {
-      payload: {
-        aps: {
-          badge: 1,
-          sound: "default",
-        },
-      },
-    },
+    token,
+    notification: { title, body },
+    data,
+    android: { priority: "high", notification: { channelId, sound: "default" } },
+    apns: { payload: { aps: { badge: 1, sound: "default" } } },
   }));
 
-  // 병렬로 모든 알림 전송
-  const results = await Promise.allSettled(
-    notifications.map((n) => messaging.send(n))
-  );
-
+  const results = await Promise.allSettled(notifications.map((n) => messaging.send(n)));
   const successCount = results.filter((r) => r.status === "fulfilled").length;
-  console.log(`Successfully sent news notifications to ${successCount}/${tokens.length} users`);
+  console.log(`Content notification sent: ${successCount}/${tokens.length}`);
 }
+
+function truncate(text, maxLength) {
+  if (!text) return "";
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+}
+
+// --- 뉴스 ---
+exports.sendNewsNotification = onDocumentCreated("news/{newsId}", async (event) => {
+  const news = event.data?.data();
+  if (!news || !news.isPublished) return;
+  await sendContentNotificationToAllUsers({
+    title: "📰 새로운 난임 뉴스",
+    body: truncate(news.title, 50),
+    data: { newsId: event.params.newsId, type: "new_news" },
+    channelId: "content",
+  });
+});
+
+exports.sendNewsPublishedNotification = onDocumentUpdated("news/{newsId}", async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+  if (!before.isPublished && after.isPublished) {
+    await sendContentNotificationToAllUsers({
+      title: "📰 새로운 난임 뉴스",
+      body: truncate(after.title, 50),
+      data: { newsId: event.params.newsId, type: "new_news" },
+      channelId: "content",
+    });
+  }
+});
+
+// --- 공지사항 ---
+exports.sendNoticeNotification = onDocumentCreated("notices/{noticeId}", async (event) => {
+  const notice = event.data?.data();
+  if (!notice || !notice.isPublished) return;
+  await sendContentNotificationToAllUsers({
+    title: "📢 새 공지사항",
+    body: truncate(notice.title, 50),
+    data: { noticeId: event.params.noticeId, type: "new_notice" },
+    channelId: "content",
+  });
+});
+
+exports.sendNoticePublishedNotification = onDocumentUpdated("notices/{noticeId}", async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+  if (!before.isPublished && after.isPublished) {
+    await sendContentNotificationToAllUsers({
+      title: "📢 새 공지사항",
+      body: truncate(after.title, 50),
+      data: { noticeId: event.params.noticeId, type: "new_notice" },
+      channelId: "content",
+    });
+  }
+});
+
+// --- 백과 ---
+exports.sendEncyclopediaNotification = onDocumentCreated("encyclopedia/{articleId}", async (event) => {
+  const article = event.data?.data();
+  if (!article || !article.isPublished) return;
+  await sendContentNotificationToAllUsers({
+    title: "📚 새 난임백과",
+    body: truncate(article.title, 50),
+    data: { articleId: event.params.articleId, type: "new_encyclopedia" },
+    channelId: "content",
+  });
+});
+
+exports.sendEncyclopediaPublishedNotification = onDocumentUpdated("encyclopedia/{articleId}", async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+  if (!before.isPublished && after.isPublished) {
+    await sendContentNotificationToAllUsers({
+      title: "📚 새 난임백과",
+      body: truncate(after.title, 50),
+      data: { articleId: event.params.articleId, type: "new_encyclopedia" },
+      channelId: "content",
+    });
+  }
+});
+
+// --- 영상 ---
+exports.sendVideoNotification = onDocumentCreated("videos/{videoId}", async (event) => {
+  const video = event.data?.data();
+  if (!video || !video.isPublished) return;
+  await sendContentNotificationToAllUsers({
+    title: "🎥 새 아기성공TV 영상",
+    body: truncate(video.title, 50),
+    data: { videoId: event.params.videoId, type: "new_video" },
+    channelId: "content",
+  });
+});
+
+exports.sendVideoPublishedNotification = onDocumentUpdated("videos/{videoId}", async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+  if (!before.isPublished && after.isPublished) {
+    await sendContentNotificationToAllUsers({
+      title: "🎥 새 아기성공TV 영상",
+      body: truncate(after.title, 50),
+      data: { videoId: event.params.videoId, type: "new_video" },
+      channelId: "content",
+    });
+  }
+});
+
+// ==================== 구독 알림 ====================
+
+/**
+ * 특정 유저에게 구독 알림 전송
+ */
+async function sendSubscriptionNotificationToUser(userId, { title, body, data }) {
+  if (!userId) return;
+  const userDoc = await db.collection("users").doc(userId).get();
+  if (!userDoc.exists) return;
+
+  const userData = userDoc.data();
+  if (!isNotificationEnabled(userData, "subscription")) return;
+  if (!userData.fcmToken) return;
+
+  await messaging.send({
+    token: userData.fcmToken,
+    notification: { title, body },
+    data,
+    android: { priority: "high", notification: { channelId: "subscription", sound: "default" } },
+    apns: { payload: { aps: { badge: 1, sound: "default" } } },
+  });
+}
+
+// --- 구독 결제 완료 (구독 문서 생성 시) ---
+exports.sendSubscriptionPurchasedNotification = onDocumentCreated(
+  "subscriptions/{subscriptionId}",
+  async (event) => {
+    const sub = event.data?.data();
+    if (!sub || sub.status !== "active") return;
+
+    const endDate = sub.endDate?.toDate();
+    const endDateStr = endDate ? `${endDate.getFullYear()}.${endDate.getMonth() + 1}.${endDate.getDate()}` : "";
+
+    await sendSubscriptionNotificationToUser(sub.userId, {
+      title: "✅ 구독이 시작되었습니다",
+      body: `이용 기간: ~${endDateStr}`,
+      data: { type: "subscription_purchased" },
+    });
+  }
+);
+
+// --- 구독 만료 임박 (매일 체크, 3일 전) ---
+exports.checkSubscriptionExpiringSoon = onSchedule(
+  { schedule: "every day 09:00", timeZone: "Asia/Seoul" },
+  async () => {
+    const now = new Date();
+    const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const startOfDay = new Date(threeDaysLater.getFullYear(), threeDaysLater.getMonth(), threeDaysLater.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+    const snapshot = await db.collection("subscriptions")
+      .where("status", "==", "active")
+      .where("endDate", ">=", Timestamp.fromDate(startOfDay))
+      .where("endDate", "<", Timestamp.fromDate(endOfDay))
+      .get();
+
+    console.log(`Expiring soon: ${snapshot.size}`);
+
+    for (const doc of snapshot.docs) {
+      const sub = doc.data();
+      await sendSubscriptionNotificationToUser(sub.userId, {
+        title: "⏰ 구독 만료 임박",
+        body: "3일 후 구독이 만료됩니다. 계속 이용하려면 연장해주세요.",
+        data: { type: "subscription_expiring" },
+      });
+    }
+  }
+);
+
+// --- 구독 만료 (매일 체크) ---
+exports.checkSubscriptionExpired = onSchedule(
+  { schedule: "every day 09:10", timeZone: "Asia/Seoul" },
+  async () => {
+    const now = Timestamp.now();
+    const snapshot = await db.collection("subscriptions")
+      .where("status", "==", "active")
+      .where("endDate", "<", now)
+      .get();
+
+    console.log(`Expired: ${snapshot.size}`);
+
+    for (const doc of snapshot.docs) {
+      const sub = doc.data();
+
+      // 상태 업데이트
+      await doc.ref.update({ status: "expired", updatedAt: now });
+      await db.collection("users").doc(sub.userId).update({
+        subscriptionStatus: "expired",
+      });
+
+      // 알림 전송
+      await sendSubscriptionNotificationToUser(sub.userId, {
+        title: "🔔 구독이 만료되었습니다",
+        body: "계속 이용하려면 구독을 갱신해주세요.",
+        data: { type: "subscription_expired" },
+      });
+    }
+  }
+);

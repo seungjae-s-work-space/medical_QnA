@@ -165,11 +165,21 @@ class NotificationService {
       enableVibration: true,
     );
 
-    // 뉴스 채널
-    const newsChannel = AndroidNotificationChannel(
-      'news',
-      '뉴스 알림',
-      description: '새로운 뉴스가 등록되면 알림을 받습니다',
+    // 콘텐츠 채널 (뉴스/공지/백과/영상)
+    const contentChannel = AndroidNotificationChannel(
+      'content',
+      '콘텐츠 알림',
+      description: '새로운 뉴스/공지/백과/영상이 등록되면 알림을 받습니다',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    // 구독 채널
+    const subscriptionChannel = AndroidNotificationChannel(
+      'subscription',
+      '구독 알림',
+      description: '구독 결제, 만료 등 구독 관련 알림을 받습니다',
       importance: Importance.high,
       playSound: true,
       enableVibration: true,
@@ -180,7 +190,8 @@ class NotificationService {
 
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(chatChannel);
-      await androidPlugin.createNotificationChannel(newsChannel);
+      await androidPlugin.createNotificationChannel(contentChannel);
+      await androidPlugin.createNotificationChannel(subscriptionChannel);
       if (kDebugMode) {
         print('Android 알림 채널 생성 완료');
       }
@@ -344,6 +355,48 @@ class NotificationService {
       if (kDebugMode) {
         print('알림 설정 변경 실패: $e');
       }
+    }
+  }
+
+  /// 카테고리별 알림 설정 전체 조회
+  /// 반환: { 'notificationsEnabled': bool, 'notificationChat': bool, 'notificationContent': bool, 'notificationSubscription': bool }
+  Future<Map<String, bool>> getNotificationSettings() async {
+    final user = _auth.currentUser;
+    const defaults = {
+      'notificationsEnabled': true,
+      'notificationChat': true,
+      'notificationContent': true,
+      'notificationSubscription': true,
+    };
+    if (user == null) return defaults;
+
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      final data = doc.data() ?? {};
+      return {
+        'notificationsEnabled': data['notificationsEnabled'] ?? true,
+        'notificationChat': data['notificationChat'] ?? true,
+        'notificationContent': data['notificationContent'] ?? true,
+        'notificationSubscription': data['notificationSubscription'] ?? true,
+      };
+    } catch (e) {
+      if (kDebugMode) print('알림 설정 조회 실패: $e');
+      return defaults;
+    }
+  }
+
+  /// 카테고리별 알림 설정 변경
+  /// key: 'notificationChat' | 'notificationContent' | 'notificationSubscription'
+  Future<void> setCategoryNotification(String key, bool enabled) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore.collection('users').doc(user.uid).set({
+        key: enabled,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      if (kDebugMode) print('$key 설정 변경 실패: $e');
     }
   }
 
