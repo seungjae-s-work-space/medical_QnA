@@ -146,16 +146,24 @@ class SubscriptionService {
 
   // 구매 완료 처리
   Future<void> completePurchase(PurchaseDetails purchaseDetails) async {
-    if (purchaseDetails.pendingCompletePurchase) {
+    // iOS/Android 모두 무조건 completePurchase 호출 (트랜잭션 finish)
+    try {
       await _iap.completePurchase(purchaseDetails);
+      debugPrint('Purchase completed: ${purchaseDetails.productID}');
+    } catch (e) {
+      debugPrint('completePurchase error: $e');
     }
 
     // Android: 소모품 consume 처리 (재구매 가능하게)
     if (Platform.isAndroid) {
-      final androidAddition =
-          _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
-      await androidAddition.consumePurchase(purchaseDetails);
-      debugPrint('Android: purchase consumed for ${purchaseDetails.productID}');
+      try {
+        final androidAddition =
+            _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
+        await androidAddition.consumePurchase(purchaseDetails);
+        debugPrint('Android: purchase consumed for ${purchaseDetails.productID}');
+      } catch (e) {
+        debugPrint('Android consume error: $e');
+      }
     }
   }
 

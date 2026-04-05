@@ -53,6 +53,7 @@ const SUBSCRIPTION_PLANS = {
   plan_6months: '6개월 이용권',
   plan_12months: '12개월 이용권',
   admin_grant: '관리자 부여',
+  admin_extend: '관리자 연장',
 };
 
 // 실제 활성 상태 확인 함수 (endDate까지 고려)
@@ -246,26 +247,37 @@ function SubscriptionManager() {
   };
 
   const handleExtend = async () => {
-    if (!selectedSubscription?.id) return;
+    if (!selectedSubscription?.userId) return;
 
     try {
-      const currentEndDate = selectedSubscription.endDate?.toDate() || new Date();
-      const newEndDate = new Date(currentEndDate);
+      const now = new Date();
+      // 기존 만료일이 미래면 거기부터, 과거면 오늘부터 연장
+      const baseEndDate = selectedSubscription.endDate?.toDate() || now;
+      const startFrom = baseEndDate > now ? baseEndDate : now;
+      const newEndDate = new Date(startFrom);
       newEndDate.setDate(newEndDate.getDate() + extendDays);
 
-      await updateDoc(doc(db, 'subscriptions', selectedSubscription.id), {
-        endDate: Timestamp.fromDate(newEndDate),
+      // 연장 이력을 위해 새 구독 문서 생성
+      const subscriptionId = `admin_${selectedSubscription.userId}_${Date.now()}`;
+      await setDoc(doc(db, 'subscriptions', subscriptionId), {
+        userId: selectedSubscription.userId,
+        planId: 'admin_extend',
+        platform: 'admin',
         status: 'active',
+        startDate: Timestamp.fromDate(now),
+        endDate: Timestamp.fromDate(newEndDate),
+        createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
+        grantedBy: 'admin',
+        extendDays,
       });
 
       // users 문서도 업데이트 (앱에서 구독 상태 인식용)
-      if (selectedSubscription.userId) {
-        await updateDoc(doc(db, 'users', selectedSubscription.userId), {
-          subscriptionStatus: 'active',
-          subscriptionEndDate: Timestamp.fromDate(newEndDate),
-        });
-      }
+      await updateDoc(doc(db, 'users', selectedSubscription.userId), {
+        subscriptionId,
+        subscriptionStatus: 'active',
+        subscriptionEndDate: Timestamp.fromDate(newEndDate),
+      });
 
       setSnackbar({
         open: true,
