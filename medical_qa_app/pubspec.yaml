@@ -3,7 +3,7 @@ description: 의료 전문가 Q&A 앱
 
 publish_to: 'none'
 
-version: 1.0.8+12
+version: 1.0.9+13
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -52,6 +52,10 @@ dependencies:
   # Remote Config (강제 업데이트)
   firebase_remote_config: ^5.1.3
   package_info_plus: ^8.0.0
+
+  # 모니터링 & 분석
+  firebase_crashlytics: ^4.1.3
+  firebase_analytics: ^11.3.3
 
   # HTML 렌더링
   flutter_html: ^3.0.0-beta.2
