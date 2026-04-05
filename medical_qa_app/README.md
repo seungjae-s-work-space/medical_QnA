@@ -2,7 +2,7 @@
 
 난임 시술 관련 의료 상담 앱 (Flutter + Firebase)
 
-- **앱 버전**: 1.0.8+12
+- **앱 버전**: 1.0.9+14
 - **Bundle ID**: `net.agisungong.nanimtalktalk`
 - **App Store**: https://apps.apple.com/us/app/id6759237772
 - **Play Store**: https://play.google.com/store/apps/details?id=net.agisungong.nanimtalktalk
@@ -102,14 +102,37 @@ Firebase Remote Config 파라미터:
 
 ## 푸시 알림 (Cloud Functions)
 
-| 함수 | 트리거 | 대상 |
-|------|--------|------|
-| `sendMessageNotification` | 새 메시지 생성 | 관리자→유저 / 유저→전체 관리자 |
-| `sendNewsNotification` | 뉴스 생성 (published) | 전체 비관리자 유저 |
-| `sendNewsPublishedNotification` | 뉴스 unpublished→published | 전체 비관리자 유저 |
+### 카테고리
+| 카테고리 | 필드명 | 포함 알림 |
+|----------|--------|----------|
+| 상담 | `notificationChat` | 채팅 메시지 |
+| 콘텐츠 | `notificationContent` | 뉴스/공지/백과/영상 신규 등록 |
+| 구독 | `notificationSubscription` | 결제 완료, 만료 임박(3일 전), 만료 |
 
-- 사용자별 알림 설정 존중 (기본값: 활성)
-- 플랫폼별 포맷 (Android priority, iOS badge)
+모두 `users` 문서에 저장. 기본값 `true`. 마스터 스위치 `notificationsEnabled`가 false이면 전체 무시.
+
+### 함수 목록
+| 함수 | 트리거 | 카테고리 |
+|------|--------|----------|
+| `sendMessageNotification` | 새 메시지 생성 | chat |
+| `sendNewsNotification` / `sendNewsPublishedNotification` | 뉴스 생성/공개 전환 | content |
+| `sendNoticeNotification` / `sendNoticePublishedNotification` | 공지 생성/공개 전환 | content |
+| `sendEncyclopediaNotification` / `sendEncyclopediaPublishedNotification` | 백과 생성/공개 전환 | content |
+| `sendVideoNotification` / `sendVideoPublishedNotification` | 영상 생성/공개 전환 | content |
+| `sendSubscriptionPurchasedNotification` | subscriptions 문서 생성 | subscription |
+| `checkSubscriptionExpiringSoon` | 매일 09:00 (KST), 3일 전 | subscription |
+| `checkSubscriptionExpired` | 매일 09:10 (KST), 자동 만료 처리 | subscription |
+
+### Android 알림 채널
+- `chat_messages` — 상담
+- `content` — 뉴스/공지/백과/영상
+- `subscription` — 구독
+
+## 모니터링 & 분석
+
+- **Firebase Crashlytics**: 앱 크래시 자동 수집 (Flutter/네이티브/비동기 에러 포함)
+- **Firebase Analytics**: 화면 전환, 세션, 첫 실행 등 자동 수집
+- **Firestore 백업**: PITR(7일) + 일일/주간 예약 백업 → [BACKUP_MANUAL.md](BACKUP_MANUAL.md) 참고
 
 ## 기술 스택
 
