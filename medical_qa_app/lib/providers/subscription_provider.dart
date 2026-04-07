@@ -1,12 +1,13 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../models/subscription_model.dart';
 import '../services/subscription_service.dart';
 
-class SubscriptionProvider with ChangeNotifier {
+class SubscriptionProvider with ChangeNotifier, WidgetsBindingObserver {
   final SubscriptionService _service = SubscriptionService();
   StreamSubscription<SubscriptionModel?>? _subscriptionStreamSub;
+  final Map<String, PurchaseDetails> _deferredPurchases = {};
 
   SubscriptionModel? _currentSubscription;
   List<ProductDetails> _products = [];
@@ -14,6 +15,12 @@ class SubscriptionProvider with ChangeNotifier {
   bool _isPurchasing = false;
   String? _errorMessage;
   String? _userId;
+  Future<void>? _bootstrapFuture;
+
+  SubscriptionProvider() {
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_warmUpPurchasePipeline());
+  }
 
   // 디버그 로그 (UI 표시용)
   final List<String> debugLogs = [];
@@ -42,6 +49,26 @@ class SubscriptionProvider with ChangeNotifier {
     return _currentSubscription!.remainingDays;
   }
 
+  Future<void> _ensurePurchasePipelineReady() async {
+    _bootstrapFuture ??= _bootstrapPurchasePipeline();
+    await _bootstrapFuture;
+  }
+
+  Future<void> _warmUpPurchasePipeline() async {
+    try {
+      await _ensurePurchasePipelineReady();
+    } catch (e) {
+      _log('초기 구매 파이프라인 준비 실패: $e');
+    }
+  }
+
+  Future<void> _bootstrapPurchasePipeline() async {
+    await _service.initialize();
+    _products = _service.products;
+    await _service.startListening(_handlePurchaseUpdate);
+    notifyListeners();
+  }
+
   // 초기화
   Future<void> initialize(String userId) async {
     _userId = userId;
@@ -49,18 +76,15 @@ class SubscriptionProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _service.initialize();
-      _products = _service.products;
-
-      // 구매 이벤트 리스닝
-      await _service.startListening(_handlePurchaseUpdate);
+      await _ensurePurchasePipelineReady();
 
       // 현재 구독 정보 로드 + 실시간 리스닝
       await loadCurrentSubscription();
       _startSubscriptionListener(userId);
 
       // 미처리 구매 복구
-      await _service.recoverPendingPurchases(_handlePurchaseUpdate);
+      await _recoverPendingPurchases('initialize');
+      await _flushDeferredPurchases();
 
       // 구독 상태 확인
       await _service.checkAndUpdateSubscriptionStatus(userId);
@@ -95,6 +119,41 @@ class SubscriptionProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  String _purchaseKey(PurchaseDetails purchaseDetails) {
+    return purchaseDetails.purchaseID ??
+        '${purchaseDetails.productID}:${purchaseDetails.transactionDate ?? 'unknown'}';
+  }
+
+  Future<void> _recoverPendingPurchases(String reason) async {
+    if (_userId == null) return;
+
+    _log('미처리 구매 복구 시도: $reason');
+    final recoveredCount = await _service.recoverPendingPurchases(
+      _handlePurchaseUpdate,
+    );
+    _log('미처리 구매 복구 결과: $recoveredCount건');
+  }
+
+  Future<void> _flushDeferredPurchases() async {
+    if (_userId == null || _deferredPurchases.isEmpty) return;
+
+    final queuedPurchases = _deferredPurchases.values.toList();
+    _deferredPurchases.clear();
+    _log('보류된 구매 처리 시작: ${queuedPurchases.length}건');
+
+    for (final purchase in queuedPurchases) {
+      await _verifyAndDeliverPurchase(purchase);
+    }
+  }
+
+  bool _isAlreadyOwnedError(PurchaseDetails purchaseDetails) {
+    final code = purchaseDetails.error?.code.toLowerCase();
+    final message = purchaseDetails.error?.message.toLowerCase();
+    return code?.contains('already') == true ||
+        message?.contains('already owned') == true ||
+        message?.contains('이미 보유') == true;
+  }
+
   // 구매 이벤트 처리
   Future<void> _handlePurchaseUpdate(PurchaseDetails purchaseDetails) async {
     _log(
@@ -119,6 +178,14 @@ class SubscriptionProvider with ChangeNotifier {
         _log('상태: error → ${purchaseDetails.error?.message}');
         _isPurchasing = false;
         _errorMessage = purchaseDetails.error?.message ?? '구매 중 오류가 발생했습니다.';
+        if (_isAlreadyOwnedError(purchaseDetails)) {
+          _log('이미 보유 오류 감지 → 미처리 구매 복구 재시도');
+          await _recoverPendingPurchases('already owned error');
+          await loadCurrentSubscription();
+          _errorMessage = hasActiveSubscription
+              ? '이전 결제가 복구되어 이용 기간을 다시 확인해 주세요.'
+              : _errorMessage;
+        }
         await _service.completePurchase(purchaseDetails);
         notifyListeners();
         break;
@@ -139,7 +206,8 @@ class SubscriptionProvider with ChangeNotifier {
         '검증 시작: userId=$_userId, productID=${purchaseDetails.productID}, purchaseID=${purchaseDetails.purchaseID}');
 
     if (_userId == null) {
-      _log('❌ userId가 null → 저장 건너뜀');
+      _deferredPurchases[_purchaseKey(purchaseDetails)] = purchaseDetails;
+      _log('⏸️ userId가 null → 구매를 큐에 보관');
       return;
     }
 
@@ -188,18 +256,43 @@ class SubscriptionProvider with ChangeNotifier {
 
   // 구독 구매
   Future<bool> purchaseSubscription(SubscriptionPlan plan) async {
+    await _ensurePurchasePipelineReady();
     _isPurchasing = true;
     _errorMessage = null;
     notifyListeners();
 
+    final recoveredCount = await _service.recoverPendingPurchases(
+      _handlePurchaseUpdate,
+    );
+    if (recoveredCount > 0) {
+      await loadCurrentSubscription();
+      _isPurchasing = false;
+      _errorMessage = '이전 결제를 먼저 복구했습니다. 만료일을 확인해 주세요.';
+      notifyListeners();
+      return false;
+    }
+
     final success = await _service.purchaseSubscription(plan);
     if (!success) {
+      await _recoverPendingPurchases('purchase start failed');
+      await loadCurrentSubscription();
       _isPurchasing = false;
       _errorMessage = '구매를 시작할 수 없습니다.';
       notifyListeners();
+    } else {
+      unawaited(_watchForMissedPurchase());
     }
 
     return success;
+  }
+
+  Future<void> _watchForMissedPurchase() async {
+    await Future<void>.delayed(const Duration(seconds: 3));
+    if (!_isPurchasing || _userId == null) return;
+
+    _log('구매 후 watchdog 복구 시도');
+    await _recoverPendingPurchases('purchase watchdog');
+    await loadCurrentSubscription();
   }
 
   // 구매 복원
@@ -230,12 +323,25 @@ class SubscriptionProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void clearDebugLogs() {
+    debugLogs.clear();
+    notifyListeners();
+  }
+
   // 사용 가능 여부
   bool get isAvailable => _service.isAvailable;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _userId != null) {
+      unawaited(_recoverPendingPurchases('app resumed'));
+    }
+  }
 
   // 리소스 정리
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _subscriptionStreamSub?.cancel();
     _service.dispose();
     super.dispose();

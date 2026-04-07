@@ -19,6 +19,7 @@ class SubscriptionService {
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   List<ProductDetails> _products = [];
   bool _isAvailable = false;
+  Future<void>? _initializeFuture;
 
   // 상품 ID 목록
   Set<String> get _productIds {
@@ -33,20 +34,23 @@ class SubscriptionService {
 
   // 초기화
   Future<void> initialize() async {
+    _initializeFuture ??= _initializeInternal();
+    await _initializeFuture;
+  }
+
+  Future<void> _initializeInternal() async {
     _isAvailable = await _iap.isAvailable();
     if (!_isAvailable) {
       debugPrint('In-app purchase is not available');
       return;
     }
 
-    // iOS에서 과거 거래 완료 처리
     if (Platform.isIOS) {
       final InAppPurchaseStoreKitPlatformAddition iosPlatformAddition =
           _iap.getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
       await iosPlatformAddition.setDelegate(ExamplePaymentQueueDelegate());
     }
 
-    // 상품 정보 로드
     await loadProducts();
   }
 
@@ -138,7 +142,7 @@ class SubscriptionService {
     try {
       return await _iap.buyConsumable(
         purchaseParam: purchaseParam,
-        autoConsume: false,
+        autoConsume: Platform.isIOS,
       );
     } catch (e) {
       debugPrint('Purchase error: $e');
@@ -148,17 +152,11 @@ class SubscriptionService {
 
   // 구매 완료 처리
   Future<void> completePurchase(PurchaseDetails purchaseDetails) async {
-    try {
-      if (purchaseDetails.pendingCompletePurchase) {
-        await _iap.completePurchase(purchaseDetails);
-        debugPrint('Purchase completed: ${purchaseDetails.productID}');
-      }
-    } catch (e) {
-      debugPrint('completePurchase error: $e');
-    }
+    final shouldConsumeOnAndroid = Platform.isAndroid &&
+        (purchaseDetails.status == PurchaseStatus.purchased ||
+            purchaseDetails.status == PurchaseStatus.restored);
 
-    // Android: 소모품 consume 처리 (재구매 가능하게)
-    if (Platform.isAndroid) {
+    if (shouldConsumeOnAndroid) {
       try {
         final androidAddition =
             _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
@@ -169,13 +167,24 @@ class SubscriptionService {
         debugPrint('Android consume error: $e');
       }
     }
+
+    try {
+      if (purchaseDetails.pendingCompletePurchase) {
+        await _iap.completePurchase(purchaseDetails);
+        debugPrint('Purchase completed: ${purchaseDetails.productID}');
+      }
+    } catch (e) {
+      debugPrint('completePurchase error: $e');
+    }
   }
 
   // Android: 미처리 구매 복구
-  Future<void> recoverPendingPurchases(
+  Future<int> recoverPendingPurchases(
     FutureOr<void> Function(PurchaseDetails) onPurchaseUpdate,
   ) async {
-    if (!Platform.isAndroid) return;
+    if (!Platform.isAndroid) return 0;
+
+    var recoveredCount = 0;
 
     try {
       final androidAddition =
@@ -189,10 +198,13 @@ class SubscriptionService {
           'Recovering pending purchase: ${purchase.productID} (${purchase.purchaseID})',
         );
         await onPurchaseUpdate(purchase);
+        recoveredCount++;
       }
     } catch (e) {
       debugPrint('Error recovering pending purchases: $e');
     }
+
+    return recoveredCount;
   }
 
   // 구매 복원
@@ -208,10 +220,12 @@ class SubscriptionService {
     required SubscriptionPlan plan,
     required PurchaseDetails purchaseDetails,
   }) async {
-    // 중복 구매 방지 - 동일 transactionId가 이미 저장되어 있으면 스킵
+    // 중복 구매 방지 - 본인 구독 범위에서만 동일 transactionId 확인
+    // Firestore Rules상 subscriptions 조회는 userId로 범위를 제한해야 허용된다.
     if (purchaseDetails.purchaseID != null) {
       final existing = await _firestore
           .collection('subscriptions')
+          .where('userId', isEqualTo: userId)
           .where('transactionId', isEqualTo: purchaseDetails.purchaseID)
           .limit(1)
           .get();

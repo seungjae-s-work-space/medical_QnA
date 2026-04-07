@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/subscription_model.dart';
@@ -81,6 +82,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
                 // 이용 안내
                 _buildInfoSection(),
+
+                const SizedBox(height: 24),
+
+                // 배포 테스트용 진단 패널
+                _buildDiagnosticPanel(provider),
               ],
             ),
           );
@@ -115,7 +121,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ),
                 child: Icon(
                   hasActive ? Icons.workspace_premium : Icons.person_outline,
-                  color: hasActive ? const Color(0xFFB87BA8) : AppColors.textSecondary,
+                  color: hasActive
+                      ? const Color(0xFFB87BA8)
+                      : AppColors.textSecondary,
                   size: 24,
                 ),
               ),
@@ -125,7 +133,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: hasActive ? const Color(0xFFB87BA8) : AppColors.textPrimary,
+                  color: hasActive
+                      ? const Color(0xFFB87BA8)
+                      : AppColors.textPrimary,
                 ),
               ),
             ],
@@ -205,7 +215,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? const Color(0xFFB87BA8) : Colors.transparent,
+                color:
+                    isSelected ? const Color(0xFFB87BA8) : Colors.transparent,
                 border: Border.all(
                   color: isSelected
                       ? const Color(0xFFB87BA8)
@@ -346,12 +357,260 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildLinkButton('이용약관', 'https://sensational-baklava-76afbf.netlify.app/terms/gukitso'),
+              _buildLinkButton('이용약관',
+                  'https://sensational-baklava-76afbf.netlify.app/terms/gukitso'),
               const SizedBox(width: 24),
-              _buildLinkButton('개인정보처리방침', 'https://sensational-baklava-76afbf.netlify.app/privacy/gukitso'),
+              _buildLinkButton('개인정보처리방침',
+                  'https://sensational-baklava-76afbf.netlify.app/privacy/gukitso'),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticPanel(SubscriptionProvider provider) {
+    final logs = provider.debugLogs.reversed.toList();
+    final linesToCopy = <String>[
+      'isAvailable=${provider.isAvailable}',
+      'isPurchasing=${provider.isPurchasing}',
+      'hasActiveSubscription=${provider.hasActiveSubscription}',
+      'productCount=${provider.products.length}',
+      'error=${provider.errorMessage ?? '-'}',
+      'currentEndDate=${provider.currentSubscription?.endDate.toIso8601String() ?? '-'}',
+      '',
+      ...logs,
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.bug_report_outlined,
+                color: Colors.greenAccent,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  '결제 진단 로그',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              _buildDebugAction(
+                label: '복사',
+                onTap: () async {
+                  await Clipboard.setData(
+                    ClipboardData(text: linesToCopy.join('\n')),
+                  );
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('진단 로그를 복사했습니다.')),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildDebugAction(
+                label: '초기화',
+                onTap: () {
+                  provider.clearDebugLogs();
+                  provider.clearError();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '배포 앱에서도 최근 결제 흐름을 이 화면에서 바로 확인할 수 있습니다.',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildStatusChip(
+                label: provider.isAvailable ? '스토어 연결됨' : '스토어 미연결',
+                color: provider.isAvailable
+                    ? Colors.greenAccent
+                    : Colors.redAccent,
+              ),
+              _buildStatusChip(
+                label: provider.isPurchasing ? '구매 진행중' : '대기중',
+                color: provider.isPurchasing
+                    ? Colors.orangeAccent
+                    : Colors.blueGrey,
+              ),
+              _buildStatusChip(
+                label: provider.hasActiveSubscription ? '이용권 활성' : '이용권 없음',
+                color: provider.hasActiveSubscription
+                    ? const Color(0xFFB87BA8)
+                    : Colors.blueGrey,
+              ),
+              _buildStatusChip(
+                label: '상품 ${provider.products.length}개',
+                color: Colors.tealAccent,
+              ),
+            ],
+          ),
+          if (provider.errorMessage != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.redAccent.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Text(
+                '최근 오류: ${provider.errorMessage}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '만료일: ${provider.currentSubscription != null ? DateFormat('yyyy-MM-dd HH:mm:ss').format(provider.currentSubscription!.endDate) : '-'}',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '남은 일수: ${provider.remainingDays}',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 120, maxHeight: 260),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.28),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            child: logs.isEmpty
+                ? const Text(
+                    '아직 기록이 없습니다.\n구독 화면 진입이나 구매 시 로그가 여기에 쌓입니다.',
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                      height: 1.5,
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: logs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      return SelectableText(
+                        logs[index],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          height: 1.4,
+                          fontFamily: 'monospace',
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebugAction({
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip({
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
