@@ -15,6 +15,15 @@ class SubscriptionProvider with ChangeNotifier {
   String? _errorMessage;
   String? _userId;
 
+  // 디버그 로그 (UI 표시용)
+  final List<String> debugLogs = [];
+  void _log(String msg) {
+    debugPrint('[IAP] $msg');
+    debugLogs.add('[${DateTime.now().toString().substring(11, 19)}] $msg');
+    if (debugLogs.length > 50) debugLogs.removeAt(0);
+    notifyListeners();
+  }
+
   SubscriptionModel? get currentSubscription => _currentSubscription;
   List<ProductDetails> get products => _products;
   bool get isLoading => _isLoading;
@@ -44,11 +53,14 @@ class SubscriptionProvider with ChangeNotifier {
       _products = _service.products;
 
       // 구매 이벤트 리스닝
-      _service.startListening(_handlePurchaseUpdate);
+      await _service.startListening(_handlePurchaseUpdate);
 
       // 현재 구독 정보 로드 + 실시간 리스닝
       await loadCurrentSubscription();
       _startSubscriptionListener(userId);
+
+      // 미처리 구매 복구
+      await _service.recoverPendingPurchases(_handlePurchaseUpdate);
 
       // 구독 상태 확인
       await _service.checkAndUpdateSubscriptionStatus(userId);
@@ -84,21 +96,27 @@ class SubscriptionProvider with ChangeNotifier {
   }
 
   // 구매 이벤트 처리
-  void _handlePurchaseUpdate(PurchaseDetails purchaseDetails) async {
+  Future<void> _handlePurchaseUpdate(PurchaseDetails purchaseDetails) async {
+    _log(
+        'purchaseUpdate: ${purchaseDetails.status} / ${purchaseDetails.productID}');
+
     switch (purchaseDetails.status) {
       case PurchaseStatus.pending:
+        _log('상태: pending');
         _isPurchasing = true;
         notifyListeners();
         break;
 
       case PurchaseStatus.purchased:
       case PurchaseStatus.restored:
+        _log('상태: ${purchaseDetails.status} → 검증 시작');
         await _verifyAndDeliverPurchase(purchaseDetails);
         _isPurchasing = false;
         notifyListeners();
         break;
 
       case PurchaseStatus.error:
+        _log('상태: error → ${purchaseDetails.error?.message}');
         _isPurchasing = false;
         _errorMessage = purchaseDetails.error?.message ?? '구매 중 오류가 발생했습니다.';
         await _service.completePurchase(purchaseDetails);
@@ -106,6 +124,7 @@ class SubscriptionProvider with ChangeNotifier {
         break;
 
       case PurchaseStatus.canceled:
+        _log('상태: canceled');
         _isPurchasing = false;
         await _service.completePurchase(purchaseDetails);
         notifyListeners();
@@ -114,34 +133,43 @@ class SubscriptionProvider with ChangeNotifier {
   }
 
   // 구매 검증 및 처리
-  Future<void> _verifyAndDeliverPurchase(PurchaseDetails purchaseDetails) async {
-    if (_userId == null) return;
+  Future<void> _verifyAndDeliverPurchase(
+      PurchaseDetails purchaseDetails) async {
+    _log(
+        '검증 시작: userId=$_userId, productID=${purchaseDetails.productID}, purchaseID=${purchaseDetails.purchaseID}');
+
+    if (_userId == null) {
+      _log('❌ userId가 null → 저장 건너뜀');
+      return;
+    }
 
     try {
-      // 상품 ID로 플랜 찾기
       final plan = _findPlanByProductId(purchaseDetails.productID);
       if (plan == null) {
+        _log('❌ 플랜 못 찾음: ${purchaseDetails.productID}');
         _errorMessage = '구독 플랜을 찾을 수 없습니다.';
         return;
       }
+      _log('✅ 플랜 찾음: ${plan.id} (${plan.name})');
 
-      // Firestore에 구독 정보 저장
+      _log('Firestore 저장 시작...');
       await _service.saveSubscription(
         userId: _userId!,
         plan: plan,
         purchaseDetails: purchaseDetails,
       );
+      _log('✅ Firestore 저장 완료');
 
-      // 현재 구독 정보 다시 로드
-      await loadCurrentSubscription();
-
-      // 구매 완료 처리
       await _service.completePurchase(purchaseDetails);
+      _log('✅ completePurchase 완료');
+
+      await loadCurrentSubscription();
+      _log('✅ 구독 정보 리로드 완료 (endDate: ${_currentSubscription?.endDate})');
 
       _errorMessage = null;
     } catch (e) {
-      debugPrint('Purchase verification error: $e');
-      _errorMessage = '구매 처리 중 오류가 발생했습니다.';
+      _log('❌ 에러: $e');
+      _errorMessage = '구매 처리 중 오류: $e';
     }
   }
 

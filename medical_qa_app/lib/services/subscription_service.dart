@@ -23,9 +23,7 @@ class SubscriptionService {
   // 상품 ID 목록
   Set<String> get _productIds {
     if (Platform.isIOS) {
-      return SubscriptionPlan.defaultPlans
-          .map((p) => p.iosProductId)
-          .toSet();
+      return SubscriptionPlan.defaultPlans.map((p) => p.iosProductId).toSet();
     } else {
       return SubscriptionPlan.defaultPlans
           .map((p) => p.androidProductId)
@@ -66,7 +64,8 @@ class SubscriptionService {
     final ProductDetailsResponse response =
         await _iap.queryProductDetails(_productIds);
 
-    debugPrint('Query response - Found: ${response.productDetails.length}, Not found: ${response.notFoundIDs.length}');
+    debugPrint(
+        'Query response - Found: ${response.productDetails.length}, Not found: ${response.notFoundIDs.length}');
 
     if (response.notFoundIDs.isNotEmpty) {
       debugPrint('Products NOT found: ${response.notFoundIDs}');
@@ -78,13 +77,17 @@ class SubscriptionService {
 
     _products = response.productDetails;
     for (final product in _products) {
-      debugPrint('Product loaded: ${product.id} - ${product.title} - ${product.price}');
+      debugPrint(
+          'Product loaded: ${product.id} - ${product.title} - ${product.price}');
     }
     debugPrint('=== Total ${_products.length} products loaded ===');
   }
 
   // 구매 스트림 리스닝 시작
-  void startListening(Function(PurchaseDetails) onPurchaseUpdate) {
+  Future<void> startListening(
+    FutureOr<void> Function(PurchaseDetails) onPurchaseUpdate,
+  ) async {
+    await _subscription?.cancel();
     _subscription = _iap.purchaseStream.listen(
       (List<PurchaseDetails> purchaseDetailsList) {
         for (final purchaseDetails in purchaseDetailsList) {
@@ -111,7 +114,8 @@ class SubscriptionService {
 
   // 특정 플랜의 상품 정보 가져오기
   ProductDetails? getProductForPlan(SubscriptionPlan plan) {
-    final productId = Platform.isIOS ? plan.iosProductId : plan.androidProductId;
+    final productId =
+        Platform.isIOS ? plan.iosProductId : plan.androidProductId;
     try {
       return _products.firstWhere((p) => p.id == productId);
     } catch (e) {
@@ -132,8 +136,6 @@ class SubscriptionService {
     );
 
     try {
-      // 소모품(Consumable)으로 설정된 경우 buyConsumable 사용
-      // autoConsume: false로 설정하여 직접 소비 처리 (Firestore 저장 후)
       return await _iap.buyConsumable(
         purchaseParam: purchaseParam,
         autoConsume: false,
@@ -146,10 +148,11 @@ class SubscriptionService {
 
   // 구매 완료 처리
   Future<void> completePurchase(PurchaseDetails purchaseDetails) async {
-    // iOS/Android 모두 무조건 completePurchase 호출 (트랜잭션 finish)
     try {
-      await _iap.completePurchase(purchaseDetails);
-      debugPrint('Purchase completed: ${purchaseDetails.productID}');
+      if (purchaseDetails.pendingCompletePurchase) {
+        await _iap.completePurchase(purchaseDetails);
+        debugPrint('Purchase completed: ${purchaseDetails.productID}');
+      }
     } catch (e) {
       debugPrint('completePurchase error: $e');
     }
@@ -160,16 +163,43 @@ class SubscriptionService {
         final androidAddition =
             _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
         await androidAddition.consumePurchase(purchaseDetails);
-        debugPrint('Android: purchase consumed for ${purchaseDetails.productID}');
+        debugPrint(
+            'Android: purchase consumed for ${purchaseDetails.productID}');
       } catch (e) {
         debugPrint('Android consume error: $e');
       }
     }
   }
 
+  // Android: 미처리 구매 복구
+  Future<void> recoverPendingPurchases(
+    FutureOr<void> Function(PurchaseDetails) onPurchaseUpdate,
+  ) async {
+    if (!Platform.isAndroid) return;
+
+    try {
+      final androidAddition =
+          _iap.getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
+      final queryResult = await androidAddition.queryPastPurchases();
+
+      for (final purchase in queryResult.pastPurchases) {
+        if (!_productIds.contains(purchase.productID)) continue;
+
+        debugPrint(
+          'Recovering pending purchase: ${purchase.productID} (${purchase.purchaseID})',
+        );
+        await onPurchaseUpdate(purchase);
+      }
+    } catch (e) {
+      debugPrint('Error recovering pending purchases: $e');
+    }
+  }
+
   // 구매 복원
   Future<void> restorePurchases() async {
-    await _iap.restorePurchases();
+    if (Platform.isIOS) {
+      await _iap.restorePurchases();
+    }
   }
 
   // Firestore에 구독 정보 저장
@@ -186,7 +216,8 @@ class SubscriptionService {
           .limit(1)
           .get();
       if (existing.docs.isNotEmpty) {
-        debugPrint('Duplicate purchase detected, skipping: ${purchaseDetails.purchaseID}');
+        debugPrint(
+            'Duplicate purchase detected, skipping: ${purchaseDetails.purchaseID}');
         return;
       }
     }
@@ -197,7 +228,8 @@ class SubscriptionService {
     final currentSubscription = await getCurrentSubscription(userId);
     DateTime baseDate = now;
 
-    if (currentSubscription != null && currentSubscription.endDate.isAfter(now)) {
+    if (currentSubscription != null &&
+        currentSubscription.endDate.isAfter(now)) {
       // 기존 구독의 만료일이 아직 남아있으면 그 날짜부터 추가
       baseDate = currentSubscription.endDate;
       debugPrint('Extending from existing subscription end date: $baseDate');
@@ -206,8 +238,10 @@ class SubscriptionService {
     final endDate = baseDate.add(Duration(days: plan.durationMonths * 30));
     debugPrint('New subscription end date: $endDate');
 
+    final docRef = _firestore.collection('subscriptions').doc();
+
     final subscription = SubscriptionModel(
-      id: '', // Firestore에서 자동 생성
+      id: docRef.id,
       userId: userId,
       planId: plan.id,
       status: SubscriptionStatus.active,
@@ -221,24 +255,21 @@ class SubscriptionService {
       updatedAt: now,
     );
 
-    // 구독 정보 저장
-    final docRef = await _firestore
-        .collection('subscriptions')
-        .add(subscription.toMap());
-
-    // 사용자 문서 업데이트
-    await _firestore.collection('users').doc(userId).update({
+    final batch = _firestore.batch();
+    batch.set(docRef, subscription.toMap());
+    batch.update(_firestore.collection('users').doc(userId), {
       'subscriptionId': docRef.id,
       'subscriptionStatus': SubscriptionStatus.active.name,
       'subscriptionEndDate': Timestamp.fromDate(endDate),
     });
+    await batch.commit();
   }
 
   // 원본 거래 ID 추출 (iOS)
   String? _getOriginalTransactionId(PurchaseDetails purchaseDetails) {
     if (Platform.isIOS && purchaseDetails is AppStorePurchaseDetails) {
-      return purchaseDetails.skPaymentTransaction.originalTransaction
-          ?.transactionIdentifier;
+      return purchaseDetails
+          .skPaymentTransaction.originalTransaction?.transactionIdentifier;
     }
     return null;
   }
@@ -254,8 +285,9 @@ class SubscriptionService {
 
       final validSubs = snapshot.docs
           .map((doc) => SubscriptionModel.fromFirestore(doc))
-          .where((sub) => sub.status == SubscriptionStatus.active ||
-                          sub.status == SubscriptionStatus.cancelled)
+          .where((sub) =>
+              sub.status == SubscriptionStatus.active ||
+              sub.status == SubscriptionStatus.cancelled)
           .toList();
 
       if (validSubs.isEmpty) return null;
@@ -282,8 +314,9 @@ class SubscriptionService {
       // 활성/취소 상태인 구독 중 만료일이 가장 늦은 것 선택
       final validSubs = querySnapshot.docs
           .map((doc) => SubscriptionModel.fromFirestore(doc))
-          .where((sub) => sub.status == SubscriptionStatus.active ||
-                          sub.status == SubscriptionStatus.cancelled)
+          .where((sub) =>
+              sub.status == SubscriptionStatus.active ||
+              sub.status == SubscriptionStatus.cancelled)
           .toList();
 
       if (validSubs.isEmpty) {
@@ -294,7 +327,8 @@ class SubscriptionService {
       // 만료일 기준 내림차순 정렬 후 첫 번째 선택
       validSubs.sort((a, b) => b.endDate.compareTo(a.endDate));
 
-      debugPrint('Found subscription: ${validSubs.first.planId}, endDate: ${validSubs.first.endDate}');
+      debugPrint(
+          'Found subscription: ${validSubs.first.planId}, endDate: ${validSubs.first.endDate}');
       return validSubs.first;
     } catch (e) {
       debugPrint('Error fetching subscription: $e');
@@ -311,10 +345,7 @@ class SubscriptionService {
     if (subscription.endDate.isBefore(now) &&
         subscription.status != SubscriptionStatus.expired) {
       // 구독 만료 처리
-      await _firestore
-          .collection('subscriptions')
-          .doc(subscription.id)
-          .update({
+      await _firestore.collection('subscriptions').doc(subscription.id).update({
         'status': SubscriptionStatus.expired.name,
         'updatedAt': Timestamp.fromDate(now),
       });
