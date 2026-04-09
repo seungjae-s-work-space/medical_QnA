@@ -8,6 +8,7 @@ class SubscriptionProvider with ChangeNotifier, WidgetsBindingObserver {
   final SubscriptionService _service = SubscriptionService();
   StreamSubscription<SubscriptionModel?>? _subscriptionStreamSub;
   final Map<String, PurchaseDetails> _deferredPurchases = {};
+  final Set<String> _processingPurchaseKeys = {};
 
   SubscriptionModel? _currentSubscription;
   List<ProductDetails> _products = [];
@@ -202,16 +203,23 @@ class SubscriptionProvider with ChangeNotifier, WidgetsBindingObserver {
   // 구매 검증 및 처리
   Future<void> _verifyAndDeliverPurchase(
       PurchaseDetails purchaseDetails) async {
-    _log(
-        '검증 시작: userId=$_userId, productID=${purchaseDetails.productID}, purchaseID=${purchaseDetails.purchaseID}');
-
-    if (_userId == null) {
-      _deferredPurchases[_purchaseKey(purchaseDetails)] = purchaseDetails;
-      _log('⏸️ userId가 null → 구매를 큐에 보관');
+    final purchaseKey = _purchaseKey(purchaseDetails);
+    if (_processingPurchaseKeys.contains(purchaseKey)) {
+      _log('⏭️ 이미 처리 중인 구매라서 중복 실행 스킵: $purchaseKey');
       return;
     }
 
+    _processingPurchaseKeys.add(purchaseKey);
+    _log(
+        '검증 시작: userId=$_userId, productID=${purchaseDetails.productID}, purchaseID=${purchaseDetails.purchaseID}');
+
     try {
+      if (_userId == null) {
+        _deferredPurchases[purchaseKey] = purchaseDetails;
+        _log('⏸️ userId가 null → 구매를 큐에 보관');
+        return;
+      }
+
       final plan = _findPlanByProductId(purchaseDetails.productID);
       if (plan == null) {
         _log('❌ 플랜 못 찾음: ${purchaseDetails.productID}');
@@ -225,6 +233,7 @@ class SubscriptionProvider with ChangeNotifier, WidgetsBindingObserver {
         userId: _userId!,
         plan: plan,
         purchaseDetails: purchaseDetails,
+        logger: _log,
       );
       _log('✅ Firestore 저장 완료');
 
@@ -236,8 +245,11 @@ class SubscriptionProvider with ChangeNotifier, WidgetsBindingObserver {
 
       _errorMessage = null;
     } catch (e) {
+      _log('❌ 에러 타입: ${e.runtimeType}');
       _log('❌ 에러: $e');
       _errorMessage = '구매 처리 중 오류: $e';
+    } finally {
+      _processingPurchaseKeys.remove(purchaseKey);
     }
   }
 

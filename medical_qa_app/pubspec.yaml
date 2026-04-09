@@ -3,7 +3,7 @@ description: 의료 전문가 Q&A 앱
 
 publish_to: 'none'
 
-version: 1.0.9+15
+version: 1.0.15+22
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -45,9 +45,9 @@ dependencies:
   open_filex: ^4.5.0
 
   # 인앱결제
-  in_app_purchase: ^3.2.0
-  in_app_purchase_storekit: ^0.3.18
-  in_app_purchase_android: ^0.3.6
+  in_app_purchase: ^3.2.3
+  in_app_purchase_storekit: ^0.4.4
+  in_app_purchase_android: ^0.4.0
 
   # Remote Config (강제 업데이트)
   firebase_remote_config: ^5.1.3

@@ -219,27 +219,46 @@ class SubscriptionService {
     required String userId,
     required SubscriptionPlan plan,
     required PurchaseDetails purchaseDetails,
+    void Function(String message)? logger,
   }) async {
+    void logStep(String message) {
+      debugPrint('[IAP/SAVE] $message');
+      logger?.call(message);
+    }
+
+    logStep(
+      'saveSubscription 시작: userId=$userId, productID=${purchaseDetails.productID}, purchaseID=${purchaseDetails.purchaseID}',
+    );
+
     // 중복 구매 방지 - 본인 구독 범위에서만 동일 transactionId 확인
     // Firestore Rules상 subscriptions 조회는 userId로 범위를 제한해야 허용된다.
     if (purchaseDetails.purchaseID != null) {
+      logStep('중복 거래 조회 시작');
       final existing = await _firestore
           .collection('subscriptions')
           .where('userId', isEqualTo: userId)
           .where('transactionId', isEqualTo: purchaseDetails.purchaseID)
           .limit(1)
           .get();
+      logStep('중복 거래 조회 완료: ${existing.docs.length}건');
       if (existing.docs.isNotEmpty) {
         debugPrint(
             'Duplicate purchase detected, skipping: ${purchaseDetails.purchaseID}');
+        logStep('이미 저장된 거래라서 저장 스킵');
         return;
       }
+    } else {
+      logStep('purchaseID 없음 → 중복 거래 조회 생략');
     }
 
     final now = DateTime.now();
 
     // 기존 구독 확인 - 잔여 기간이 있으면 그 이후부터 추가
+    logStep('현재 구독 조회 시작');
     final currentSubscription = await getCurrentSubscription(userId);
+    logStep(
+      '현재 구독 조회 완료: ${currentSubscription == null ? '없음' : 'endDate=${currentSubscription.endDate.toIso8601String()}, status=${currentSubscription.status.name}'}',
+    );
     DateTime baseDate = now;
 
     if (currentSubscription != null &&
@@ -247,12 +266,23 @@ class SubscriptionService {
       // 기존 구독의 만료일이 아직 남아있으면 그 날짜부터 추가
       baseDate = currentSubscription.endDate;
       debugPrint('Extending from existing subscription end date: $baseDate');
+      logStep('기존 만료일 기준으로 연장: ${baseDate.toIso8601String()}');
     }
 
     final endDate = baseDate.add(Duration(days: plan.durationMonths * 30));
     debugPrint('New subscription end date: $endDate');
+    logStep('새 만료일 계산 완료: ${endDate.toIso8601String()}');
 
-    final docRef = _firestore.collection('subscriptions').doc();
+    logStep('사용자 문서 확인 시작');
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    logStep('사용자 문서 확인 완료: exists=${userDoc.exists}');
+
+    final docRef = purchaseDetails.purchaseID != null
+        ? _firestore
+            .collection('subscriptions')
+            .doc('${userId}_${purchaseDetails.purchaseID}')
+        : _firestore.collection('subscriptions').doc();
+    logStep('subscriptions 문서 ID 생성: ${docRef.id}');
 
     final subscription = SubscriptionModel(
       id: docRef.id,
@@ -270,13 +300,27 @@ class SubscriptionService {
     );
 
     final batch = _firestore.batch();
+    logStep('batch에 subscriptions set 추가');
     batch.set(docRef, subscription.toMap());
+    logStep('batch에 users update 추가');
     batch.update(_firestore.collection('users').doc(userId), {
       'subscriptionId': docRef.id,
       'subscriptionStatus': SubscriptionStatus.active.name,
       'subscriptionEndDate': Timestamp.fromDate(endDate),
     });
-    await batch.commit();
+    logStep('batch.commit 시작');
+    try {
+      await batch.commit();
+      logStep('batch.commit 성공');
+    } on FirebaseException catch (e) {
+      logStep(
+        '❌ batch.commit 실패: code=${e.code}, message=${e.message ?? '-'}',
+      );
+      rethrow;
+    } catch (e) {
+      logStep('❌ batch.commit 실패: $e');
+      rethrow;
+    }
   }
 
   // 원본 거래 ID 추출 (iOS)

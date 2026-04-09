@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/subscription_model.dart';
@@ -83,10 +84,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 // 이용 안내
                 _buildInfoSection(),
 
-                const SizedBox(height: 24),
+                if (kDebugMode) ...[
+                  const SizedBox(height: 24),
 
-                // 배포 테스트용 진단 패널
-                _buildDiagnosticPanel(provider),
+                  // 디버그 빌드에서만 노출
+                  _buildDiagnosticPanel(provider),
+                ],
               ],
             ),
           );
