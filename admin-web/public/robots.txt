@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /login
+Disallow: /subscription
+Disallow: /chat/
 
 Sitemap: https://agisungong.net/sitemap.xml

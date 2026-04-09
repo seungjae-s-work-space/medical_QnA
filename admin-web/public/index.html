@@ -29,6 +29,34 @@
     <meta name="google-site-verification" content="7ZOoZgkYybv7DPt0xo1yU85erQebdLddlcNE4Bnlgb4" />
     <link rel="canonical" href="https://agisungong.net/" />
     <title>난임상담톡톡 | 난임 정보 포털</title>
+    <script>
+      (function () {
+        var searchParams = new URLSearchParams(window.location.search);
+        var redirectedPath = searchParams.get('p');
+
+        if (redirectedPath) {
+          searchParams.delete('p');
+
+          var nextUrl = redirectedPath;
+          var remainingQuery = searchParams.toString();
+
+          if (remainingQuery) {
+            nextUrl += (nextUrl.indexOf('?') === -1 ? '?' : '&') + remainingQuery;
+          }
+
+          if (nextUrl.charAt(0) !== '/') {
+            nextUrl = '/' + nextUrl;
+          }
+
+          window.history.replaceState(null, '', nextUrl);
+          return;
+        }
+
+        if (window.location.hash && window.location.hash.indexOf('#/') === 0) {
+          window.history.replaceState(null, '', window.location.hash.slice(1));
+        }
+      })();
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -39,9 +67,31 @@
         "description": "난임백과, 뉴스, 공지사항, 아기성공TV와 전문가 상담을 제공하는 난임 정보 포털입니다."
       }
     </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "난임상담톡톡",
+        "url": "https://agisungong.net/"
+      }
+    </script>
   </head>
   <body>
-    <noscript>이 앱을 사용하려면 JavaScript가 필요합니다.</noscript>
+    <noscript>
+      <div style="padding: 24px; font-family: sans-serif; line-height: 1.6;">
+        <h1>난임상담톡톡</h1>
+        <p>난임상담톡톡은 난임백과, 뉴스, 공지사항, 아기성공TV와 전문가 상담을 제공하는 난임 정보 포털입니다.</p>
+        <p>일부 기능은 JavaScript를 활성화해야 이용할 수 있습니다.</p>
+        <p>공개 콘텐츠 바로가기:</p>
+        <ul>
+          <li><a href="/">홈</a></li>
+          <li><a href="/encyclopedia">난임백과</a></li>
+          <li><a href="/news">뉴스</a></li>
+          <li><a href="/notice">공지사항</a></li>
+          <li><a href="/video">아기성공TV</a></li>
+        </ul>
+      </div>
+    </noscript>
     <div id="root"></div>
   </body>
 </html>

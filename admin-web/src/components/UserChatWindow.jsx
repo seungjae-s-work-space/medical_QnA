@@ -666,32 +666,105 @@ function UserChatWindow() {
         justifyContent="center"
         alignItems="center"
         minHeight="100vh"
-        sx={{ bgcolor: colors.background, gap: 3 }}
+        sx={{ bgcolor: colors.background, gap: 3, px: 3 }}
       >
         <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 64, color: colors.textTertiary }} />
-        <Typography sx={{ fontSize: 20, fontWeight: 600, color: colors.textPrimary }}>
-          전문가 상담 서비스
-        </Typography>
-        <Typography sx={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 1.8 }}>
-          난임 전문가와 1:1 상담을 받으실 수 있습니다.<br />
-          로그인 후 이용해 주세요.
-        </Typography>
-        <Box
-          component="button"
-          onClick={() => navigate('/login')}
+        <Typography
+          component="h1"
           sx={{
-            px: 4, py: 1.5,
-            bgcolor: colors.primary,
-            color: 'white',
-            border: 'none',
-            borderRadius: 2,
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: 'pointer',
-            '&:hover': { bgcolor: '#5558E6' },
+            fontSize: { xs: 30, sm: 40 },
+            fontWeight: 700,
+            color: colors.textPrimary,
+            textAlign: 'center',
+            letterSpacing: '-0.03em',
           }}
         >
-          로그인하기
+          난임상담톡톡
+        </Typography>
+        <Typography
+          sx={{
+            maxWidth: 720,
+            fontSize: 16,
+            color: colors.textSecondary,
+            textAlign: 'center',
+            lineHeight: 1.9,
+          }}
+        >
+          난임상담톡톡은 난임백과, 뉴스, 공지사항, 아기성공TV와 전문가 1:1 상담을 제공하는
+          난임 정보 포털입니다.
+        </Typography>
+        <Typography
+          sx={{
+            maxWidth: 720,
+            fontSize: 14,
+            color: colors.textTertiary,
+            textAlign: 'center',
+            lineHeight: 1.8,
+          }}
+        >
+          로그인하면 전문가 상담을 시작할 수 있고, 비로그인 상태에서도 난임백과와 뉴스 같은
+          공개 콘텐츠를 확인할 수 있습니다.
+        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: 1.5,
+          }}
+        >
+          <Box
+            component="button"
+            onClick={() => navigate('/login')}
+            sx={{
+              px: 4,
+              py: 1.5,
+              bgcolor: colors.primary,
+              color: 'white',
+              border: 'none',
+              borderRadius: 2,
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: 'pointer',
+              '&:hover': { bgcolor: '#5558E6' },
+            }}
+          >
+            로그인하고 상담하기
+          </Box>
+          <Box
+            component="a"
+            href="/encyclopedia"
+            sx={{
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+              border: `1px solid ${colors.border}`,
+              bgcolor: 'white',
+              color: colors.textPrimary,
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            난임백과 보기
+          </Box>
+          <Box
+            component="a"
+            href="/news"
+            sx={{
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+              border: `1px solid ${colors.border}`,
+              bgcolor: 'white',
+              color: colors.textPrimary,
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            뉴스 보기
+          </Box>
         </Box>
       </Box>
     );
