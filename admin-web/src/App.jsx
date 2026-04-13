@@ -17,9 +17,9 @@ import theme, { colors } from './theme';
 
 const SITE_NAME = '난임상담톡톡';
 const SITE_URL = 'https://agisungong.net';
-const DEFAULT_TITLE = `${SITE_NAME} | 난임 정보 포털`;
+const DEFAULT_TITLE = `${SITE_NAME} 공식 홈페이지 | 난임 정보 포털`;
 const DEFAULT_DESCRIPTION =
-  '난임상담톡톡은 난임백과, 뉴스, 공지사항, 아기성공TV와 전문가 상담을 제공하는 난임 정보 포털입니다.';
+  '난임상담톡톡 공식 홈페이지입니다. 난임백과, 뉴스, 공지사항, 아기성공TV와 전문가 상담을 제공하는 난임 정보 포털입니다.';
 
 function updateMetaTag(attribute, key, content) {
   let tag = document.head.querySelector(`meta[${attribute}="${key}"]`);
