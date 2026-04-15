@@ -323,7 +323,7 @@ function Layout({ children }) {
                 <LoginRoundedIcon />
               </ListItemIcon>
               <ListItemText
-                primary="로그인"
+                primary="로그인 / 회원가입"
                 primaryTypographyProps={{
                   fontSize: 14,
                   fontWeight: 600,

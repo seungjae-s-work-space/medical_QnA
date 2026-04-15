@@ -78,8 +78,8 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
             shouldIndex: true,
           },
     '/login': {
-      title: `관리자 로그인 | ${SITE_NAME}`,
-      description: '난임상담톡톡 관리자 대시보드 로그인 화면입니다.',
+      title: `로그인 | ${SITE_NAME}`,
+      description: '난임상담톡톡 로그인 및 회원가입 화면입니다.',
       shouldIndex: false,
     },
     '/encyclopedia': {

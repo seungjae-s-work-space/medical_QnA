@@ -729,7 +729,7 @@ function UserChatWindow() {
               '&:hover': { bgcolor: '#5558E6' },
             }}
           >
-            로그인하고 상담하기
+            로그인 / 회원가입
           </Box>
           <Box
             component="a"
