@@ -13,6 +13,7 @@ class AuthProvider with ChangeNotifier {
   bool _isInitialized = false;
   String? _errorMessage;
   bool _isGuest = false;
+  bool _requiresEmailVerification = false;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -21,6 +22,9 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _currentUser != null;
   bool get isAdmin => _currentUser?.isAdmin ?? false;
   bool get isGuest => _isGuest;
+  bool get requiresEmailVerification => _requiresEmailVerification;
+  String get verificationEmail =>
+      _authService.currentUser?.email ?? _currentUser?.email ?? '';
 
   /// 로그인된 사용자 또는 게스트 (홈 화면 접근 가능 여부)
   bool get canAccessHome => _currentUser != null || _isGuest;
@@ -29,20 +33,36 @@ class AuthProvider with ChangeNotifier {
     _init();
   }
 
+  void _updateEmailVerificationRequirement() {
+    _requiresEmailVerification = !_isGuest &&
+        _currentUser != null &&
+        !_currentUser!.isAdmin &&
+        _authService.requiresEmailVerification;
+  }
+
   // 초기화: Firebase Auth 상태 변화 리스닝 + 로컬 자동 로그인
   void _init() async {
     // 로컬 저장소에서 사용자 정보 확인
+    if (_authService.currentUser != null) {
+      await _authService.reloadAndCheckEmailVerified();
+    }
     _currentUser = await _authService.getLocalUser();
+    _updateEmailVerificationRequirement();
     _isInitialized = true;
     notifyListeners();
 
     // Firebase Auth 상태 변화 리스닝
-    _authSubscription = _authService.authStateChanges.listen((User? user) async {
+    _authSubscription =
+        _authService.authStateChanges.listen((User? user) async {
       if (user == null) {
         _currentUser = null;
+        _requiresEmailVerification = false;
         notifyListeners();
       } else {
+        await _authService.reloadAndCheckEmailVerified();
         await _loadUserData(user.uid);
+        _updateEmailVerificationRequirement();
+        notifyListeners();
       }
     });
   }
@@ -50,7 +70,6 @@ class AuthProvider with ChangeNotifier {
   // 사용자 데이터 로드
   Future<void> _loadUserData(String userId) async {
     _currentUser = await _authService.getUserData(userId);
-    notifyListeners();
   }
 
   // 회원가입
@@ -64,11 +83,13 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      _isGuest = false;
       _currentUser = await _authService.signUp(
         email: email,
         password: password,
         name: name,
       );
+      _updateEmailVerificationRequirement();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -90,10 +111,12 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      _isGuest = false;
       _currentUser = await _authService.signIn(
         email: email,
         password: password,
       );
+      _updateEmailVerificationRequirement();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -112,7 +135,9 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      _isGuest = false;
       _currentUser = await _authService.signInWithNickname(nickname);
+      _requiresEmailVerification = false;
       _isLoading = false;
       notifyListeners();
       return true;
@@ -129,6 +154,7 @@ class AuthProvider with ChangeNotifier {
     await _authService.signOut();
     _currentUser = null;
     _isGuest = false;
+    _requiresEmailVerification = false;
     notifyListeners();
   }
 
@@ -136,6 +162,7 @@ class AuthProvider with ChangeNotifier {
   void enterGuestMode() {
     _isGuest = true;
     _currentUser = null;
+    _requiresEmailVerification = false;
     notifyListeners();
   }
 
@@ -170,6 +197,33 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> resendVerificationEmail() async {
+    try {
+      await _authService.sendEmailVerification();
+      return true;
+    } catch (e) {
+      _errorMessage = _getErrorMessage(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> refreshEmailVerificationStatus() async {
+    try {
+      final verified = await _authService.reloadAndCheckEmailVerified();
+      if (_currentUser != null) {
+        await _loadUserData(_currentUser!.userId);
+      }
+      _updateEmailVerificationRequirement();
+      notifyListeners();
+      return verified;
+    } catch (e) {
+      _errorMessage = _getErrorMessage(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   // 에러 메시지 변환
   String _getErrorMessage(dynamic error) {
     if (error is FirebaseAuthException) {
@@ -186,6 +240,12 @@ class AuthProvider with ChangeNotifier {
           return '비밀번호가 너무 약합니다. (최소 6자)';
         case 'network-request-failed':
           return '네트워크 연결을 확인해주세요.';
+        case 'too-many-requests':
+          return '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+        case 'invalid-credential':
+          return '이메일 또는 비밀번호가 올바르지 않습니다.';
+        case 'no-current-user':
+          return '현재 로그인된 사용자가 없습니다.';
         default:
           return '오류가 발생했습니다: ${error.message}';
       }

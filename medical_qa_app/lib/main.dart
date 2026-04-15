@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/subscription_provider.dart';
+import 'screens/auth/email_verification_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/user/home_screen.dart';
 import 'screens/admin/admin_conversations_screen.dart';
@@ -220,6 +221,13 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
       return const HomeScreen();
     }
 
+    // 이메일 인증이 필요한 경우 → 인증 안내 화면
+    if (authProvider.requiresEmailVerification) {
+      _notificationInitialized = false;
+      _notificationService.stopListening();
+      return const EmailVerificationScreen();
+    }
+
     // 로그인된 사용자
     // 알림 및 구독 초기화 (한 번만)
     if (!_notificationInitialized) {
@@ -228,7 +236,8 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
 
       // 구독 프로바이더 초기화 (build 중 notifyListeners 방지)
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+        final subscriptionProvider =
+            Provider.of<SubscriptionProvider>(context, listen: false);
         subscriptionProvider.initialize(authProvider.currentUser!.userId);
       });
 

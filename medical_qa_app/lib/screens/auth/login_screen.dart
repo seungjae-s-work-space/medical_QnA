@@ -52,7 +52,151 @@ class _LoginScreenState extends State<LoginScreen> {
           backgroundColor: AppColors.textSecondary,
         ),
       );
+    } else if (success && mounted && !_isLogin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('인증 메일을 보냈습니다. 메일함에서 링크를 눌러주세요.'),
+          backgroundColor: Color(0xFFB87BA8),
+        ),
+      );
     }
+  }
+
+  Future<void> _showPasswordResetDialog() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final emailController = TextEditingController(
+      text: _emailController.text.trim(),
+    );
+    String? localError;
+    bool sending = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: const Text(
+                '비밀번호 찾기',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    '가입한 이메일을 입력하면 비밀번호 재설정 링크를 보내드릴게요.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      hintText: '이메일 주소',
+                      errorText: localError,
+                      filled: true,
+                      fillColor: const Color(0xFFF5F5F5),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      sending ? null : () => Navigator.of(dialogContext).pop(),
+                  child: const Text(
+                    '취소',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: sending
+                      ? null
+                      : () async {
+                          final navigator = Navigator.of(dialogContext);
+                          final messenger = ScaffoldMessenger.of(this.context);
+                          final email = emailController.text.trim();
+                          if (email.isEmpty || !email.contains('@')) {
+                            setState(() {
+                              localError = '올바른 이메일을 입력해주세요';
+                            });
+                            return;
+                          }
+
+                          setState(() {
+                            localError = null;
+                            sending = true;
+                          });
+
+                          final success =
+                              await authProvider.sendPasswordResetEmail(email);
+
+                          if (!mounted) return;
+
+                          setState(() {
+                            sending = false;
+                          });
+
+                          if (success) {
+                            navigator.pop();
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  '비밀번호 재설정 메일을 보냈습니다. 메일함을 확인해주세요.',
+                                ),
+                                backgroundColor: Color(0xFFB87BA8),
+                              ),
+                            );
+                          } else {
+                            setState(() {
+                              localError = authProvider.errorMessage ??
+                                  '재설정 메일 발송에 실패했습니다';
+                            });
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB87BA8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  child: sending
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          '메일 보내기',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    emailController.dispose();
   }
 
   @override
@@ -83,9 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // 서브 타이틀
                   Text(
-                    _isLogin
-                        ? '난임시술, 이제 혼자 고민하지 마세요'
-                        : '새 계정을 만들어주세요',
+                    _isLogin ? '난임시술, 이제 혼자 고민하지 마세요' : '새 계정을 만들어주세요',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 16,
@@ -137,7 +279,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: _obscurePassword,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: AppColors.textTertiary,
                         size: 20,
                       ),
@@ -207,7 +351,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           TextSpan(
                             text: _isLogin ? '계정이 없으신가요? ' : '이미 계정이 있으신가요? ',
-                            style: const TextStyle(color: AppColors.textSecondary),
+                            style:
+                                const TextStyle(color: AppColors.textSecondary),
                           ),
                           TextSpan(
                             text: _isLogin ? '회원가입' : '로그인',
@@ -222,6 +367,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const SizedBox(height: 16),
+
+                  if (_isLogin)
+                    TextButton(
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : _showPasswordResetDialog,
+                      child: const Text(
+                        '비밀번호를 잊으셨나요?',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFFB87BA8),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                  if (_isLogin) const SizedBox(height: 8),
 
                   // 둘러보기 버튼 (게스트 모드)
                   TextButton(
@@ -281,7 +443,8 @@ class _LoginScreenState extends State<LoginScreen> {
             : null,
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         suffixIcon: suffixIcon,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
           borderSide: BorderSide.none,

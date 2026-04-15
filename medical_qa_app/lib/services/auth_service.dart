@@ -14,6 +14,22 @@ class AuthService {
   // 현재 사용자
   User? get currentUser => _auth.currentUser;
 
+  bool get requiresEmailVerification {
+    final user = currentUser;
+    if (user == null) return false;
+
+    final hasEmail = (user.email ?? '').isNotEmpty;
+    final usesPasswordProvider = user.providerData.any(
+      (provider) => provider.providerId == 'password',
+    );
+
+    return hasEmail && usesPasswordProvider && !user.emailVerified;
+  }
+
+  Future<void> _setKoreanEmailLanguage() async {
+    await _auth.setLanguageCode('ko');
+  }
+
   // 회원가입
   Future<UserModel?> signUp({
     required String email,
@@ -44,6 +60,8 @@ class AuthService {
       );
 
       await _db.collection('users').doc(user.uid).set(userModel.toMap());
+      await _setKoreanEmailLanguage();
+      await user.sendEmailVerification();
 
       return userModel;
     } catch (e) {
@@ -118,7 +136,29 @@ class AuthService {
 
   // 비밀번호 재설정 이메일 전송
   Future<void> sendPasswordResetEmail(String email) async {
+    await _setKoreanEmailLanguage();
     await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  Future<void> sendEmailVerification() async {
+    final user = currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: '현재 로그인된 사용자가 없습니다.',
+      );
+    }
+
+    await _setKoreanEmailLanguage();
+    await user.sendEmailVerification();
+  }
+
+  Future<bool> reloadAndCheckEmailVerified() async {
+    final user = currentUser;
+    if (user == null) return false;
+
+    await user.reload();
+    return !requiresEmailVerification;
   }
 
   // 현재 사용자가 관리자인지 확인
@@ -158,12 +198,16 @@ class AuthService {
               .limit(1)
               .get();
 
-          if (nicknameQuery.docs.isNotEmpty && nicknameQuery.docs.first.id != user.uid) {
+          if (nicknameQuery.docs.isNotEmpty &&
+              nicknameQuery.docs.first.id != user.uid) {
             throw Exception('이미 사용 중인 닉네임입니다');
           }
 
           // 닉네임 업데이트
-          await _db.collection('users').doc(user.uid).update({'name': nickname});
+          await _db
+              .collection('users')
+              .doc(user.uid)
+              .update({'name': nickname});
           await prefs.setString('nickname', nickname);
 
           existingUser = UserModel(
@@ -180,7 +224,8 @@ class AuthService {
       }
 
       // 3. 새 사용자 - 닉네임 중복 확인 + 저장 (트랜잭션으로 race condition 방지)
-      final userModel = await _db.runTransaction<UserModel>((transaction) async {
+      final userModel =
+          await _db.runTransaction<UserModel>((transaction) async {
         final nicknameQuery = await _db
             .collection('users')
             .where('name', isEqualTo: nickname)
