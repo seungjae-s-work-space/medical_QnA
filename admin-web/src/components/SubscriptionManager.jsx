@@ -270,6 +270,8 @@ function SubscriptionManager() {
         updatedAt: Timestamp.now(),
         grantedBy: 'admin',
         extendDays,
+        grantedDays: extendDays,
+        sourceType: 'admin',
       });
 
       // users 문서도 업데이트 (앱에서 구독 상태 인식용)
@@ -347,6 +349,8 @@ function SubscriptionManager() {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         grantedBy: 'admin',
+        grantedDays: grantDays,
+        sourceType: 'admin',
       });
 
       // users 문서도 업데이트
@@ -400,6 +404,8 @@ function SubscriptionManager() {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         grantedBy: 'admin',
+        grantedDays: days,
+        sourceType: 'admin',
       });
 
       // users 문서도 업데이트
