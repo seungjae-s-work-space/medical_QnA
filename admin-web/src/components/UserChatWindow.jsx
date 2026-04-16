@@ -867,7 +867,7 @@ function UserChatWindow() {
               color: colors.textSecondary,
             }}
           >
-            전문가가 친절하게 답변해 드립니다
+            이승주가 친절하게 답변해드립니다
           </Typography>
         </Box>
       </Box>
