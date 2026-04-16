@@ -55,9 +55,9 @@ import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import PhoneIphoneRoundedIcon from '@mui/icons-material/PhoneIphoneRounded';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
+import StorePurchaseDialogContent from './StorePurchaseDialogContent';
 
 // 이미지 리사이즈 모듈 등록
 Quill.register('modules/imageResize', ImageResize);
@@ -1292,16 +1292,8 @@ function EncyclopediaManager({ readOnly = false }) {
       </Dialog>
 
       {/* 구독 필요 모달 */}
-      <Dialog open={accessModal === 'subscribe'} onClose={() => setAccessModal(null)} maxWidth="xs" fullWidth>
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <PhoneIphoneRoundedIcon sx={{ fontSize: 48, color: colors.primary, mb: 2 }} />
-          <Typography sx={{ fontSize: 18, fontWeight: 600, mb: 1 }}>이용권이 필요합니다</Typography>
-          <Typography sx={{ fontSize: 14, color: colors.textSecondary, mb: 3, lineHeight: 1.8 }}>
-            이 콘텐츠는 구독자 전용입니다.<br />
-            난임상담톡톡 앱에서 이용권을 구매해 주세요.
-          </Typography>
-          <Button variant="contained" onClick={() => setAccessModal(null)}>확인</Button>
-        </Box>
+      <Dialog open={accessModal === 'subscribe'} onClose={() => setAccessModal(null)} maxWidth="sm" fullWidth>
+        <StorePurchaseDialogContent onClose={() => setAccessModal(null)} />
       </Dialog>
     </Box>
   );
