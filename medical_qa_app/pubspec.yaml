@@ -77,9 +77,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo/logo4xreal.png"
+  image_path: "assets/logo/applogofinal.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/logo/logo4xreal.png"
+  adaptive_icon_foreground: "assets/logo/applogofinal.png"
   remove_alpha_ios: true
 
 flutter:
