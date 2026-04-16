@@ -116,7 +116,8 @@ class _NewsScreenState extends State<NewsScreen> {
 
   void _goToPreviousMatch() {
     if (_matchedIndices.isEmpty) return;
-    final newIndex = (_currentMatchIndex - 1 + _matchedIndices.length) % _matchedIndices.length;
+    final newIndex = (_currentMatchIndex - 1 + _matchedIndices.length) %
+        _matchedIndices.length;
     _scrollToMatch(newIndex);
   }
 
@@ -296,7 +297,8 @@ class _NewsScreenState extends State<NewsScreen> {
               if (_matchedIndices.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF5E6A3),
                     borderRadius: BorderRadius.circular(12),
@@ -366,9 +368,11 @@ class _NewsScreenState extends State<NewsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.newspaper_outlined, size: 64, color: AppColors.textSecondary),
+            Icon(Icons.newspaper_outlined,
+                size: 64, color: AppColors.textSecondary),
             SizedBox(height: 16),
-            Text('등록된 뉴스가 없습니다', style: TextStyle(fontSize: 18, color: AppColors.textSecondary)),
+            Text('등록된 뉴스가 없습니다',
+                style: TextStyle(fontSize: 18, color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -418,7 +422,8 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   void _openNewsDetail(NewsModel news) {
-    final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+    final subscriptionProvider =
+        Provider.of<SubscriptionProvider>(context, listen: false);
     if (!subscriptionProvider.hasActiveSubscription) {
       _showSubscriptionRequiredSheet();
       return;
@@ -556,7 +561,8 @@ class _NewsCard extends StatelessWidget {
 
   Widget _buildHighlightedText(String text, String query, TextStyle baseStyle) {
     if (query.isEmpty) {
-      return Text(text, style: baseStyle, maxLines: 2, overflow: TextOverflow.ellipsis);
+      return Text(text,
+          style: baseStyle, maxLines: 2, overflow: TextOverflow.ellipsis);
     }
 
     final lowerText = text.toLowerCase();
@@ -619,7 +625,8 @@ class _PaginationBar extends StatelessWidget {
           // 이전 버튼
           _PageButton(
             icon: Icons.chevron_left,
-            onTap: currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
+            onTap:
+                currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
           ),
           const SizedBox(width: 8),
           // 페이지 번호들
@@ -628,7 +635,9 @@ class _PaginationBar extends StatelessWidget {
           // 다음 버튼
           _PageButton(
             icon: Icons.chevron_right,
-            onTap: currentPage < totalPages - 1 ? () => onPageChanged(currentPage + 1) : null,
+            onTap: currentPage < totalPages - 1
+                ? () => onPageChanged(currentPage + 1)
+                : null,
           ),
         ],
       ),
@@ -656,7 +665,8 @@ class _PaginationBar extends StatelessWidget {
             height: 36,
             margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: i == currentPage ? AppColors.textPrimary : Colors.transparent,
+              color:
+                  i == currentPage ? AppColors.textPrimary : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -664,8 +674,10 @@ class _PaginationBar extends StatelessWidget {
                 '${i + 1}',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: i == currentPage ? FontWeight.w600 : FontWeight.normal,
-                  color: i == currentPage ? Colors.white : AppColors.textSecondary,
+                  fontWeight:
+                      i == currentPage ? FontWeight.w600 : FontWeight.normal,
+                  color:
+                      i == currentPage ? Colors.white : AppColors.textSecondary,
                 ),
               ),
             ),
@@ -722,7 +734,8 @@ String _cleanHtmlContent(String html) {
 
   // 빈 blockquote 제거
   cleaned = cleaned.replaceAllMapped(
-    RegExp(r'<blockquote[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</blockquote>', caseSensitive: false),
+    RegExp(r'<blockquote[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</blockquote>',
+        caseSensitive: false),
     (match) => '',
   );
 
@@ -817,13 +830,32 @@ class NewsDetailScreen extends StatelessWidget {
                   if (news.sourceUrl != null && news.sourceUrl!.isNotEmpty) ...[
                     GestureDetector(
                       onTap: () async {
+                        final messenger = ScaffoldMessenger.of(context);
                         final uri = Uri.parse(news.sourceUrl!);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+                        try {
+                          final launched = await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                          if (!launched) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('외부 페이지를 열 수 없습니다.'),
+                              ),
+                            );
+                          }
+                        } catch (_) {
+                          messenger.showSnackBar(
+                            const SnackBar(
+                              content: Text('외부 페이지를 열 수 없습니다.'),
+                            ),
+                          );
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF5F5F5),
                           borderRadius: BorderRadius.circular(12),
@@ -919,7 +951,8 @@ class NewsDetailScreen extends StatelessWidget {
                             width: 4,
                           ),
                         ),
-                        padding: HtmlPaddings.symmetric(horizontal: 16, vertical: 8),
+                        padding:
+                            HtmlPaddings.symmetric(horizontal: 16, vertical: 8),
                         margin: Margins.symmetric(vertical: 8),
                       ),
                       "strong": Style(

@@ -140,7 +140,8 @@ class ForceUpdateService {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               ),
               child: const Text(
                 '업데이트하기',
@@ -163,10 +164,20 @@ class ForceUpdateService {
     if (Platform.isIOS) {
       url = Uri.parse('https://apps.apple.com/us/app/id6759237772');
     } else {
-      url = Uri.parse('https://play.google.com/store/apps/details?id=net.agisungong.nanimtalktalk&hl=en');
+      url = Uri.parse(
+          'https://play.google.com/store/apps/details?id=net.agisungong.nanimtalktalk&hl=en');
     }
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+
+    try {
+      final launched = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        debugPrint('Could not launch store URL: $url');
+      }
+    } catch (e) {
+      debugPrint('Store launch error: $e');
     }
   }
 }

@@ -293,6 +293,8 @@ class SubscriptionService {
       platformProductId: purchaseDetails.productID,
       transactionId: purchaseDetails.purchaseID,
       originalTransactionId: _getOriginalTransactionId(purchaseDetails),
+      grantedDays: plan.durationMonths * 30,
+      sourceType: 'purchase',
       startDate: now,
       endDate: endDate,
       createdAt: now,
@@ -391,6 +393,30 @@ class SubscriptionService {
     } catch (e) {
       debugPrint('Error fetching subscription: $e');
       return null;
+    }
+  }
+
+  // 사용자의 결제/구독 히스토리 가져오기
+  Future<List<SubscriptionModel>> getSubscriptionHistory(String userId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        return [];
+      }
+
+      final subscriptions = querySnapshot.docs
+          .map((doc) => SubscriptionModel.fromFirestore(doc))
+          .toList();
+
+      subscriptions.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      return subscriptions;
+    } catch (e) {
+      debugPrint('Error fetching subscription history: $e');
+      return [];
     }
   }
 

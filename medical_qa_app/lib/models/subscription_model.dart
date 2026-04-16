@@ -2,16 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// 구독 상태 열거형
 enum SubscriptionStatus {
-  free,      // 무료 사용자
-  active,    // 구독 활성
-  expired,   // 만료됨
+  free, // 무료 사용자
+  active, // 구독 활성
+  expired, // 만료됨
   cancelled, // 취소됨 (기간 내 사용 가능)
 }
 
 /// 구독 플랜 타입
 enum SubscriptionPlanType {
-  monthly,      // 월간권
-  sixMonths,    // 6개월권
+  monthly, // 월간권
+  sixMonths, // 6개월권
   twelveMonths, // 12개월권
 }
 
@@ -24,7 +24,7 @@ class SubscriptionPlan {
   final double price;
   final String currency;
   final String? description;
-  final String iosProductId;     // App Store 상품 ID
+  final String iosProductId; // App Store 상품 ID
   final String androidProductId; // Google Play 상품 ID
   final bool isActive;
 
@@ -118,10 +118,12 @@ class SubscriptionModel {
   final String userId;
   final String planId;
   final SubscriptionStatus status;
-  final String platform;           // 'ios' or 'android'
+  final String platform; // 'ios' or 'android'
   final String? platformProductId; // 플랫폼 상품 ID
-  final String? transactionId;     // 거래 ID
+  final String? transactionId; // 거래 ID
   final String? originalTransactionId; // 원본 거래 ID (갱신 추적용)
+  final int? grantedDays; // 이번 기록에서 추가된 일수
+  final String? sourceType; // purchase | admin
   final DateTime startDate;
   final DateTime endDate;
   final DateTime? cancelledAt;
@@ -137,6 +139,8 @@ class SubscriptionModel {
     this.platformProductId,
     this.transactionId,
     this.originalTransactionId,
+    this.grantedDays,
+    this.sourceType,
     required this.startDate,
     required this.endDate,
     this.cancelledAt,
@@ -166,6 +170,8 @@ class SubscriptionModel {
     String? platformProductId,
     String? transactionId,
     String? originalTransactionId,
+    int? grantedDays,
+    String? sourceType,
     DateTime? startDate,
     DateTime? endDate,
     DateTime? cancelledAt,
@@ -180,7 +186,10 @@ class SubscriptionModel {
       platform: platform ?? this.platform,
       platformProductId: platformProductId ?? this.platformProductId,
       transactionId: transactionId ?? this.transactionId,
-      originalTransactionId: originalTransactionId ?? this.originalTransactionId,
+      originalTransactionId:
+          originalTransactionId ?? this.originalTransactionId,
+      grantedDays: grantedDays ?? this.grantedDays,
+      sourceType: sourceType ?? this.sourceType,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       cancelledAt: cancelledAt ?? this.cancelledAt,
@@ -199,9 +208,12 @@ class SubscriptionModel {
       'platformProductId': platformProductId,
       'transactionId': transactionId,
       'originalTransactionId': originalTransactionId,
+      'grantedDays': grantedDays,
+      'sourceType': sourceType,
       'startDate': Timestamp.fromDate(startDate),
       'endDate': Timestamp.fromDate(endDate),
-      'cancelledAt': cancelledAt != null ? Timestamp.fromDate(cancelledAt!) : null,
+      'cancelledAt':
+          cancelledAt != null ? Timestamp.fromDate(cancelledAt!) : null,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -220,6 +232,10 @@ class SubscriptionModel {
       platformProductId: map['platformProductId'],
       transactionId: map['transactionId'],
       originalTransactionId: map['originalTransactionId'],
+      grantedDays: map['grantedDays'] is int
+          ? map['grantedDays'] as int
+          : int.tryParse('${map['grantedDays'] ?? ''}'),
+      sourceType: map['sourceType'],
       startDate: (map['startDate'] as Timestamp).toDate(),
       endDate: (map['endDate'] as Timestamp).toDate(),
       cancelledAt: map['cancelledAt'] != null

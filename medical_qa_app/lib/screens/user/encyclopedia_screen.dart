@@ -194,7 +194,8 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
 
   void _goToPreviousMatch() {
     if (_matchedIndices.isEmpty) return;
-    final newIndex = (_currentMatchIndex - 1 + _matchedIndices.length) % _matchedIndices.length;
+    final newIndex = (_currentMatchIndex - 1 + _matchedIndices.length) %
+        _matchedIndices.length;
     _scrollToMatch(newIndex);
   }
 
@@ -267,7 +268,8 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
               if (_matchedIndices.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF5E6A3),
                     borderRadius: BorderRadius.circular(12),
@@ -328,7 +330,8 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   }
 
   void _openArticleDetail(EncyclopediaModel article) {
-    final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+    final subscriptionProvider =
+        Provider.of<SubscriptionProvider>(context, listen: false);
     if (!subscriptionProvider.hasActiveSubscription) {
       _showSubscriptionRequiredSheet();
       return;
@@ -595,7 +598,8 @@ class _ArticleCard extends StatelessWidget {
 
   Widget _buildHighlightedText(String text, String query, TextStyle baseStyle) {
     if (query.isEmpty) {
-      return Text(text, style: baseStyle, maxLines: 2, overflow: TextOverflow.ellipsis);
+      return Text(text,
+          style: baseStyle, maxLines: 2, overflow: TextOverflow.ellipsis);
     }
 
     final lowerText = text.toLowerCase();
@@ -661,7 +665,8 @@ class _PaginationBar extends StatelessWidget {
           // 이전 버튼
           _PageButton(
             icon: Icons.chevron_left,
-            onTap: currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
+            onTap:
+                currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
           ),
           const SizedBox(width: 8),
           // 페이지 번호들
@@ -670,7 +675,9 @@ class _PaginationBar extends StatelessWidget {
           // 다음 버튼
           _PageButton(
             icon: Icons.chevron_right,
-            onTap: currentPage < totalPages - 1 ? () => onPageChanged(currentPage + 1) : null,
+            onTap: currentPage < totalPages - 1
+                ? () => onPageChanged(currentPage + 1)
+                : null,
           ),
         ],
       ),
@@ -698,7 +705,8 @@ class _PaginationBar extends StatelessWidget {
             height: 36,
             margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: i == currentPage ? AppColors.textPrimary : Colors.transparent,
+              color:
+                  i == currentPage ? AppColors.textPrimary : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -706,8 +714,10 @@ class _PaginationBar extends StatelessWidget {
                 '${i + 1}',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: i == currentPage ? FontWeight.w600 : FontWeight.normal,
-                  color: i == currentPage ? Colors.white : AppColors.textSecondary,
+                  fontWeight:
+                      i == currentPage ? FontWeight.w600 : FontWeight.normal,
+                  color:
+                      i == currentPage ? Colors.white : AppColors.textSecondary,
                 ),
               ),
             ),
@@ -760,10 +770,25 @@ class _ReferencesSection extends StatelessWidget {
     this.sourceUrl,
   });
 
-  Future<void> _launchUrl(String url) async {
+  Future<void> _launchUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('외부 페이지를 열 수 없습니다.')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('외부 페이지를 열 수 없습니다.')),
+        );
+      }
     }
   }
 
@@ -802,40 +827,43 @@ class _ReferencesSection extends StatelessWidget {
           const SizedBox(height: 12),
           // 참고자료 목록
           if (references != null && references!.isNotEmpty) ...[
-            ...references!.split('\n').where((line) => line.trim().isNotEmpty).map(
-              (ref) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '• ',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        ref.trim(),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                          height: 1.4,
+            ...references!
+                .split('\n')
+                .where((line) => line.trim().isNotEmpty)
+                .map(
+                  (ref) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '• ',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
+                        Expanded(
+                          child: Text(
+                            ref.trim(),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
           ],
           // 원문 링크
           if (sourceUrl != null && sourceUrl!.isNotEmpty) ...[
             if (references != null && references!.isNotEmpty)
               const SizedBox(height: 8),
             GestureDetector(
-              onTap: () => _launchUrl(sourceUrl!),
+              onTap: () => _launchUrl(context, sourceUrl!),
               child: Row(
                 children: [
                   Icon(
@@ -878,7 +906,8 @@ String _cleanHtmlContent(String html) {
 
   // 빈 blockquote 제거
   cleaned = cleaned.replaceAllMapped(
-    RegExp(r'<blockquote[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</blockquote>', caseSensitive: false),
+    RegExp(r'<blockquote[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</blockquote>',
+        caseSensitive: false),
     (match) => '',
   );
 
@@ -1029,7 +1058,8 @@ class EncyclopediaDetailScreen extends StatelessWidget {
                             width: 4,
                           ),
                         ),
-                        padding: HtmlPaddings.symmetric(horizontal: 16, vertical: 8),
+                        padding:
+                            HtmlPaddings.symmetric(horizontal: 16, vertical: 8),
                         margin: Margins.symmetric(vertical: 8),
                       ),
                       "strong": Style(
@@ -1065,8 +1095,10 @@ class EncyclopediaDetailScreen extends StatelessWidget {
                     },
                   ),
                   // 참고자료 및 출처 섹션
-                  if (article.references != null && article.references!.isNotEmpty ||
-                      article.sourceUrl != null && article.sourceUrl!.isNotEmpty)
+                  if (article.references != null &&
+                          article.references!.isNotEmpty ||
+                      article.sourceUrl != null &&
+                          article.sourceUrl!.isNotEmpty)
                     _ReferencesSection(
                       references: article.references,
                       sourceUrl: article.sourceUrl,

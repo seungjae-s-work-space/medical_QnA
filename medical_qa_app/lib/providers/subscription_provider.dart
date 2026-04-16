@@ -329,6 +329,15 @@ class SubscriptionProvider with ChangeNotifier, WidgetsBindingObserver {
     return product?.price;
   }
 
+  Future<List<SubscriptionModel>> getSubscriptionHistory() async {
+    if (_userId == null) return [];
+    return _service.getSubscriptionHistory(_userId!);
+  }
+
+  SubscriptionPlan? getPlanById(String planId) {
+    return _service.getPlanById(planId);
+  }
+
   // 에러 메시지 초기화
   void clearError() {
     _errorMessage = null;

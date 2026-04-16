@@ -8,7 +8,8 @@ class AdminSubscriptionScreen extends StatefulWidget {
   const AdminSubscriptionScreen({super.key});
 
   @override
-  State<AdminSubscriptionScreen> createState() => _AdminSubscriptionScreenState();
+  State<AdminSubscriptionScreen> createState() =>
+      _AdminSubscriptionScreenState();
 }
 
 class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
@@ -161,7 +162,8 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
   }
 
   Widget _buildSubscriptionList() {
-    Query query = _firestore.collection('subscriptions')
+    Query query = _firestore
+        .collection('subscriptions')
         .orderBy('endDate', descending: true);
 
     if (_filterStatus != 'all') {
@@ -238,11 +240,15 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
     final startDate = (data['startDate'] as Timestamp?)?.toDate();
     final endDate = (data['endDate'] as Timestamp?)?.toDate();
 
-    final plan = SubscriptionPlan.defaultPlans.where((p) => p.id == planId).firstOrNull;
+    final plan =
+        SubscriptionPlan.defaultPlans.where((p) => p.id == planId).firstOrNull;
     final planName = plan?.name ?? planId;
 
-    final isActive = status == 'active' && endDate != null && endDate.isAfter(DateTime.now());
-    final remainingDays = endDate != null ? endDate.difference(DateTime.now()).inDays : 0;
+    final isActive = status == 'active' &&
+        endDate != null &&
+        endDate.isAfter(DateTime.now());
+    final remainingDays =
+        endDate != null ? endDate.difference(DateTime.now()).inDays : 0;
 
     return FutureBuilder<DocumentSnapshot>(
       future: _firestore.collection('users').doc(userId).get(),
@@ -374,7 +380,8 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
                 if (isActive && remainingDays >= 0) ...[
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -498,13 +505,12 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, size: 18, color: AppColors.textSecondary),
+                    const Icon(Icons.info_outline,
+                        size: 18, color: AppColors.textSecondary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '새 만료일: ${DateFormat('yyyy.MM.dd').format(
-                          (currentEndDate ?? DateTime.now()).add(Duration(days: selectedDays))
-                        )}',
+                        '새 만료일: ${DateFormat('yyyy.MM.dd').format((currentEndDate ?? DateTime.now()).add(Duration(days: selectedDays)))}',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -522,7 +528,8 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
               child: const Text('취소'),
             ),
             ElevatedButton(
-              onPressed: () => _extendSubscription(docId, currentEndDate, selectedDays),
+              onPressed: () =>
+                  _extendSubscription(docId, currentEndDate, selectedDays),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4CAF50),
               ),
@@ -571,7 +578,8 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
     );
   }
 
-  Future<void> _extendSubscription(String docId, DateTime? currentEndDate, int days) async {
+  Future<void> _extendSubscription(
+      String docId, DateTime? currentEndDate, int days) async {
     Navigator.pop(context);
 
     try {
@@ -581,6 +589,8 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
       await _firestore.collection('subscriptions').doc(docId).update({
         'endDate': Timestamp.fromDate(newEndDate),
         'status': 'active',
+        'grantedDays': days,
+        'sourceType': 'admin',
         'updatedAt': Timestamp.now(),
       });
 

@@ -146,28 +146,58 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           if (hasActive && subscription != null) ...[
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.white.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '남은 기간: ${provider.remainingDays}일',
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFB87BA8),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '남은 기간',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(
+                                  0xFFB87BA8,
+                                ).withValues(alpha: 0.75),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${provider.remainingDays}일',
+                              style: const TextStyle(
+                                fontSize: 30,
+                                height: 1,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFB87BA8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      _buildHistoryAction(provider),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 10),
                   Text(
-                    '만료일: ${DateFormat('yyyy년 M월 d일').format(subscription.endDate)}',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: AppColors.textSecondary,
+                    '만료일 ${DateFormat('yyyy년 M월 d일').format(subscription.endDate)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -621,9 +651,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   Widget _buildLinkButton(String text, String url) {
     return GestureDetector(
       onTap: () async {
+        final messenger = ScaffoldMessenger.of(context);
         final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+        try {
+          final launched = await launchUrl(
+            uri,
+            mode: LaunchMode.externalApplication,
+          );
+          if (!launched && mounted) {
+            messenger.showSnackBar(
+              const SnackBar(content: Text('외부 페이지를 열 수 없습니다.')),
+            );
+          }
+        } catch (_) {
+          if (mounted) {
+            messenger.showSnackBar(
+              const SnackBar(content: Text('외부 페이지를 열 수 없습니다.')),
+            );
+          }
         }
       },
       child: Text(
@@ -633,6 +679,32 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           color: Color(0xFFB87BA8),
           decoration: TextDecoration.underline,
           decorationColor: Color(0xFFB87BA8),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryAction(SubscriptionProvider provider) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showPurchaseHistorySheet(provider),
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFB87BA8).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: const Text(
+            '기록 보기',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFB87BA8),
+              letterSpacing: -0.1,
+            ),
+          ),
         ),
       ),
     );
@@ -664,6 +736,309 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showPurchaseHistorySheet(SubscriptionProvider provider) async {
+    final historyFuture = provider.getSubscriptionHistory();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.78,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: FutureBuilder<List<SubscriptionModel>>(
+              future: historyFuture,
+              builder: (context, snapshot) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 44,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6E6E6),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        '결제 기록',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '언제 어떤 기간이 추가되었는지 확인할 수 있어요.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary.withValues(alpha: 0.9),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (snapshot.connectionState == ConnectionState.waiting)
+                        const Expanded(
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFB87BA8),
+                            ),
+                          ),
+                        )
+                      else if (snapshot.hasError)
+                        Expanded(
+                          child: _buildHistoryEmptyState(
+                            title: '결제 기록을 불러오지 못했어요',
+                            message: '잠시 후 다시 시도해 주세요.',
+                            icon: Icons.error_outline,
+                          ),
+                        )
+                      else if (!snapshot.hasData || snapshot.data!.isEmpty)
+                        Expanded(
+                          child: _buildHistoryEmptyState(
+                            title: '아직 결제 기록이 없어요',
+                            message: '첫 이용권 결제를 완료하면 여기에서 확인할 수 있어요.',
+                            icon: Icons.receipt_long_outlined,
+                          ),
+                        )
+                      else
+                        Expanded(
+                          child: ListView.separated(
+                            itemCount: snapshot.data!.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final history = snapshot.data![index];
+                              return _buildHistoryCard(provider, history);
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHistoryEmptyState({
+    required String title,
+    required String message,
+    required IconData icon,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 42,
+              color: const Color(0xFFB87BA8).withValues(alpha: 0.75),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryCard(
+    SubscriptionProvider provider,
+    SubscriptionModel history,
+  ) {
+    final plan = provider.getPlanById(history.planId);
+    final planName = _getHistoryTitle(plan);
+    final recordDate =
+        history.sourceType == 'admin' ? history.updatedAt : history.createdAt;
+    final recordDateLabel = DateFormat('yyyy년 M월 d일').format(recordDate);
+    final endDate = DateFormat('yyyy년 M월 d일').format(history.endDate);
+    final addedDaysLabel = _getHistoryAddedDaysLabel(history, plan);
+    final badgeColor = _getHistoryBadgeColor(plan);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFECECEC)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      planName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '기록일 $recordDateLabel',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  addedDaysLabel,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: badgeColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _buildHistoryInfoRow('적용 종료일', endDate),
+          if ((history.transactionId ?? '').isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _buildHistoryInfoRow(
+              '거래 ID',
+              history.transactionId!,
+              isMonospace: true,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryInfoRow(
+    String label,
+    String value, {
+    bool isMonospace = false,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 72,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.45,
+              color: AppColors.textPrimary,
+              fontFamily: isMonospace ? 'monospace' : null,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getHistoryTitle(SubscriptionPlan? plan) {
+    return plan?.name ?? '관리자 부여';
+  }
+
+  String _getHistoryAddedDaysLabel(
+    SubscriptionModel history,
+    SubscriptionPlan? plan,
+  ) {
+    final addedDays = _getHistoryAddedDays(history, plan);
+    if (addedDays > 0) {
+      return '+$addedDays일';
+    }
+    return plan == null ? '관리자 부여' : '기간 추가';
+  }
+
+  int _getHistoryAddedDays(
+    SubscriptionModel history,
+    SubscriptionPlan? plan,
+  ) {
+    if ((history.grantedDays ?? 0) > 0) {
+      return history.grantedDays!;
+    }
+
+    if (plan != null) {
+      return plan.durationMonths * 30;
+    }
+
+    final totalDays = history.endDate.difference(history.startDate).inDays;
+    if (totalDays > 0) {
+      return totalDays;
+    }
+
+    final createdToEndDays =
+        history.endDate.difference(history.createdAt).inDays;
+    return createdToEndDays > 0 ? createdToEndDays : 0;
+  }
+
+  Color _getHistoryBadgeColor(SubscriptionPlan? plan) {
+    if (plan == null) {
+      return const Color(0xFF8D8D8D);
+    }
+    return const Color(0xFFB87BA8);
   }
 
   Future<void> _handlePurchase(SubscriptionProvider provider) async {
