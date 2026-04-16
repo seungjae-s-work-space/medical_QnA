@@ -64,6 +64,10 @@ function Login() {
         return '이메일 또는 비밀번호가 올바르지 않습니다.';
       case 'auth/too-many-requests':
         return '시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+      case 'auth/expired-action-code':
+        return '링크가 만료되었습니다. 이메일 인증 또는 비밀번호 재설정을 다시 요청해 주세요.';
+      case 'auth/invalid-action-code':
+        return '유효하지 않거나 이미 사용된 링크입니다. 다시 요청해 주세요.';
       default:
         if (action === 'signup') {
           return '회원가입 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.';
@@ -160,7 +164,7 @@ function Login() {
       setResetDialogOpen(false);
       setFeedback({
         severity: 'success',
-        message: '비밀번호 재설정 메일을 보냈습니다. 메일함을 확인해 주세요.',
+        message: '비밀번호 재설정 메일을 보냈습니다. 링크가 만료되면 다시 요청해 주세요.',
       });
     } catch (err) {
       setFeedback({

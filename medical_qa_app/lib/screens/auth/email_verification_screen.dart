@@ -67,7 +67,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         SnackBar(
           content: Text(
             authProvider.errorMessage ??
-                '아직 이메일 인증이 확인되지 않았어요. 메일함에서 링크를 눌러주세요.',
+                '아직 이메일 인증이 확인되지 않았어요. 링크가 만료되었거나 이미 사용되었다면 인증 메일을 다시 보내주세요.',
           ),
           backgroundColor: AppColors.textSecondary,
         ),
@@ -178,7 +178,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    '메일이 보이지 않으면 스팸함이나 프로모션함도 확인해주세요. 잘못 입력한 이메일이라면 로그아웃 후 다시 가입하시면 됩니다.',
+                    '메일이 보이지 않으면 스팸함이나 프로모션함도 확인해주세요. 링크가 만료되었거나 이미 사용되었다면 아래에서 인증 메일을 다시 보낼 수 있어요. 잘못 입력한 이메일이라면 로그아웃 후 다시 가입하시면 됩니다.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,

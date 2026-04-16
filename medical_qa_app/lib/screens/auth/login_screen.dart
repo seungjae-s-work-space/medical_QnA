@@ -64,9 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _showPasswordResetDialog() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final emailController = TextEditingController(
-      text: _emailController.text.trim(),
-    );
+    String resetEmail = _emailController.text.trim();
     String? localError;
     bool sending = false;
 
@@ -99,9 +97,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextField(
-                    controller: emailController,
+                  TextFormField(
+                    initialValue: resetEmail,
                     keyboardType: TextInputType.emailAddress,
+                    onChanged: (value) {
+                      resetEmail = value;
+                      if (localError != null) {
+                        setState(() {
+                          localError = null;
+                        });
+                      }
+                    },
                     decoration: InputDecoration(
                       hintText: '이메일 주소',
                       errorText: localError,
@@ -130,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       : () async {
                           final navigator = Navigator.of(dialogContext);
                           final messenger = ScaffoldMessenger.of(this.context);
-                          final email = emailController.text.trim();
+                          final email = resetEmail.trim();
                           if (email.isEmpty || !email.contains('@')) {
                             setState(() {
                               localError = '올바른 이메일을 입력해주세요';
@@ -195,8 +201,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       },
     );
-
-    emailController.dispose();
   }
 
   @override

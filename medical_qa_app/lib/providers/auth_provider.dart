@@ -244,6 +244,10 @@ class AuthProvider with ChangeNotifier {
           return '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
         case 'invalid-credential':
           return '이메일 또는 비밀번호가 올바르지 않습니다.';
+        case 'expired-action-code':
+          return '링크가 만료되었습니다. 이메일 인증 또는 비밀번호 재설정을 다시 요청해주세요.';
+        case 'invalid-action-code':
+          return '유효하지 않거나 이미 사용된 링크입니다. 다시 요청해주세요.';
         case 'no-current-user':
           return '현재 로그인된 사용자가 없습니다.';
         default:
