@@ -299,6 +299,14 @@ function ChatWindow() {
     setUploading(false);
   };
 
+  const handleMessageKeyDown = (e) => {
+    if (e.key !== 'Enter' || e.shiftKey) return;
+    if (e.nativeEvent?.isComposing || e.nativeEvent?.keyCode === 229) return;
+
+    e.preventDefault();
+    handleSendMessage(e);
+  };
+
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     return timestamp.toDate().toLocaleTimeString('ko-KR', {
@@ -960,9 +968,10 @@ function ChatWindow() {
             fullWidth
             multiline
             maxRows={4}
-            placeholder="답변을 입력하세요"
+            placeholder="답변을 입력하세요 (Shift+Enter 줄바꿈)"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={handleMessageKeyDown}
             sx={{
               '& .MuiOutlinedInput-root': {
                 bgcolor: 'transparent',
