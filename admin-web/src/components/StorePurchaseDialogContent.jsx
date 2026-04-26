@@ -27,7 +27,11 @@ const STORE_LINKS = [
 const getQrImageUrl = (url) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(url)}`;
 
-function StorePurchaseDialogContent({ onClose }) {
+function StorePurchaseDialogContent({
+  onClose,
+  title = '이용권이 필요합니다',
+  description = '이 콘텐츠는 이용권 구매 후 볼 수 있습니다.\n아래 QR을 스캔하거나 앱스토어로 이동해 난임상담톡톡 앱을 설치해 주세요.',
+}) {
   return (
     <Box sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center' }}>
       <Box
@@ -48,7 +52,7 @@ function StorePurchaseDialogContent({ onClose }) {
       </Box>
 
       <Typography sx={{ fontSize: 22, fontWeight: 700, color: colors.textPrimary, mb: 1.5 }}>
-        이용권이 필요합니다
+        {title}
       </Typography>
 
       <Typography
@@ -56,14 +60,13 @@ function StorePurchaseDialogContent({ onClose }) {
           fontSize: 14,
           color: colors.textSecondary,
           lineHeight: 1.8,
+          whiteSpace: 'pre-line',
           maxWidth: 420,
           mx: 'auto',
           mb: 3,
         }}
       >
-        이 콘텐츠는 이용권 구매 후 볼 수 있습니다.
-        <br />
-        아래 QR을 스캔하거나 앱스토어로 이동해 난임상담톡톡 앱을 설치해 주세요.
+        {description}
       </Typography>
 
       <Box

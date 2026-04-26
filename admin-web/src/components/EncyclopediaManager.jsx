@@ -58,6 +58,8 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 import StorePurchaseDialogContent from './StorePurchaseDialogContent';
+import FreeContentAccessDialogContent from './FreeContentAccessDialogContent';
+import { consumeFreeContentAccess } from '../utils/freeContentAccess';
 
 // 이미지 리사이즈 모듈 등록
 Quill.register('modules/imageResize', ImageResize);
@@ -124,7 +126,7 @@ const mergeConsecutiveBlockquotes = (html) => {
 const ITEMS_PER_PAGE = 17;
 
 function EncyclopediaManager({ readOnly = false }) {
-  const { isLoggedIn, isAdmin, hasActiveSubscription } = useAuth();
+  const { user, isLoggedIn, isAdmin, hasActiveSubscription } = useAuth();
   const navigate = useNavigate();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -135,7 +137,9 @@ function EncyclopediaManager({ readOnly = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewArticle, setViewArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [accessModal, setAccessModal] = useState(null); // 'login' | 'subscribe' | null
+  const [accessModal, setAccessModal] = useState(null); // 'login' | 'subscribe' | 'trialEnded' | null
+  const [freeAccessGuide, setFreeAccessGuide] = useState(null);
+  const [openingArticleId, setOpeningArticleId] = useState(null);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -217,6 +221,58 @@ function EncyclopediaManager({ readOnly = false }) {
     } finally {
       setUploadingThumbnail(false);
     }
+  };
+
+  const handleArticleOpen = async (article) => {
+    if (!readOnly) {
+      setViewArticle(article);
+      return;
+    }
+
+    if (!isLoggedIn) {
+      setAccessModal('login');
+      return;
+    }
+
+    if (isAdmin || hasActiveSubscription) {
+      setViewArticle(article);
+      return;
+    }
+
+    if (!user?.uid || openingArticleId) return;
+
+    setOpeningArticleId(article.id);
+
+    try {
+      const accessResult = await consumeFreeContentAccess({ db, userId: user.uid });
+
+      if (accessResult.granted) {
+        setFreeAccessGuide({
+          article,
+          remainingViews: accessResult.remainingViews,
+          limit: accessResult.limit,
+        });
+      } else {
+        setAccessModal('trialEnded');
+      }
+    } catch (error) {
+      console.error('무료 열람 처리 오류:', error);
+      setSnackbar({
+        open: true,
+        message: '무료 열람 권한 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+        severity: 'error',
+      });
+    } finally {
+      setOpeningArticleId(null);
+    }
+  };
+
+  const handleFreeAccessGuideClose = () => {
+    if (!freeAccessGuide) return;
+
+    const { article } = freeAccessGuide;
+    setFreeAccessGuide(null);
+    setViewArticle(article);
   };
 
   // 이미지 업로드 핸들러 (Quill 에디터용)
@@ -655,15 +711,7 @@ function EncyclopediaManager({ readOnly = false }) {
           {paginatedArticles.map((article) => (
             <Grid item xs={12} sm={6} lg={4} key={article.id}>
               <Card
-                onClick={() => {
-                  if (readOnly && !isLoggedIn) {
-                    setAccessModal('login');
-                  } else if (readOnly && !isAdmin && !hasActiveSubscription) {
-                    setAccessModal('subscribe');
-                  } else {
-                    setViewArticle(article);
-                  }
-                }}
+                onClick={() => handleArticleOpen(article)}
                 sx={{
                   height: '100%',
                   display: 'flex',
@@ -1292,8 +1340,29 @@ function EncyclopediaManager({ readOnly = false }) {
       </Dialog>
 
       {/* 구독 필요 모달 */}
-      <Dialog open={accessModal === 'subscribe'} onClose={() => setAccessModal(null)} maxWidth="sm" fullWidth>
-        <StorePurchaseDialogContent onClose={() => setAccessModal(null)} />
+      <Dialog
+        open={accessModal === 'subscribe' || accessModal === 'trialEnded'}
+        onClose={() => setAccessModal(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <StorePurchaseDialogContent
+          onClose={() => setAccessModal(null)}
+          title={accessModal === 'trialEnded' ? '무료 열람을 모두 사용했어요' : undefined}
+          description={
+            accessModal === 'trialEnded'
+              ? '회원가입 후 제공되는 백과/뉴스 무료 열람 5회를 모두 사용했습니다.\n계속 보시려면 이용권을 구매해 주세요.'
+              : undefined
+          }
+        />
+      </Dialog>
+
+      <Dialog open={Boolean(freeAccessGuide)} onClose={handleFreeAccessGuideClose} maxWidth="xs" fullWidth>
+        <FreeContentAccessDialogContent
+          onClose={handleFreeAccessGuideClose}
+          remainingViews={freeAccessGuide?.remainingViews ?? 0}
+          limit={freeAccessGuide?.limit ?? 5}
+        />
       </Dialog>
     </Box>
   );

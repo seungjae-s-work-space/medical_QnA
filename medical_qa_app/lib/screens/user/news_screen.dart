@@ -5,8 +5,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../../models/news_model.dart';
 import '../../services/news_service.dart';
+import '../../services/free_content_access_service.dart';
 import '../../utils/app_colors.dart';
 import '../../providers/subscription_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../widgets/free_content_access_dialog.dart';
 import 'package:intl/intl.dart';
 import 'subscription_screen.dart';
 
@@ -19,6 +22,8 @@ class NewsScreen extends StatefulWidget {
 
 class _NewsScreenState extends State<NewsScreen> {
   final NewsService _service = NewsService();
+  final FreeContentAccessService _freeContentAccessService =
+      FreeContentAccessService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -31,6 +36,7 @@ class _NewsScreenState extends State<NewsScreen> {
   int _currentMatchIndex = 0;
   String _searchQuery = '';
   bool _isSearching = false;
+  bool _isOpeningNews = false;
 
   final Map<int, GlobalKey> _itemKeys = {};
 
@@ -137,7 +143,20 @@ class _NewsScreenState extends State<NewsScreen> {
     });
   }
 
-  void _showSubscriptionRequiredSheet() {
+  Future<void> _showFreeAccessGuideDialog({
+    required int remainingViews,
+    required int limit,
+  }) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => FreeContentAccessDialog(
+        remainingViews: remainingViews,
+        limit: limit,
+      ),
+    );
+  }
+
+  void _showSubscriptionRequiredSheet({bool isTrialExhausted = false}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -178,8 +197,8 @@ class _NewsScreenState extends State<NewsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              '이용권이 필요해요',
+            Text(
+              isTrialExhausted ? '무료 열람을 모두 사용했어요' : '이용권이 필요해요',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -187,10 +206,12 @@ class _NewsScreenState extends State<NewsScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              '뉴스를 보시려면\n이용권이 필요합니다.',
+            Text(
+              isTrialExhausted
+                  ? '백과/뉴스 무료 열람 5회를 모두 사용했습니다.\n계속 보시려면 이용권이 필요합니다.'
+                  : '뉴스를 보시려면\n이용권이 필요합니다.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 color: Color(0xFF888888),
                 height: 1.5,
@@ -421,19 +442,72 @@ class _NewsScreenState extends State<NewsScreen> {
     );
   }
 
-  void _openNewsDetail(NewsModel news) {
+  Future<void> _openNewsDetail(NewsModel news) async {
+    if (_isOpeningNews) return;
+
     final subscriptionProvider =
         Provider.of<SubscriptionProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    setState(() {
+      _isOpeningNews = true;
+    });
+
     if (!subscriptionProvider.hasActiveSubscription) {
-      _showSubscriptionRequiredSheet();
-      return;
+      final currentUser = authProvider.currentUser;
+      if (authProvider.isGuest || currentUser == null) {
+        _showSubscriptionRequiredSheet();
+        setState(() {
+          _isOpeningNews = false;
+        });
+        return;
+      }
+
+      try {
+        final accessResult =
+            await _freeContentAccessService.consumeView(currentUser.userId);
+        if (!mounted) return;
+
+        if (!accessResult.granted) {
+          _showSubscriptionRequiredSheet(isTrialExhausted: true);
+          setState(() {
+            _isOpeningNews = false;
+          });
+          return;
+        }
+
+        await _showFreeAccessGuideDialog(
+          remainingViews: accessResult.remainingViews,
+          limit: accessResult.limit,
+        );
+        if (!mounted) return;
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('무료 열람 권한을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'),
+            ),
+          );
+          setState(() {
+            _isOpeningNews = false;
+          });
+        }
+        return;
+      }
     }
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => NewsDetailScreen(news: news),
       ),
     );
+
+    if (mounted) {
+      setState(() {
+        _isOpeningNews = false;
+      });
+    }
   }
 }
 

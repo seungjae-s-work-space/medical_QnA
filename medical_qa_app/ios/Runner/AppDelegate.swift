@@ -2,9 +2,10 @@ import Flutter
 import UIKit
 import FirebaseCore
 import FirebaseMessaging
+import UserNotifications
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -26,8 +27,11 @@ import FirebaseMessaging
     // FCM 메시징 delegate 설정
     Messaging.messaging().delegate = self
 
-    GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
 
   // APNs 토큰 수신 시 FCM에 전달

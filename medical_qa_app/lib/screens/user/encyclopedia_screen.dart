@@ -5,9 +5,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../../models/encyclopedia_model.dart';
 import '../../services/encyclopedia_service.dart';
+import '../../services/free_content_access_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../utils/app_colors.dart';
+import '../../widgets/free_content_access_dialog.dart';
 import 'package:intl/intl.dart';
 import 'subscription_screen.dart';
 
@@ -20,6 +22,8 @@ class EncyclopediaScreen extends StatefulWidget {
 
 class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   final EncyclopediaService _service = EncyclopediaService();
+  final FreeContentAccessService _freeContentAccessService =
+      FreeContentAccessService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -29,6 +33,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   String _searchQuery = '';
   bool _isSearching = false;
   bool _isLoading = true;
+  bool _isOpeningArticle = false;
 
   // 페이지네이션
   static const int _itemsPerPage = 5;
@@ -329,16 +334,61 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
     );
   }
 
-  void _openArticleDetail(EncyclopediaModel article) {
+  Future<void> _openArticleDetail(EncyclopediaModel article) async {
+    if (_isOpeningArticle) return;
+
     final subscriptionProvider =
         Provider.of<SubscriptionProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    setState(() {
+      _isOpeningArticle = true;
+    });
+
     if (!subscriptionProvider.hasActiveSubscription) {
-      _showSubscriptionRequiredSheet();
-      return;
+      final currentUser = authProvider.currentUser;
+      if (authProvider.isGuest || currentUser == null) {
+        _showSubscriptionRequiredSheet();
+        setState(() {
+          _isOpeningArticle = false;
+        });
+        return;
+      }
+
+      try {
+        final accessResult =
+            await _freeContentAccessService.consumeView(currentUser.userId);
+        if (!mounted) return;
+
+        if (!accessResult.granted) {
+          _showSubscriptionRequiredSheet(isTrialExhausted: true);
+          setState(() {
+            _isOpeningArticle = false;
+          });
+          return;
+        }
+
+        await _showFreeAccessGuideDialog(
+          remainingViews: accessResult.remainingViews,
+          limit: accessResult.limit,
+        );
+        if (!mounted) return;
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('무료 열람 권한을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'),
+            ),
+          );
+          setState(() {
+            _isOpeningArticle = false;
+          });
+        }
+        return;
+      }
     }
 
     // 게스트 모드가 아닐 때만 조회수 증가
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (!authProvider.isGuest) {
       _service.incrementViewCount(article.id);
     }
@@ -349,9 +399,28 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
         builder: (context) => EncyclopediaDetailScreen(article: article),
       ),
     );
+
+    if (mounted) {
+      setState(() {
+        _isOpeningArticle = false;
+      });
+    }
   }
 
-  void _showSubscriptionRequiredSheet() {
+  Future<void> _showFreeAccessGuideDialog({
+    required int remainingViews,
+    required int limit,
+  }) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => FreeContentAccessDialog(
+        remainingViews: remainingViews,
+        limit: limit,
+      ),
+    );
+  }
+
+  void _showSubscriptionRequiredSheet({bool isTrialExhausted = false}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -392,8 +461,8 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              '이용권이 필요해요',
+            Text(
+              isTrialExhausted ? '무료 열람을 모두 사용했어요' : '이용권이 필요해요',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -401,10 +470,12 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              '글을 보시려면\n이용권이 필요합니다.',
+            Text(
+              isTrialExhausted
+                  ? '백과/뉴스 무료 열람 5회를 모두 사용했습니다.\n계속 보시려면 이용권이 필요합니다.'
+                  : '글을 보시려면\n이용권이 필요합니다.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 color: Color(0xFF888888),
                 height: 1.5,

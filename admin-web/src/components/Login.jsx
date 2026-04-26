@@ -128,6 +128,8 @@ function Login() {
             email: normalizedEmail,
             name: trimmedName,
             role: 'user',
+            freeContentViewLimit: 5,
+            freeContentViewUsed: 0,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           },

@@ -12,9 +12,11 @@ class UserModel {
   final DateTime? lastSeenAt;
 
   // 구독 관련 필드
-  final String? subscriptionId;        // 현재 구독 ID
+  final String? subscriptionId; // 현재 구독 ID
   final SubscriptionStatus subscriptionStatus; // 구독 상태
   final DateTime? subscriptionEndDate; // 구독 만료일
+  final int freeContentViewLimit; // 무료 열람 총 횟수
+  final int freeContentViewUsed; // 사용한 무료 열람 횟수
 
   UserModel({
     required this.userId,
@@ -28,6 +30,8 @@ class UserModel {
     this.subscriptionId,
     this.subscriptionStatus = SubscriptionStatus.free,
     this.subscriptionEndDate,
+    this.freeContentViewLimit = 5,
+    this.freeContentViewUsed = 0,
   });
 
   // Firestore에서 읽기
@@ -47,7 +51,10 @@ class UserModel {
         (e) => e.name == data['subscriptionStatus'],
         orElse: () => SubscriptionStatus.free,
       ),
-      subscriptionEndDate: (data['subscriptionEndDate'] as Timestamp?)?.toDate(),
+      subscriptionEndDate:
+          (data['subscriptionEndDate'] as Timestamp?)?.toDate(),
+      freeContentViewLimit: _parseInt(data['freeContentViewLimit']) ?? 5,
+      freeContentViewUsed: _parseInt(data['freeContentViewUsed']) ?? 0,
     );
   }
 
@@ -67,6 +74,8 @@ class UserModel {
       'subscriptionEndDate': subscriptionEndDate != null
           ? Timestamp.fromDate(subscriptionEndDate!)
           : null,
+      'freeContentViewLimit': freeContentViewLimit,
+      'freeContentViewUsed': freeContentViewUsed,
     };
   }
 
@@ -81,6 +90,13 @@ class UserModel {
     return DateTime.now().isBefore(subscriptionEndDate!);
   }
 
+  int get remainingFreeContentViews {
+    final remaining = freeContentViewLimit - freeContentViewUsed;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  bool get hasFreeContentViews => remainingFreeContentViews > 0;
+
   // copyWith
   UserModel copyWith({
     String? userId,
@@ -94,6 +110,8 @@ class UserModel {
     String? subscriptionId,
     SubscriptionStatus? subscriptionStatus,
     DateTime? subscriptionEndDate,
+    int? freeContentViewLimit,
+    int? freeContentViewUsed,
   }) {
     return UserModel(
       userId: userId ?? this.userId,
@@ -107,6 +125,14 @@ class UserModel {
       subscriptionId: subscriptionId ?? this.subscriptionId,
       subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
       subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
+      freeContentViewLimit: freeContentViewLimit ?? this.freeContentViewLimit,
+      freeContentViewUsed: freeContentViewUsed ?? this.freeContentViewUsed,
     );
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    return null;
   }
 }

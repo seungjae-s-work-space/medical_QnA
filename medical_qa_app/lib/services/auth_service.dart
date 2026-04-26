@@ -210,14 +210,7 @@ class AuthService {
               .update({'name': nickname});
           await prefs.setString('nickname', nickname);
 
-          existingUser = UserModel(
-            userId: existingUser.userId,
-            role: existingUser.role,
-            name: nickname,
-            email: existingUser.email,
-            createdAt: existingUser.createdAt,
-            fcmToken: existingUser.fcmToken,
-          );
+          existingUser = existingUser.copyWith(name: nickname);
         }
 
         return existingUser;
