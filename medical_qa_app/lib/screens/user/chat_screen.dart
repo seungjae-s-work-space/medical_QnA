@@ -10,6 +10,9 @@ import '../../services/storage_service.dart';
 import '../../models/message_model.dart';
 import '../../widgets/message_record.dart';
 import '../../widgets/date_divider.dart';
+import '../../design/app_radii.dart';
+import '../../design/app_spacing.dart';
+import '../../utils/app_colors.dart';
 import 'subscription_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -27,7 +30,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _imagePicker = ImagePicker();
   String? _conversationId;
   bool _isSending = false;
-  List<_PendingAttachment> _pendingAttachments = [];
+  final List<_PendingAttachment> _pendingAttachments = [];
 
   @override
   void initState() {
@@ -49,80 +52,83 @@ class _ChatScreenState extends State<ChatScreen> {
   void _showAttachmentOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
       ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
-                  borderRadius: BorderRadius.circular(2),
+      builder: (context) {
+        final textTheme = Theme.of(context).textTheme;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderStrong,
+                    borderRadius: BorderRadius.circular(AppSpacing.xxs / 2),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                '첨부하기',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF333333),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  '첨부하기',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildAttachmentOption(
-                    icon: Icons.camera_alt_rounded,
-                    label: '카메라',
-                    color: const Color(0xFF5B8BA8),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickFromCamera();
-                    },
-                  ),
-                  _buildAttachmentOption(
-                    icon: Icons.photo_library_rounded,
-                    label: '갤러리',
-                    color: const Color(0xFFB87BA8),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickFromGallery();
-                    },
-                  ),
-                  _buildAttachmentOption(
-                    icon: Icons.videocam_rounded,
-                    label: '동영상',
-                    color: const Color(0xFFE57373),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickVideo();
-                    },
-                  ),
-                  _buildAttachmentOption(
-                    icon: Icons.attach_file_rounded,
-                    label: '파일',
-                    color: const Color(0xFF81C784),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickFile();
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-            ],
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildAttachmentOption(
+                      icon: Icons.camera_alt_rounded,
+                      label: '카메라',
+                      color: AppColors.info,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pickFromCamera();
+                      },
+                    ),
+                    _buildAttachmentOption(
+                      icon: Icons.photo_library_rounded,
+                      label: '갤러리',
+                      color: AppColors.accent,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pickFromGallery();
+                      },
+                    ),
+                    _buildAttachmentOption(
+                      icon: Icons.videocam_rounded,
+                      label: '동영상',
+                      color: AppColors.error,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pickVideo();
+                      },
+                    ),
+                    _buildAttachmentOption(
+                      icon: Icons.attach_file_rounded,
+                      label: '파일',
+                      color: AppColors.success,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pickFile();
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -142,7 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
             height: 60,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: Icon(icon, color: color, size: 28),
           ),
@@ -151,7 +157,7 @@ class _ChatScreenState extends State<ChatScreen> {
             label,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF666666),
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -166,7 +172,8 @@ class _ChatScreenState extends State<ChatScreen> {
         imageQuality: 80,
       );
       if (image != null) {
-        _addPendingAttachment(File(image.path), AttachmentType.image, image.name);
+        _addPendingAttachment(
+            File(image.path), AttachmentType.image, image.name);
       }
     } catch (e) {
       _showErrorSnackBar('카메라를 열 수 없습니다');
@@ -180,7 +187,8 @@ class _ChatScreenState extends State<ChatScreen> {
         limit: 5,
       );
       for (final image in images) {
-        _addPendingAttachment(File(image.path), AttachmentType.image, image.name);
+        _addPendingAttachment(
+            File(image.path), AttachmentType.image, image.name);
       }
     } catch (e) {
       _showErrorSnackBar('갤러리를 열 수 없습니다');
@@ -213,7 +221,17 @@ class _ChatScreenState extends State<ChatScreen> {
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip'],
+        allowedExtensions: [
+          'pdf',
+          'doc',
+          'docx',
+          'xls',
+          'xlsx',
+          'ppt',
+          'pptx',
+          'txt',
+          'zip'
+        ],
       );
       if (result != null) {
         for (final file in result.files) {
@@ -257,9 +275,11 @@ class _ChatScreenState extends State<ChatScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red.shade400,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+        ),
       ),
     );
   }
@@ -271,7 +291,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_isSending) return;
 
     // 구독 상태 확인
-    final subscriptionProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+    final subscriptionProvider =
+        Provider.of<SubscriptionProvider>(context, listen: false);
     if (!subscriptionProvider.hasActiveSubscription) {
       _showSubscriptionRequiredSheet();
       return;
@@ -311,16 +332,16 @@ class _ChatScreenState extends State<ChatScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
       ),
       builder: (context) => Padding(
         padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(context).padding.bottom + 24,
+          left: AppSpacing.xl,
+          right: AppSpacing.xl,
+          top: AppSpacing.xl,
+          bottom: MediaQuery.of(context).padding.bottom + AppSpacing.xl,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -330,47 +351,47 @@ class _ChatScreenState extends State<ChatScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0),
-                borderRadius: BorderRadius.circular(2),
+                color: AppColors.borderStrong,
+                borderRadius: BorderRadius.circular(AppSpacing.xxs / 2),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
             // 아이콘
             Container(
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: const Color(0xFFF0D8E8),
-                borderRadius: BorderRadius.circular(24),
+                color: AppColors.accentSoft,
+                borderRadius: BorderRadius.circular(AppRadii.xl),
               ),
               child: const Icon(
                 Icons.workspace_premium,
                 size: 40,
-                color: Color(0xFFB87BA8),
+                color: AppColors.accentDeep,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             // 제목
             const Text(
               '이용권이 필요해요',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF333333),
+                color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             // 설명
             const Text(
               '메시지를 보내시려면\n이용권이 필요합니다.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Color(0xFF888888),
+                color: AppColors.textSecondary,
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
             // 이용권 구매 버튼
             SizedBox(
               width: double.infinity,
@@ -385,34 +406,16 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB87BA8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  elevation: 0,
-                ),
                 child: const Text(
                   '이용권 구매하기',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             // 나중에 버튼
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text(
-                '나중에 할게요',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF888888),
-                ),
-              ),
+              child: const Text('나중에 할게요'),
             ),
           ],
         ),
@@ -420,7 +423,8 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  List<Widget> _buildMessagesWithDateDividers(List<MessageModel> messages, String currentUserId) {
+  List<Widget> _buildMessagesWithDateDividers(
+      List<MessageModel> messages, String currentUserId) {
     final List<Widget> widgets = [];
 
     for (int i = 0; i < messages.length; i++) {
@@ -453,17 +457,17 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildPendingAttachmentsPreview() {
     if (_pendingAttachments.isEmpty) return const SizedBox.shrink();
 
-    final hasVideo = _pendingAttachments.any((a) => a.type == AttachmentType.video);
-    final expiryText = hasVideo
-        ? '동영상 7일, 이미지/문서 30일 후 자동 삭제'
-        : '이미지/문서는 30일 후 자동 삭제됩니다';
+    final hasVideo =
+        _pendingAttachments.any((a) => a.type == AttachmentType.video);
+    final expiryText =
+        hasVideo ? '동영상 7일, 이미지/문서 30일 후 자동 삭제' : '이미지/문서는 30일 후 자동 삭제됩니다';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
-        color: Color(0xFFF8F8F8),
+        color: AppColors.surfaceMuted,
         border: Border(
-          bottom: BorderSide(color: Color(0xFFE0E0E0), width: 0.5),
+          bottom: BorderSide(color: AppColors.borderStrong, width: 0.5),
         ),
       ),
       child: Column(
@@ -482,12 +486,12 @@ class _ChatScreenState extends State<ChatScreen> {
                         width: 70,
                         height: 70,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppRadii.sm),
+                          border: Border.all(color: AppColors.borderStrong),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(11),
+                          borderRadius: BorderRadius.circular(AppRadii.sm - 1),
                           child: _buildAttachmentPreview(attachment),
                         ),
                       ),
@@ -499,8 +503,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: Container(
                             width: 22,
                             height: 22,
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade400,
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -522,7 +526,7 @@ class _ChatScreenState extends State<ChatScreen> {
             expiryText,
             style: const TextStyle(
               fontSize: 11,
-              color: Color(0xFF999999),
+              color: AppColors.textTertiary,
             ),
           ),
         ],
@@ -541,25 +545,25 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       case AttachmentType.video:
         return Container(
-          color: const Color(0xFFE57373).withValues(alpha: 0.1),
+          color: AppColors.errorSoft,
           child: const Center(
             child: Icon(
               Icons.videocam_rounded,
-              color: Color(0xFFE57373),
+              color: AppColors.error,
               size: 28,
             ),
           ),
         );
       case AttachmentType.file:
         return Container(
-          color: const Color(0xFF81C784).withValues(alpha: 0.1),
+          color: AppColors.successSoft,
           padding: const EdgeInsets.all(6),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
                 Icons.insert_drive_file_rounded,
-                color: Color(0xFF81C784),
+                color: AppColors.success,
                 size: 24,
               ),
               const SizedBox(height: 2),
@@ -567,7 +571,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 attachment.fileName,
                 style: const TextStyle(
                   fontSize: 9,
-                  color: Color(0xFF666666),
+                  color: AppColors.textSecondary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -582,13 +586,14 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final textTheme = Theme.of(context).textTheme;
 
     // 채팅 화면 전용 색상
-    const backgroundColor = Colors.white;
-    const textPrimary = Color(0xFF333333);
-    const textSecondary = Color(0xFF888888);
-    const textTertiary = Color(0xFFAAAAAA);
-    const accentColor = Color(0xFF5B8BA8);
+    const backgroundColor = AppColors.background;
+    const textPrimary = AppColors.textPrimary;
+    const textSecondary = AppColors.textSecondary;
+    const textTertiary = AppColors.textTertiary;
+    const accentColor = AppColors.accent;
 
     if (_conversationId == null) {
       return const Scaffold(
@@ -608,8 +613,8 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0F0F0),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.inputBackground,
+              borderRadius: BorderRadius.circular(AppRadii.sm),
             ),
             child: const Icon(
               Icons.arrow_back_ios_new_rounded,
@@ -618,13 +623,11 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         ),
-        title: const Text(
+        title: Text(
           '상담',
-          style: TextStyle(
+          style: textTheme.titleLarge?.copyWith(
             color: textPrimary,
-            fontSize: 19,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+            fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: true,
@@ -651,13 +654,13 @@ class _ChatScreenState extends State<ChatScreen> {
                             width: 72,
                             height: 72,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFB8D4E8),
-                              borderRadius: BorderRadius.circular(20),
+                              color: AppColors.accentSoft,
+                              borderRadius: BorderRadius.circular(AppRadii.lg),
                             ),
                             child: const Icon(
                               Icons.forum_outlined,
                               size: 32,
-                              color: Color(0xFF5B8BA8),
+                              color: AppColors.accentDeep,
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -694,7 +697,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 return ListView.builder(
                   controller: _scrollController,
                   reverse: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: widgets.length,
                   itemBuilder: (context, index) => widgets[index],
                 );
@@ -708,13 +712,16 @@ class _ChatScreenState extends State<ChatScreen> {
           // 입력 영역
           Container(
             padding: EdgeInsets.only(
-              left: 12,
-              right: 16,
-              top: 12,
-              bottom: MediaQuery.of(context).padding.bottom + 12,
+              left: AppSpacing.sm,
+              right: AppSpacing.md,
+              top: AppSpacing.sm,
+              bottom: MediaQuery.of(context).padding.bottom + AppSpacing.sm,
             ),
             decoration: const BoxDecoration(
               color: backgroundColor,
+              border: Border(
+                top: BorderSide(color: AppColors.border, width: 1),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -725,14 +732,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   height: 42,
                   margin: const EdgeInsets.only(bottom: 4, right: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0F0F0),
+                    color: AppColors.inputBackground,
                     borderRadius: BorderRadius.circular(21),
                   ),
                   child: IconButton(
                     onPressed: _showAttachmentOptions,
                     icon: const Icon(
                       Icons.add_rounded,
-                      color: Color(0xFF666666),
+                      color: AppColors.textSecondary,
                       size: 24,
                     ),
                   ),
@@ -740,7 +747,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0F0F0),
+                      color: AppColors.inputBackground,
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: TextField(
@@ -775,9 +782,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   height: 46,
                   margin: const EdgeInsets.only(bottom: 2),
                   decoration: BoxDecoration(
-                    color: _isSending
-                        ? const Color(0xFFE0E0E0)
-                        : accentColor,
+                    color: _isSending ? AppColors.borderStrong : accentColor,
                     borderRadius: BorderRadius.circular(23),
                   ),
                   child: IconButton(

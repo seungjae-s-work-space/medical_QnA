@@ -37,7 +37,7 @@ class FreeContentAccessDialog extends StatelessWidget {
               child: const Icon(
                 Icons.visibility_rounded,
                 size: 42,
-                color: Color(0xFFD4A853),
+                color: AppColors.premium,
               ),
             ),
             const SizedBox(height: 20),
@@ -107,7 +107,7 @@ class FreeContentAccessDialog extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4A853),
+                  backgroundColor: AppColors.premium,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(

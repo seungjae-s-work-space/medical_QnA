@@ -13,6 +13,8 @@ import 'screens/user/home_screen.dart';
 import 'screens/admin/admin_conversations_screen.dart';
 import 'services/notification_service.dart';
 import 'services/force_update_service.dart';
+import 'design/app_theme.dart';
+import 'utils/app_colors.dart';
 
 // 모바일 전용 import
 import 'package:firebase_messaging/firebase_messaging.dart'
@@ -86,10 +88,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: '골통주부의 난임&상담톡',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.light,
         home: const AuthWrapper(),
       ),
     );
@@ -184,7 +183,7 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
     // 초기화 중 → Splash 화면
     if (!authProvider.isInitialized) {
       return Scaffold(
-        backgroundColor: const Color(0xFFFDF6F9),
+        backgroundColor: AppColors.backgroundWarm,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -200,7 +199,7 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFFB87BA8),
+                  color: AppColors.accent,
                 ),
               ),
             ],

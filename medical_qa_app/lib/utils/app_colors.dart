@@ -1,28 +1,75 @@
 import 'package:flutter/material.dart';
 
-/// 웜그레이/아이보리 톤 - "말해도 되는 공간"
+/// App-wide color tokens for the Flutter client.
+///
+/// The visual direction stays close to the current product:
+/// clean white surfaces, muted cocoa text, sage-green emphasis, and
+/// a champagne accent for premium actions.
 class AppColors {
-  // 배경색 - 흰색
+  AppColors._();
+
+  // Core surfaces
   static const Color background = Color(0xFFFFFFFF);
-  static const Color backgroundAlt = Color(0xFFF8F8F8);
+  static const Color backgroundWarm = Color(0xFFF6FBF7);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceMuted = Color(0xFFFAFAFA);
+  static const Color surfaceRaised = Color(0xFFF1E9E3);
+  static const Color surfaceTint = Color(0xFFEEF7F1);
 
-  // 메시지 배경 - 같은 계열, 명도만 다름
-  static const Color userMessage = Color(0xFFE8E6E2);      // 사용자 질문 (조금 진한 톤)
-  static const Color adminMessage = Color(0xFFDCD9D4);     // 관리자 답변 (더 진한 톤)
+  // Text
+  static const Color textPrimary = Color(0xFF2F2627);
+  static const Color textSecondary = Color(0xFF74666A);
+  static const Color textTertiary = Color(0xFFA39598);
+  static const Color textInverse = Color(0xFFFFFFFF);
 
-  // 텍스트
-  static const Color textPrimary = Color(0xFF3C3C3C);      // 본문
-  static const Color textSecondary = Color(0xFF8A8A8A);    // 날짜, 라벨
-  static const Color textTertiary = Color(0xFFB0B0B0);     // 안내 문구
+  // Brand accents
+  static const Color accent = Color(0xFF70B789);
+  static const Color accentStrong = Color(0xFF5B9D72);
+  static const Color accentDeep = Color(0xFF447B59);
+  static const Color accentSoft = Color(0xFFD8EEE0);
+  static const Color accentSoftMuted = Color(0xFFEEF8F1);
 
-  // 버튼 - 얇은 테두리
-  static const Color buttonBorder = Color(0xFFD0CEC9);
-  static const Color buttonText = Color(0xFF5A5A5A);
+  // Supporting accents
+  static const Color premium = Color(0xFFD4A853);
+  static const Color premiumSoft = Color(0xFFF8F8F8);
+  static const Color info = Color(0xFF5B8BA8);
+  static const Color infoSoft = Color(0xFFE8F4FC);
+  static const Color success = Color(0xFF6FA87B);
+  static const Color successSoft = Color(0xFFE8F5EC);
+  static const Color warning = Color(0xFFE0A14A);
+  static const Color warningSoft = Color(0xFFFFF1E1);
+  static const Color error = Color(0xFFE57373);
+  static const Color errorSoft = Color(0xFFFDECEC);
 
-  // 구분선
-  static const Color divider = Color(0xFFE0DED9);
+  // Feature palettes
+  static const Color encyclopediaTone = Color(0xFFD4A956);
+  static const Color encyclopediaSurface = Color(0xFFFADC4A);
+  static const Color encyclopediaSurfaceSoft = Color(0xFFF5E6A3);
+  static const Color encyclopediaHighlight = Color(0xFFFFEB3B);
+  static const Color newsTone = Color(0xFF80A5BB);
+  static const Color newsSurfaceSoft = Color(0xFFD4E8EF);
+  static const Color newsHighlight = Color(0xFFD4E8EF);
 
-  // 입력 필드
-  static const Color inputBorder = Color(0xFFD8D6D1);
-  static const Color inputBackground = Color(0xFFFAF9F7);
+  // Borders and overlays
+  static const Color border = Color(0xFFE7DDD8);
+  static const Color borderStrong = Color(0xFFD7CAC5);
+  static const Color divider = border;
+  static const Color scrim = Color(0x66000000);
+
+  // Inputs and controls
+  static const Color inputBackground = Color(0xFFFAFAFA);
+  static const Color inputBorder = Color(0xFFFAFAFA);
+  static const Color buttonBorder = borderStrong;
+  static const Color buttonText = textPrimary;
+
+  // Chat-specific aliases
+  static const Color userMessage = accent;
+  static const Color adminMessage = surfaceMuted;
+  static const Color chatUserBubble = accent;
+  static const Color chatAdminBubble = surfaceMuted;
+  static const Color chatAgentBadgeBackground = accentSoft;
+  static const Color chatAgentBadgeForeground = accentDeep;
+
+  // Backwards-compatible aliases used across the codebase
+  static const Color backgroundAlt = surfaceMuted;
 }

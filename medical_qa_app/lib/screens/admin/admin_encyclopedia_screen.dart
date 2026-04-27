@@ -106,7 +106,7 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
           bottom: 16,
           child: FloatingActionButton(
             onPressed: _createArticle,
-            backgroundColor: const Color(0xFF6B4E71),
+            backgroundColor: AppColors.accentDeep,
             child: const Icon(Icons.add, color: Colors.white),
           ),
         ),
@@ -588,7 +588,7 @@ class AdminArticleDetailScreen extends StatelessWidget {
                         backgroundColor: Colors.transparent,
                         border: const Border(
                           left: BorderSide(
-                            color: Color(0xFF333333),
+                            color: AppColors.textPrimary,
                             width: 4,
                           ),
                         ),
@@ -872,7 +872,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
             icon: const Icon(Icons.refresh, size: 18),
             label: const Text('이미지 변경'),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF6B4E71),
+              foregroundColor: AppColors.accentDeep,
             ),
           ),
         ],
@@ -907,7 +907,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
             child: Text(
               _isEditing ? '수정' : '등록',
               style: TextStyle(
-                color: _isLoading ? AppColors.textTertiary : const Color(0xFF6B4E71),
+                color: _isLoading ? AppColors.textTertiary : AppColors.accentDeep,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -964,7 +964,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF6B4E71)),
+                        borderSide: const BorderSide(color: AppColors.accentDeep),
                       ),
                     ),
                     validator: (value) {
@@ -1004,7 +1004,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF6B4E71)),
+                        borderSide: const BorderSide(color: AppColors.accentDeep),
                       ),
                     ),
                     validator: (value) {
@@ -1033,7 +1033,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
                         onChanged: (value) {
                           setState(() => _isPublished = value);
                         },
-                        activeColor: const Color(0xFF6B4E71),
+                        activeColor: AppColors.accentDeep,
                       ),
                     ],
                   ),

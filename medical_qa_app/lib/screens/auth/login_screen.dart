@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('인증 메일을 보냈습니다. 메일함에서 링크를 눌러주세요.'),
-          backgroundColor: Color(0xFFB87BA8),
+          backgroundColor: AppColors.accent,
         ),
       );
     }
@@ -112,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       hintText: '이메일 주소',
                       errorText: localError,
                       filled: true,
-                      fillColor: const Color(0xFFF5F5F5),
+                      fillColor: AppColors.inputBackground,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(18),
                         borderSide: BorderSide.none,
@@ -165,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 content: Text(
                                   '비밀번호 재설정 메일을 보냈습니다. 메일함을 확인해주세요.',
                                 ),
-                                backgroundColor: Color(0xFFB87BA8),
+                                backgroundColor: AppColors.accent,
                               ),
                             );
                           } else {
@@ -176,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB87BA8),
+                    backgroundColor: AppColors.accent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
@@ -313,8 +313,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: ElevatedButton(
                       onPressed: authProvider.isLoading ? null : _submit,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFB87BA8),
-                        disabledBackgroundColor: const Color(0xFFE0E0E0),
+                        backgroundColor: AppColors.accent,
+                        disabledBackgroundColor: AppColors.borderStrong,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(28),
                         ),
@@ -361,7 +361,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextSpan(
                             text: _isLogin ? '회원가입' : '로그인',
                             style: const TextStyle(
-                              color: Color(0xFFB87BA8),
+                              color: AppColors.accent,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -381,7 +381,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         '비밀번호를 잊으셨나요?',
                         style: TextStyle(
                           fontSize: 15,
-                          color: Color(0xFFB87BA8),
+                          color: AppColors.accent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -438,11 +438,11 @@ class _LoginScreenState extends State<LoginScreen> {
           fontSize: 17,
         ),
         filled: true,
-        fillColor: const Color(0xFFF5F5F5),
+        fillColor: AppColors.inputBackground,
         prefixIcon: icon != null
             ? Container(
                 margin: const EdgeInsets.only(left: 16, right: 12),
-                child: Icon(icon, color: const Color(0xFFB87BA8), size: 22),
+                child: Icon(icon, color: AppColors.accent, size: 22),
               )
             : null,
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
@@ -459,7 +459,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
-          borderSide: const BorderSide(color: Color(0xFFB87BA8), width: 2),
+          borderSide: const BorderSide(color: AppColors.accent, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),

@@ -164,13 +164,13 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6B4E71).withValues(alpha: 0.2),
+                    color: AppColors.accentDeep.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.admin_panel_settings,
                     size: 32,
-                    color: Color(0xFF6B4E71),
+                    color: AppColors.accentDeep,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -216,7 +216,7 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
             trailing: Switch(
               value: _notificationsEnabled,
               onChanged: (_) => _toggleNotification(),
-              activeColor: const Color(0xFF6B4E71),
+              activeColor: AppColors.accentDeep,
             ),
           ),
           const Divider(height: 1, color: AppColors.divider),

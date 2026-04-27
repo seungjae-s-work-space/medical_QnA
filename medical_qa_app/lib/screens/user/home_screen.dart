@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../design/app_radii.dart';
+import '../../design/app_spacing.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
 import '../../services/notice_service.dart';
@@ -43,14 +45,14 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF333333),
+            color: AppColors.textPrimary,
           ),
         ),
         content: Text(
           '$feature 기능을 이용하시려면\n로그인이 필요합니다.',
           style: const TextStyle(
             fontSize: 16,
-            color: Color(0xFF666666),
+            color: AppColors.textSecondary,
             height: 1.5,
           ),
         ),
@@ -61,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
               '취소',
               style: TextStyle(
                 fontSize: 16,
-                color: Color(0xFF888888),
+                color: AppColors.textSecondary,
               ),
             ),
           ),
@@ -77,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFB87BA8),
+                color: AppColors.accent,
               ),
             ),
           ),
@@ -169,11 +171,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showAboutSheet() {
     // 바텀시트 전용 색상
     const sheetBg = Colors.white;
-    const textPrimary = Color(0xFF333333);
-    const textSecondary = Color(0xFF888888);
-    const dividerColor = Color(0xFFE8E8E8);
-    const accentColor = Color(0xFF5B8BA8);
-    const cardBg = Color(0xFFF8F8F8);
+    const textPrimary = AppColors.textPrimary;
+    const textSecondary = AppColors.textSecondary;
+    const dividerColor = AppColors.border;
+    const accentColor = AppColors.info;
+    const cardBg = AppColors.surfaceMuted;
 
     showModalBottomSheet(
       context: context,
@@ -294,15 +296,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          const Row(
                             children: [
                               Icon(
                                 Icons.verified,
                                 size: 18,
                                 color: accentColor,
                               ),
-                              const SizedBox(width: 8),
-                              const Text(
+                              SizedBox(width: 8),
+                              Text(
                                 '자문위원단',
                                 style: TextStyle(
                                   fontSize: 18,
@@ -393,6 +395,153 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _pushFeaturePage({
+    required String title,
+    required Widget child,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            backgroundColor: AppColors.background,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              title,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            centerTitle: true,
+          ),
+          body: child,
+        ),
+      ),
+    );
+  }
+
+  void _openNewsScreen() {
+    _pushFeaturePage(
+      title: '난임뉴스',
+      child: const NewsScreen(),
+    );
+  }
+
+  void _openVideoScreen() {
+    _pushFeaturePage(
+      title: '아기성공TV',
+      child: const VideoScreen(),
+    );
+  }
+
+  Widget _buildFeatureMosaic() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 14.0;
+        final largeWidth = (constraints.maxWidth - gap) / 2;
+        final largeHeight = largeWidth * 0.86;
+        final compactHeight = (largeHeight - gap) / 2;
+
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: largeHeight,
+                    child: _LargeFeatureCard(
+                      title: '난임백과',
+                      icon: Icons.menu_book_outlined,
+                      tone: const Color(0xFF915408),
+                      surfaceTint: const Color(0xFFFADC4A),
+                      imageAsset: 'assets/grid/encyclopedia.png',
+                      imageAlignment: Alignment.centerRight,
+                      onTap: () => setState(() => _currentIndex = 1),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: gap),
+                Expanded(
+                  child: SizedBox(
+                    height: largeHeight,
+                    child: _LargeFeatureCard(
+                      title: '난임톡톡 소개',
+                      icon: Icons.assignment_outlined,
+                      tone: const Color(0xFF7333A1),
+                      surfaceTint: const Color(0xFFCEA4EC),
+                      imageAsset: 'assets/grid/inform.png',
+                      imageAlignment: Alignment.center,
+                      onTap: _showAboutSheet,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: gap),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: largeHeight,
+                    child: _LargeFeatureCard(
+                      title: '난임뉴스',
+                      icon: Icons.public_outlined,
+                      tone: const Color(0xFF0C457B),
+                      surfaceTint: const Color(0xFFA5BBEC),
+                      imageAsset: 'assets/grid/news.png',
+                      imageAlignment: Alignment.centerRight,
+                      onTap: _openNewsScreen,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: gap),
+                Expanded(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: compactHeight,
+                        child: _CompactFeatureCard(
+                          title: '아기성공TV',
+                          icon: Icons.smart_display_outlined,
+                          tone: const Color(0xFF981F00),
+                          surfaceTint: const Color(0xFFF39764),
+                          imageAsset: 'assets/grid/tv.png',
+                          imageAlignment: Alignment.center,
+                          onTap: _openVideoScreen,
+                        ),
+                      ),
+                      const SizedBox(height: gap),
+                      SizedBox(
+                        height: compactHeight,
+                        child: _CompactFeatureCard(
+                          title: '무제한 상담',
+                          icon: Icons.coffee_outlined,
+                          tone: const Color(0xFF8E7922),
+                          surfaceTint: const Color(0xFFF8EEC4),
+                          imageAsset: 'assets/grid/counseling.png',
+                          imageAlignment: Alignment.center,
+                          onTap: _openSubscriptionScreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildHomeContent() {
     return SingleChildScrollView(
       padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 100),
@@ -401,7 +550,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // 앱바 이미지
           Image.asset(
-            'assets/images/appbar_section4xreal.png',
+            'assets/images/loginlogo4xreal.png',
             height: 65,
             fit: BoxFit.contain,
           ),
@@ -410,6 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _ChatBanner(
             onTap: _navigateToChat,
           ),
+          const SizedBox(height: 14),
 
           // 로고 영역
           _buildLogoSection(),
@@ -417,137 +567,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // 공지사항 배너
           _buildNoticeBanner(),
-          const SizedBox(height: 12),
-
-          // 상단 2개 메뉴 (난임백과, 난임톡톡 소개)
-          Row(
-            children: [
-              Expanded(
-                child: _NewMenuCard(
-                  title: '난임뉴스',
-                  titleColor: const Color(0xFFBC843D),
-                  icon: Icons.public,
-                  color: const Color(0xFFFBF2D1),
-                  iconColor: const Color(0xFFBC843D),
-                  buttonBorderColor: const Color(0xFFBC843D),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Scaffold(
-                          backgroundColor: AppColors.background,
-                          appBar: AppBar(
-                            backgroundColor: AppColors.background,
-                            elevation: 0,
-                            leading: IconButton(
-                              icon: const Icon(Icons.arrow_back,
-                                  color: AppColors.textPrimary),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            title: const Text(
-                              '난임뉴스',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            centerTitle: true,
-                          ),
-                          body: const NewsScreen(),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _NewMenuCard(
-                  title: '난임톡톡 소개',
-                  titleColor: const Color(0xFF5288B1),
-                  icon: Icons.assignment_outlined,
-                  color: const Color(0xFFDCEFFF),
-                  iconColor: const Color(0xFF5288B1),
-                  buttonBorderColor: const Color(0xFF5288B1),
-                  onTap: _showAboutSheet,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // 난임뉴스 (왼쪽) + 아기성공TV, 무제한상담 (오른쪽 Column)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 왼쪽: 난임뉴스 (큰 카드)
-              Expanded(
-                child: _NewMenuCard(
-                  title: '난임백과',
-                  titleColor: const Color(0xFF5288B1),
-                  icon: Icons.menu_book_rounded,
-                  color: const Color(0xFFDCEFFF),
-                  iconColor: const Color(0xFF5288B1),
-                  buttonBorderColor: const Color(0xFF5288B1),
-                  onTap: () => setState(() => _currentIndex = 1),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // 오른쪽: 아기성공TV + 무제한상담 (Column)
-              Expanded(
-                child: Column(
-                  children: [
-                    _MiniMenuCard(
-                      title: '아기성공TV',
-                      icon: Icons.play_circle_filled,
-                      color: const Color(0xFFFFCDD2),
-                      iconColor: const Color(0xFFE62B83),
-                      textColor: const Color(0xFFE62B83),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Scaffold(
-                              backgroundColor: AppColors.background,
-                              appBar: AppBar(
-                                backgroundColor: AppColors.background,
-                                elevation: 0,
-                                leading: IconButton(
-                                  icon: const Icon(Icons.arrow_back,
-                                      color: AppColors.textPrimary),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
-                                title: const Text(
-                                  '아기성공TV',
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                centerTitle: true,
-                              ),
-                              body: const VideoScreen(),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    _MiniMenuCard(
-                      title: '무제한 상담',
-                      icon: Icons.coffee_outlined,
-                      color: const Color(0xFFECC2E3),
-                      iconColor: const Color(0xFF8A5B80),
-                      textColor: const Color(0xFF8A5B80),
-                      onTap: () => _openSubscriptionScreen(),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 14),
+          _buildFeatureMosaic(),
         ],
       ),
     );
@@ -597,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFFCF8ED),
+          color: AppColors.premiumSoft,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -655,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0D8E8),
+              color: AppColors.accentSoft,
               borderRadius: BorderRadius.circular(24),
             ),
             child: Row(
@@ -664,7 +685,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 64,
                   height: 64,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFB87BA8),
+                    color: AppColors.accent,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -705,7 +726,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // 설정 메뉴
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
+              color: AppColors.surfaceMuted,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
@@ -715,7 +736,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ? Icons.notifications_active
                       : Icons.notifications_off_outlined,
                   title: '알림 설정',
-                  iconColor: const Color(0xFF5B8BA8),
+                  iconColor: AppColors.info,
                   onTap: () async {
                     await Navigator.push(
                       context,
@@ -728,17 +749,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Divider(height: 1, color: Color(0xFFE8E8E8)),
+                  child: Divider(height: 1, color: AppColors.border),
                 ),
                 _buildSettingItem(
                   icon: Icons.info_outline,
                   title: '난임톡톡 소개',
-                  iconColor: const Color(0xFFD4A853),
+                  iconColor: AppColors.premium,
                   onTap: _showAboutSheet,
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Divider(height: 1, color: Color(0xFFE8E8E8)),
+                  child: Divider(height: 1, color: AppColors.border),
                 ),
                 _buildSettingItem(
                   icon: Icons.logout,
@@ -749,7 +770,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Divider(height: 1, color: Color(0xFFE8E8E8)),
+                  child: Divider(height: 1, color: AppColors.border),
                 ),
                 _buildSettingItem(
                   icon: Icons.person_remove_outlined,
@@ -779,7 +800,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF333333),
+            color: AppColors.textPrimary,
           ),
         ),
         content: const Text(
@@ -787,7 +808,7 @@ class _HomeScreenState extends State<HomeScreen> {
           '탈퇴 시 모든 데이터(상담 내역, 구독 정보 등)가 삭제되며 복구할 수 없습니다.',
           style: TextStyle(
             fontSize: 16,
-            color: Color(0xFF666666),
+            color: AppColors.textSecondary,
             height: 1.5,
           ),
         ),
@@ -798,7 +819,7 @@ class _HomeScreenState extends State<HomeScreen> {
               '취소',
               style: TextStyle(
                 fontSize: 16,
-                color: Color(0xFF888888),
+                color: AppColors.textSecondary,
               ),
             ),
           ),
@@ -840,7 +861,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('회원 탈퇴가 완료되었습니다.'),
-            backgroundColor: Color(0xFF333333),
+            backgroundColor: AppColors.textPrimary,
           ),
         );
       } else {
@@ -888,7 +909,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8E8E8),
+                    color: AppColors.border,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.chevron_right,
@@ -943,7 +964,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SnackBar(
                 content: Text('뒤로가기를 한 번 더 누르면 종료됩니다'),
                 duration: Duration(seconds: 2),
-                backgroundColor: Color(0xFF333333),
+                backgroundColor: AppColors.textPrimary,
               ),
             );
           } else {
@@ -959,7 +980,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: AppColors.background,
                 elevation: 0,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                  icon: const Icon(Icons.arrow_back,
+                      color: AppColors.textPrimary),
                   onPressed: () => setState(() => _currentIndex = 0),
                 ),
                 title: Text(
@@ -1017,7 +1039,6 @@ class _HomeScreenState extends State<HomeScreen> {
         //     ),
         //   ),
         // ),
-
       ),
     );
   }
@@ -1036,7 +1057,7 @@ class _ChatBanner extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Image.asset(
-          'assets/images/chatting4xreal.png',
+          'assets/images/chatting4xgreen.png',
           width: double.infinity,
           fit: BoxFit.contain,
         ),
@@ -1045,135 +1066,264 @@ class _ChatBanner extends StatelessWidget {
   }
 }
 
-// 새 메뉴 카드 (난임백과, 난임톡톡 소개)
-class _NewMenuCard extends StatelessWidget {
+class _LargeFeatureCard extends StatelessWidget {
   final String title;
   final IconData icon;
-  final Color color;
-  final Color iconColor;
-  final Color buttonBorderColor;
-  final Color titleColor;
+  final Color tone;
+  final Color surfaceTint;
+  final String imageAsset;
+  final Alignment imageAlignment;
   final VoidCallback onTap;
 
-  const _NewMenuCard({
+  const _LargeFeatureCard({
     required this.title,
     required this.icon,
-    required this.color,
-    required this.iconColor,
-    required this.buttonBorderColor,
-    this.titleColor = AppColors.textPrimary,
+    required this.tone,
+    required this.surfaceTint,
+    required this.imageAsset,
+    required this.imageAlignment,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 137,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 아이콘
-            Icon(
-              icon,
-              size: 28,
-              color: iconColor,
-            ),
-            const Spacer(),
-            // 타이틀
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: titleColor,
-              ),
-            ),
-            const SizedBox(height: 10),
-            // view 버튼 (테두리 스타일)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                border: Border.all(color: buttonBorderColor, width: 1.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'view',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: buttonBorderColor,
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: surfaceTint,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: _FeatureImageLayer(
+                  imageAsset: imageAsset,
+                  surfaceTint: surfaceTint,
+                  imageAlignment: imageAlignment,
+                  borderRadius: BorderRadius.circular(30),
+                  imageOpacity: 0.38,
                 ),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 32,
+                      color: tone,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        height: 1.12,
+                        color: tone,
+                      ),
+                    ),
+                    const Spacer(),
+                    _ViewPill(tone: tone),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// 미니 메뉴 카드 (오른쪽 Column용)
-class _MiniMenuCard extends StatelessWidget {
+class _CompactFeatureCard extends StatelessWidget {
   final String title;
   final IconData icon;
-  final Color color;
-  final Color iconColor;
-  final Color textColor;
+  final Color tone;
+  final Color surfaceTint;
+  final String imageAsset;
+  final Alignment imageAlignment;
   final VoidCallback onTap;
 
-  const _MiniMenuCard({
+  const _CompactFeatureCard({
     required this.title,
     required this.icon,
-    required this.color,
-    required this.iconColor,
-    required this.textColor,
+    required this.tone,
+    required this.surfaceTint,
+    required this.imageAsset,
+    required this.imageAlignment,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 64,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: surfaceTint,
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: _FeatureImageLayer(
+                  imageAsset: imageAsset,
+                  surfaceTint: surfaceTint,
+                  imageAlignment: imageAlignment,
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                  imageOpacity: 0.32,
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        icon,
+                        size: 24,
+                        color: tone,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: tone,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: tone,
+                        size: 28,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: iconColor,
+      ),
+    );
+  }
+}
+
+class _ViewPill extends StatelessWidget {
+  final Color tone;
+
+  const _ViewPill({required this.tone});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs + 1,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        border: Border.all(
+          color: tone.withValues(alpha: 0.8),
+          width: 1.6,
+        ),
+      ),
+      child: Text(
+        'view',
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: tone,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: textColor,
+      ),
+    );
+  }
+}
+
+class _FeatureImageLayer extends StatelessWidget {
+  static const List<double> _desaturateMatrix = <double>[
+    0.2126,
+    0.7152,
+    0.0722,
+    0,
+    0,
+    0.2126,
+    0.7152,
+    0.0722,
+    0,
+    0,
+    0.2126,
+    0.7152,
+    0.0722,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
+
+  final String imageAsset;
+  final Color surfaceTint;
+  final Alignment imageAlignment;
+  final BorderRadius borderRadius;
+  final double imageOpacity;
+
+  const _FeatureImageLayer({
+    required this.imageAsset,
+    required this.surfaceTint,
+    required this.imageAlignment,
+    required this.borderRadius,
+    required this.imageOpacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity: imageOpacity,
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(surfaceTint, BlendMode.color),
+                child: ColorFiltered(
+                  colorFilter: const ColorFilter.matrix(_desaturateMatrix),
+                  child: Image.asset(
+                    imageAsset,
+                    fit: BoxFit.cover,
+                    alignment: imageAlignment,
+                  ),
                 ),
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: iconColor,
-              size: 18,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

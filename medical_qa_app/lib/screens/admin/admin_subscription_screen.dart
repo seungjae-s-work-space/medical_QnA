@@ -63,7 +63,7 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
                 child: _buildStatCard(
                   '전체',
                   totalCount.toString(),
-                  const Color(0xFF5B8BA8),
+                  AppColors.info,
                 ),
               ),
               const SizedBox(width: 12),
@@ -146,7 +146,7 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF6B4E71) : const Color(0xFFF5F5F5),
+          color: isSelected ? AppColors.accentDeep : AppColors.inputBackground,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -294,7 +294,7 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
                       decoration: BoxDecoration(
                         color: isActive
                             ? const Color(0xFF4CAF50).withValues(alpha: 0.1)
-                            : const Color(0xFFF5F5F5),
+                            : AppColors.inputBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -500,7 +500,7 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
+                  color: AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -563,7 +563,7 @@ class _AdminSubscriptionScreenState extends State<AdminSubscriptionScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF6B4E71) : const Color(0xFFF5F5F5),
+          color: isSelected ? AppColors.accentDeep : AppColors.inputBackground,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(

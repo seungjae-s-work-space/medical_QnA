@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../services/notification_service.dart';
+import '../../utils/app_colors.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
 
   @override
-  State<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+  State<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState
+    extends State<NotificationSettingsScreen> {
   final NotificationService _service = NotificationService();
 
   bool _masterEnabled = true;
@@ -60,22 +63,23 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF6F9),
+      backgroundColor: AppColors.backgroundWarm,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         title: const Text(
           '알림 설정',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF333333),
+            color: AppColors.textPrimary,
           ),
         ),
-        iconTheme: const IconThemeData(color: Color(0xFF333333)),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFB87BA8)))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.accent))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -84,7 +88,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   children: [
                     _buildTile(
                       icon: Icons.notifications_active_outlined,
-                      iconColor: const Color(0xFFB87BA8),
+                      iconColor: AppColors.accent,
                       title: '전체 알림',
                       subtitle: '알림을 모두 끄려면 비활성화하세요',
                       value: _masterEnabled,
@@ -102,11 +106,12 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                       children: [
                         _buildTile(
                           icon: Icons.chat_bubble_outline,
-                          iconColor: const Color(0xFF5B8BA8),
+                          iconColor: AppColors.info,
                           title: '상담 알림',
                           subtitle: '상담사의 답변 알림',
                           value: _chatEnabled,
-                          onChanged: (v) => _toggleCategory('notificationChat', v),
+                          onChanged: (v) =>
+                              _toggleCategory('notificationChat', v),
                         ),
                         const Divider(height: 1, indent: 60),
                         _buildTile(
@@ -115,7 +120,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                           title: '콘텐츠 알림',
                           subtitle: '새 뉴스, 공지사항, 백과, 영상 등록 알림',
                           value: _contentEnabled,
-                          onChanged: (v) => _toggleCategory('notificationContent', v),
+                          onChanged: (v) =>
+                              _toggleCategory('notificationContent', v),
                         ),
                         const Divider(height: 1, indent: 60),
                         _buildTile(
@@ -124,7 +130,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                           title: '구독 알림',
                           subtitle: '결제 완료, 만료 임박, 만료 알림',
                           value: _subscriptionEnabled,
-                          onChanged: (v) => _toggleCategory('notificationSubscription', v),
+                          onChanged: (v) =>
+                              _toggleCategory('notificationSubscription', v),
                         ),
                       ],
                     ),
@@ -138,7 +145,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   Widget _buildCard({required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(children: children),
@@ -176,7 +183,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -184,7 +191,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   subtitle,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF888888),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -193,7 +200,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFFB87BA8),
           ),
         ],
       ),

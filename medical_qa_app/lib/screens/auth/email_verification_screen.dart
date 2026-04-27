@@ -88,7 +88,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('인증 메일을 다시 보냈습니다. 메일함을 확인해주세요.'),
-          backgroundColor: Color(0xFFB87BA8),
+          backgroundColor: AppColors.accent,
         ),
       );
     } else {
@@ -121,7 +121,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   const Icon(
                     Icons.mark_email_read_outlined,
                     size: 72,
-                    color: Color(0xFFB87BA8),
+                    color: AppColors.accent,
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -192,8 +192,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     child: ElevatedButton(
                       onPressed: _checking ? null : _refreshVerificationStatus,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFB87BA8),
-                        disabledBackgroundColor: const Color(0xFFE0E0E0),
+                        backgroundColor: AppColors.accent,
+                        disabledBackgroundColor: AppColors.borderStrong,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(28),
                         ),
@@ -231,7 +231,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                         fontWeight: FontWeight.w600,
                         color: _cooldownSeconds > 0
                             ? AppColors.textTertiary
-                            : const Color(0xFFB87BA8),
+                            : AppColors.accent,
                       ),
                     ),
                   ),

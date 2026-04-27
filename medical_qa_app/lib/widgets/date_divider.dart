@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../design/app_spacing.dart';
+import '../utils/app_colors.dart';
 
 /// 날짜 구분선 - 모던하고 깔끔한 디자인
 class DateDivider extends StatelessWidget {
   final DateTime date;
 
   // 채팅 화면 전용 색상
-  static const Color _dividerColor = Color(0xFFE8E8E8);
-  static const Color _textColor = Color(0xFF999999);
+  static const Color _dividerColor = AppColors.border;
+  static const Color _textColor = AppColors.textTertiary;
 
   const DateDivider({super.key, required this.date});
 
@@ -28,8 +30,16 @@ class DateDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: _textColor,
+          fontWeight: FontWeight.w600,
+        );
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.md,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -39,14 +49,10 @@ class DateDivider extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Text(
               _formatDate(date),
-              style: const TextStyle(
-                fontSize: 12,
-                color: _textColor,
-                fontWeight: FontWeight.w500,
-              ),
+              style: labelStyle,
             ),
           ),
           Expanded(

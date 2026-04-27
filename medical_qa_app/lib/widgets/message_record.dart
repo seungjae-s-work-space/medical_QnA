@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../design/app_radii.dart';
+import '../design/app_spacing.dart';
 import '../models/message_model.dart';
 import '../services/download_service.dart';
+import '../utils/app_colors.dart';
 
 /// 메시지 버블 - 모던하고 깔끔한 디자인
 class MessageRecord extends StatefulWidget {
@@ -21,10 +24,10 @@ class MessageRecord extends StatefulWidget {
 
 class _MessageRecordState extends State<MessageRecord> {
   // 채팅 전용 색상
-  static const Color _userBubbleColor = Color(0xFF5B8BA8);  // 파란색 (사용자)
-  static const Color _adminBubbleColor = Color(0xFFF0F0F0); // 밝은 회색 (관리자)
-  static const Color _adminIconBg = Color(0xFFE8F4FC);      // 아이콘 배경
-  static const Color _adminIconColor = Color(0xFF5B8BA8);   // 아이콘 색상
+  static const Color _userBubbleColor = AppColors.chatUserBubble;
+  static const Color _adminBubbleColor = AppColors.chatAdminBubble;
+  static const Color _adminIconBg = AppColors.chatAgentBadgeBackground;
+  static const Color _adminIconColor = AppColors.chatAgentBadgeForeground;
 
   final DownloadService _downloadService = DownloadService();
 
@@ -39,7 +42,8 @@ class _MessageRecordState extends State<MessageRecord> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
-        mainAxisAlignment: widget.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            widget.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!widget.isUser) ...[
@@ -51,7 +55,7 @@ class _MessageRecordState extends State<MessageRecord> {
                   height: 32,
                   decoration: BoxDecoration(
                     color: _adminIconBg,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                   child: const Icon(
                     Icons.support_agent,
@@ -64,7 +68,7 @@ class _MessageRecordState extends State<MessageRecord> {
                   '이승주',
                   style: TextStyle(
                     fontSize: 10,
-                    color: Color(0xFF999999),
+                    color: AppColors.textTertiary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -80,10 +84,14 @@ class _MessageRecordState extends State<MessageRecord> {
               decoration: BoxDecoration(
                 color: widget.isUser ? _userBubbleColor : _adminBubbleColor,
                 borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(18),
-                  topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(widget.isUser ? 18 : 4),
-                  bottomRight: Radius.circular(widget.isUser ? 4 : 18),
+                  topLeft: const Radius.circular(AppRadii.lg),
+                  topRight: const Radius.circular(AppRadii.lg),
+                  bottomLeft: Radius.circular(
+                    widget.isUser ? AppRadii.lg : AppSpacing.xxs,
+                  ),
+                  bottomRight: Radius.circular(
+                    widget.isUser ? AppSpacing.xxs : AppRadii.lg,
+                  ),
                 ),
               ),
               child: IntrinsicWidth(
@@ -98,23 +106,30 @@ class _MessageRecordState extends State<MessageRecord> {
                         style: TextStyle(
                           fontSize: 17,
                           height: 1.5,
-                          color: widget.isUser ? Colors.white : const Color(0xFF333333),
+                          color: widget.isUser
+                              ? Colors.white
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
 
                     // 첨부파일들
                     if (widget.message.hasAttachments) ...[
-                      if (widget.message.text.isNotEmpty) const SizedBox(height: 10),
+                      if (widget.message.text.isNotEmpty)
+                        const SizedBox(height: 10),
                       _buildAttachments(context),
                     ],
 
                     // 이미지가 있으면 (하위 호환성)
-                    if (widget.message.imageUrl != null && widget.message.attachments.isEmpty) ...[
-                      if (widget.message.text.isNotEmpty) const SizedBox(height: 10),
+                    if (widget.message.imageUrl != null &&
+                        widget.message.attachments.isEmpty) ...[
+                      if (widget.message.text.isNotEmpty)
+                        const SizedBox(height: 10),
                       GestureDetector(
-                        onTap: () => _showFullScreenImage(context, widget.message.imageUrl!, null),
-                        onLongPress: () => _showImageOptions(context, widget.message.imageUrl!, null),
+                        onTap: () => _showFullScreenImage(
+                            context, widget.message.imageUrl!, null),
+                        onLongPress: () => _showImageOptions(
+                            context, widget.message.imageUrl!, null),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: CachedNetworkImage(
@@ -122,15 +137,19 @@ class _MessageRecordState extends State<MessageRecord> {
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
                               height: 150,
-                              color: Colors.grey.shade200,
+                              color: AppColors.surfaceRaised,
                               child: const Center(
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               ),
                             ),
                             errorWidget: (context, url, error) => Container(
                               height: 100,
-                              color: Colors.grey.shade200,
-                              child: const Icon(Icons.error),
+                              color: AppColors.surfaceRaised,
+                              child: const Icon(
+                                Icons.error,
+                                color: AppColors.textTertiary,
+                              ),
                             ),
                           ),
                         ),
@@ -147,7 +166,7 @@ class _MessageRecordState extends State<MessageRecord> {
                           fontSize: 12,
                           color: widget.isUser
                               ? Colors.white.withValues(alpha: 0.7)
-                              : const Color(0xFF999999),
+                              : AppColors.textTertiary,
                         ),
                       ),
                     ),
@@ -233,9 +252,11 @@ class _MessageRecordState extends State<MessageRecord> {
               Expanded(
                 child: Column(
                   children: [
-                    Expanded(child: _buildGridImage(context, images[1], 1, images)),
+                    Expanded(
+                        child: _buildGridImage(context, images[1], 1, images)),
                     const SizedBox(height: gap),
-                    Expanded(child: _buildGridImage(context, images[2], 2, images)),
+                    Expanded(
+                        child: _buildGridImage(context, images[2], 2, images)),
                   ],
                 ),
               ),
@@ -256,9 +277,11 @@ class _MessageRecordState extends State<MessageRecord> {
               Expanded(
                 child: Row(
                   children: [
-                    Expanded(child: _buildGridImage(context, images[0], 0, images)),
+                    Expanded(
+                        child: _buildGridImage(context, images[0], 0, images)),
                     const SizedBox(width: gap),
-                    Expanded(child: _buildGridImage(context, images[1], 1, images)),
+                    Expanded(
+                        child: _buildGridImage(context, images[1], 1, images)),
                   ],
                 ),
               ),
@@ -266,9 +289,11 @@ class _MessageRecordState extends State<MessageRecord> {
               Expanded(
                 child: Row(
                   children: [
-                    Expanded(child: _buildGridImage(context, images[2], 2, images)),
+                    Expanded(
+                        child: _buildGridImage(context, images[2], 2, images)),
                     const SizedBox(width: gap),
-                    Expanded(child: _buildGridImage(context, images[3], 3, images)),
+                    Expanded(
+                        child: _buildGridImage(context, images[3], 3, images)),
                   ],
                 ),
               ),
@@ -290,9 +315,11 @@ class _MessageRecordState extends State<MessageRecord> {
             Expanded(
               child: Row(
                 children: [
-                  Expanded(child: _buildGridImage(context, images[0], 0, images)),
+                  Expanded(
+                      child: _buildGridImage(context, images[0], 0, images)),
                   const SizedBox(width: gap),
-                  Expanded(child: _buildGridImage(context, images[1], 1, images)),
+                  Expanded(
+                      child: _buildGridImage(context, images[1], 1, images)),
                 ],
               ),
             ),
@@ -300,7 +327,8 @@ class _MessageRecordState extends State<MessageRecord> {
             Expanded(
               child: Row(
                 children: [
-                  Expanded(child: _buildGridImage(context, images[2], 2, images)),
+                  Expanded(
+                      child: _buildGridImage(context, images[2], 2, images)),
                   const SizedBox(width: gap),
                   Expanded(
                     child: Stack(
@@ -312,7 +340,8 @@ class _MessageRecordState extends State<MessageRecord> {
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.xxs),
                             ),
                             child: Center(
                               child: Text(
@@ -338,28 +367,33 @@ class _MessageRecordState extends State<MessageRecord> {
     );
   }
 
-  Widget _buildSingleImage(BuildContext context, AttachmentModel attachment, List<AttachmentModel> allImages) {
+  Widget _buildSingleImage(BuildContext context, AttachmentModel attachment,
+      List<AttachmentModel> allImages) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
         onTap: () => _showImageGallery(context, allImages, 0),
-        onLongPress: () => _showImageOptions(context, attachment.url, attachment.fileName),
+        onLongPress: () =>
+            _showImageOptions(context, attachment.url, attachment.fileName),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppSpacing.xs),
           child: CachedNetworkImage(
             imageUrl: attachment.url,
             fit: BoxFit.cover,
             placeholder: (context, url) => Container(
               height: 150,
-              color: Colors.grey.shade200,
+              color: AppColors.surfaceRaised,
               child: const Center(
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
             errorWidget: (context, url, error) => Container(
               height: 100,
-              color: Colors.grey.shade200,
-              child: const Icon(Icons.error),
+              color: AppColors.surfaceRaised,
+              child: const Icon(
+                Icons.error,
+                color: AppColors.textTertiary,
+              ),
             ),
           ),
         ),
@@ -367,24 +401,30 @@ class _MessageRecordState extends State<MessageRecord> {
     );
   }
 
-  Widget _buildGridImage(BuildContext context, AttachmentModel attachment, int index, List<AttachmentModel> allImages) {
+  Widget _buildGridImage(BuildContext context, AttachmentModel attachment,
+      int index, List<AttachmentModel> allImages) {
     return GestureDetector(
       onTap: () => _showImageGallery(context, allImages, index),
-      onLongPress: () => _showImageOptions(context, attachment.url, attachment.fileName),
+      onLongPress: () =>
+          _showImageOptions(context, attachment.url, attachment.fileName),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(AppSpacing.xxs),
         child: CachedNetworkImage(
           imageUrl: attachment.url,
           fit: BoxFit.cover,
           placeholder: (context, url) => Container(
-            color: Colors.grey.shade200,
+            color: AppColors.surfaceRaised,
             child: const Center(
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
           errorWidget: (context, url, error) => Container(
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.error, size: 20),
+            color: AppColors.surfaceRaised,
+            child: const Icon(
+              Icons.error,
+              size: 20,
+              color: AppColors.textTertiary,
+            ),
           ),
         ),
       ),
@@ -392,7 +432,8 @@ class _MessageRecordState extends State<MessageRecord> {
   }
 
   // 이미지 갤러리 (스와이프)
-  void _showImageGallery(BuildContext context, List<AttachmentModel> images, int initialIndex) {
+  void _showImageGallery(
+      BuildContext context, List<AttachmentModel> images, int initialIndex) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => _ImageGalleryView(
@@ -404,7 +445,8 @@ class _MessageRecordState extends State<MessageRecord> {
     );
   }
 
-  Widget _buildVideoAttachment(BuildContext context, AttachmentModel attachment) {
+  Widget _buildVideoAttachment(
+      BuildContext context, AttachmentModel attachment) {
     final isDownloading = _downloadingUrls.contains(attachment.url);
     final progress = _progressByUrl[attachment.url] ?? 0.0;
 
@@ -417,8 +459,8 @@ class _MessageRecordState extends State<MessageRecord> {
           decoration: BoxDecoration(
             color: widget.isUser
                 ? Colors.white.withValues(alpha: 0.15)
-                : const Color(0xFFE0E0E0),
-            borderRadius: BorderRadius.circular(8),
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppSpacing.xs),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -427,8 +469,8 @@ class _MessageRecordState extends State<MessageRecord> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE57373).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.errorSoft,
+                  borderRadius: BorderRadius.circular(AppSpacing.xs),
                 ),
                 child: isDownloading
                     ? Padding(
@@ -436,12 +478,12 @@ class _MessageRecordState extends State<MessageRecord> {
                         child: CircularProgressIndicator(
                           value: progress > 0 ? progress : null,
                           strokeWidth: 2,
-                          color: const Color(0xFFE57373),
+                          color: AppColors.error,
                         ),
                       )
                     : const Icon(
                         Icons.play_circle_fill_rounded,
-                        color: Color(0xFFE57373),
+                        color: AppColors.error,
                         size: 24,
                       ),
               ),
@@ -455,7 +497,9 @@ class _MessageRecordState extends State<MessageRecord> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: widget.isUser ? Colors.white : const Color(0xFF333333),
+                        color: widget.isUser
+                            ? Colors.white
+                            : AppColors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -467,7 +511,7 @@ class _MessageRecordState extends State<MessageRecord> {
                           fontSize: 12,
                           color: widget.isUser
                               ? Colors.white.withValues(alpha: 0.7)
-                              : const Color(0xFF888888),
+                              : AppColors.textSecondary,
                         ),
                       ),
                   ],
@@ -477,7 +521,9 @@ class _MessageRecordState extends State<MessageRecord> {
               Icon(
                 Icons.download_rounded,
                 size: 20,
-                color: widget.isUser ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF888888),
+                color: widget.isUser
+                    ? Colors.white.withValues(alpha: 0.7)
+                    : AppColors.textSecondary,
               ),
             ],
           ),
@@ -486,7 +532,8 @@ class _MessageRecordState extends State<MessageRecord> {
     );
   }
 
-  Widget _buildFileAttachment(BuildContext context, AttachmentModel attachment) {
+  Widget _buildFileAttachment(
+      BuildContext context, AttachmentModel attachment) {
     final isDownloading = _downloadingUrls.contains(attachment.url);
     final progress = _progressByUrl[attachment.url] ?? 0.0;
 
@@ -499,8 +546,8 @@ class _MessageRecordState extends State<MessageRecord> {
           decoration: BoxDecoration(
             color: widget.isUser
                 ? Colors.white.withValues(alpha: 0.15)
-                : const Color(0xFFE0E0E0),
-            borderRadius: BorderRadius.circular(8),
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppSpacing.xs),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -509,8 +556,8 @@ class _MessageRecordState extends State<MessageRecord> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF81C784).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.successSoft,
+                  borderRadius: BorderRadius.circular(AppSpacing.xs),
                 ),
                 child: isDownloading
                     ? Padding(
@@ -518,12 +565,12 @@ class _MessageRecordState extends State<MessageRecord> {
                         child: CircularProgressIndicator(
                           value: progress > 0 ? progress : null,
                           strokeWidth: 2,
-                          color: const Color(0xFF81C784),
+                          color: AppColors.success,
                         ),
                       )
                     : Icon(
                         _getFileIcon(attachment.fileName),
-                        color: const Color(0xFF81C784),
+                        color: AppColors.success,
                         size: 22,
                       ),
               ),
@@ -537,7 +584,9 @@ class _MessageRecordState extends State<MessageRecord> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: widget.isUser ? Colors.white : const Color(0xFF333333),
+                        color: widget.isUser
+                            ? Colors.white
+                            : AppColors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -549,7 +598,7 @@ class _MessageRecordState extends State<MessageRecord> {
                           fontSize: 12,
                           color: widget.isUser
                               ? Colors.white.withValues(alpha: 0.7)
-                              : const Color(0xFF888888),
+                              : AppColors.textSecondary,
                         ),
                       ),
                   ],
@@ -559,7 +608,9 @@ class _MessageRecordState extends State<MessageRecord> {
               Icon(
                 Icons.download_rounded,
                 size: 20,
-                color: widget.isUser ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF888888),
+                color: widget.isUser
+                    ? Colors.white.withValues(alpha: 0.7)
+                    : AppColors.textSecondary,
               ),
             ],
           ),
@@ -598,9 +649,9 @@ class _MessageRecordState extends State<MessageRecord> {
   void _showImageOptions(BuildContext context, String url, String? fileName) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
       ),
       builder: (context) => SafeArea(
         child: Padding(
@@ -612,13 +663,16 @@ class _MessageRecordState extends State<MessageRecord> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
-                  borderRadius: BorderRadius.circular(2),
+                  color: AppColors.borderStrong,
+                  borderRadius: BorderRadius.circular(AppSpacing.xxs / 2),
                 ),
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(Icons.save_alt_rounded, color: Color(0xFF5B8BA8)),
+                leading: const Icon(
+                  Icons.save_alt_rounded,
+                  color: AppColors.accent,
+                ),
                 title: const Text('갤러리에 저장'),
                 onTap: () {
                   Navigator.pop(context);
@@ -636,9 +690,9 @@ class _MessageRecordState extends State<MessageRecord> {
   void _showVideoOptions(BuildContext context, AttachmentModel attachment) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
       ),
       builder: (context) => SafeArea(
         child: Padding(
@@ -650,13 +704,16 @@ class _MessageRecordState extends State<MessageRecord> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
-                  borderRadius: BorderRadius.circular(2),
+                  color: AppColors.borderStrong,
+                  borderRadius: BorderRadius.circular(AppSpacing.xxs / 2),
                 ),
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(Icons.save_alt_rounded, color: Color(0xFFE57373)),
+                leading: const Icon(
+                  Icons.save_alt_rounded,
+                  color: AppColors.error,
+                ),
                 title: const Text('갤러리에 저장'),
                 onTap: () {
                   Navigator.pop(context);
@@ -671,10 +728,12 @@ class _MessageRecordState extends State<MessageRecord> {
   }
 
   // 이미지 갤러리 저장
-  Future<void> _saveImageToGallery(BuildContext context, String url, String? fileName) async {
+  Future<void> _saveImageToGallery(
+      BuildContext context, String url, String? fileName) async {
     setState(() => _downloadingUrls.add(url));
 
-    final name = fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final name =
+        fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
     final result = await _downloadService.saveImageToGallery(url, name);
 
     setState(() => _downloadingUrls.remove(url));
@@ -685,14 +744,16 @@ class _MessageRecordState extends State<MessageRecord> {
   }
 
   // 동영상 갤러리 저장
-  Future<void> _saveVideoToGallery(BuildContext context, AttachmentModel attachment) async {
+  Future<void> _saveVideoToGallery(
+      BuildContext context, AttachmentModel attachment) async {
     final url = attachment.url;
     setState(() {
       _downloadingUrls.add(url);
       _progressByUrl[url] = 0;
     });
 
-    final name = attachment.fileName ?? 'video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    final name = attachment.fileName ??
+        'video_${DateTime.now().millisecondsSinceEpoch}.mp4';
     final result = await _downloadService.saveVideoToGallery(
       url,
       name,
@@ -712,14 +773,16 @@ class _MessageRecordState extends State<MessageRecord> {
   }
 
   // 파일 다운로드 및 열기
-  Future<void> _downloadAndOpenFile(BuildContext context, AttachmentModel attachment) async {
+  Future<void> _downloadAndOpenFile(
+      BuildContext context, AttachmentModel attachment) async {
     final url = attachment.url;
     setState(() {
       _downloadingUrls.add(url);
       _progressByUrl[url] = 0;
     });
 
-    final name = attachment.fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
+    final name =
+        attachment.fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
     final result = await _downloadService.downloadFile(
       url,
       name,
@@ -747,15 +810,18 @@ class _MessageRecordState extends State<MessageRecord> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(result.message),
-        backgroundColor: result.success ? Colors.green.shade400 : Colors.red.shade400,
+        backgroundColor: result.success ? AppColors.success : AppColors.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+        ),
         duration: const Duration(seconds: 2),
       ),
     );
   }
 
-  void _showFullScreenImage(BuildContext context, String imageUrl, String? fileName) {
+  void _showFullScreenImage(
+      BuildContext context, String imageUrl, String? fileName) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => _FullScreenImageView(
@@ -835,8 +901,10 @@ class _FullScreenImageViewState extends State<_FullScreenImageView> {
   Future<void> _saveImage() async {
     setState(() => _isSaving = true);
 
-    final name = widget.fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final result = await widget.downloadService.saveImageToGallery(widget.imageUrl, name);
+    final name =
+        widget.fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final result =
+        await widget.downloadService.saveImageToGallery(widget.imageUrl, name);
 
     setState(() => _isSaving = false);
 
@@ -844,9 +912,11 @@ class _FullScreenImageViewState extends State<_FullScreenImageView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result.message),
-          backgroundColor: result.success ? Colors.green.shade400 : Colors.red.shade400,
+          backgroundColor: result.success ? AppColors.success : AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
         ),
       );
     }
@@ -952,8 +1022,10 @@ class _ImageGalleryViewState extends State<_ImageGalleryView> {
     setState(() => _isSaving = true);
 
     final image = widget.images[_currentIndex];
-    final name = image.fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final result = await widget.downloadService.saveImageToGallery(image.url, name);
+    final name =
+        image.fileName ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final result =
+        await widget.downloadService.saveImageToGallery(image.url, name);
 
     setState(() => _isSaving = false);
 
@@ -961,9 +1033,11 @@ class _ImageGalleryViewState extends State<_ImageGalleryView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result.message),
-          backgroundColor: result.success ? Colors.green.shade400 : Colors.red.shade400,
+          backgroundColor: result.success ? AppColors.success : AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
         ),
       );
     }

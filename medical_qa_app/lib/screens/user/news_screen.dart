@@ -178,7 +178,7 @@ class _NewsScreenState extends State<NewsScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0),
+                color: AppColors.borderStrong,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -187,13 +187,13 @@ class _NewsScreenState extends State<NewsScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: const Color(0xFFF0D8E8),
+                color: AppColors.accentSoft,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: const Icon(
                 Icons.workspace_premium,
                 size: 40,
-                color: Color(0xFFB87BA8),
+                color: AppColors.accent,
               ),
             ),
             const SizedBox(height: 20),
@@ -202,7 +202,7 @@ class _NewsScreenState extends State<NewsScreen> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF333333),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -213,7 +213,7 @@ class _NewsScreenState extends State<NewsScreen> {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 16,
-                color: Color(0xFF888888),
+                color: AppColors.textSecondary,
                 height: 1.5,
               ),
             ),
@@ -232,7 +232,7 @@ class _NewsScreenState extends State<NewsScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB87BA8),
+                  backgroundColor: AppColors.accent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
@@ -255,8 +255,110 @@ class _NewsScreenState extends State<NewsScreen> {
                 '나중에 할게요',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF888888),
+                  color: AppColors.textSecondary,
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLoginRequiredSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.of(context).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.borderStrong,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.accentSoft,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Icon(
+                Icons.lock_outline_rounded,
+                size: 40,
+                color: AppColors.accent,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              '로그인이 필요해요',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '게스트 모드에서는 뉴스 상세를 볼 수 없어요.\n로그인 후 이용해 주세요.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Provider.of<AuthProvider>(
+                    this.context,
+                    listen: false,
+                  ).exitGuestMode();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  '로그인하기',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                '나중에 할게요',
+                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
               ),
             ),
           ],
@@ -277,17 +379,20 @@ class _NewsScreenState extends State<NewsScreen> {
               Expanded(
                 child: Container(
                   height: 48,
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: AppColors.inputBackground,
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: TextField(
                     controller: _searchController,
+                    cursorColor: AppColors.newsTone,
                     onChanged: (value) {
                       setState(() => _isSearching = value.isNotEmpty);
                       _performSearch(value);
                     },
                     decoration: InputDecoration(
+                      filled: false,
                       hintText: '키워드 검색',
                       hintStyle: const TextStyle(
                         color: AppColors.textTertiary,
@@ -295,17 +400,58 @@ class _NewsScreenState extends State<NewsScreen> {
                       ),
                       prefixIcon: const Icon(
                         Icons.search,
-                        color: AppColors.textSecondary,
+                        color: AppColors.newsTone,
                         size: 20,
                       ),
                       suffixIcon: _isSearching
                           ? IconButton(
                               icon: const Icon(Icons.close, size: 18),
-                              color: AppColors.textSecondary,
+                              color: AppColors.newsTone,
                               onPressed: _clearSearch,
                             )
                           : null,
-                      border: InputBorder.none,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(
+                          color: Colors.transparent,
+                          width: 1.4,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(
+                          color: AppColors.newsTone,
+                          width: 1.4,
+                        ),
+                      ),
+                      disabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(
+                          color: Colors.transparent,
+                          width: 1.4,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(
+                          color: AppColors.error,
+                          width: 1.4,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(
+                          color: AppColors.error,
+                          width: 1.4,
+                        ),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(
+                          color: Colors.transparent,
+                          width: 1.4,
+                        ),
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
@@ -321,14 +467,14 @@ class _NewsScreenState extends State<NewsScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5E6A3),
+                    color: AppColors.newsSurfaceSoft,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${_currentMatchIndex + 1}/${_matchedIndices.length}',
                     style: const TextStyle(
                       fontSize: 15,
-                      color: Color(0xFFD4A853),
+                      color: AppColors.newsTone,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -340,13 +486,13 @@ class _NewsScreenState extends State<NewsScreen> {
                     width: 36,
                     height: 36,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFF5E6A3),
+                      color: AppColors.newsSurfaceSoft,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.keyboard_arrow_up,
                       size: 22,
-                      color: Color(0xFFD4A853),
+                      color: AppColors.newsTone,
                     ),
                   ),
                 ),
@@ -357,13 +503,13 @@ class _NewsScreenState extends State<NewsScreen> {
                     width: 36,
                     height: 36,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFF5E6A3),
+                      color: AppColors.newsSurfaceSoft,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.keyboard_arrow_down,
                       size: 22,
-                      color: Color(0xFFD4A853),
+                      color: AppColors.newsTone,
                     ),
                   ),
                 ),
@@ -456,7 +602,7 @@ class _NewsScreenState extends State<NewsScreen> {
     if (!subscriptionProvider.hasActiveSubscription) {
       final currentUser = authProvider.currentUser;
       if (authProvider.isGuest || currentUser == null) {
-        _showSubscriptionRequiredSheet();
+        _showLoginRequiredSheet();
         setState(() {
           _isOpeningNews = false;
         });
@@ -535,16 +681,16 @@ class _NewsCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isHighlighted
-              ? const Color(0xFFF5E6A3).withValues(alpha: 0.6)
+              ? AppColors.newsSurfaceSoft.withValues(alpha: 0.6)
               : isMatched
-                  ? const Color(0xFFF5E6A3).withValues(alpha: 0.3)
-                  : const Color(0xFFFAFAFA),
+                  ? AppColors.newsSurfaceSoft.withValues(alpha: 0.3)
+                  : AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isHighlighted
-                ? const Color(0xFFD4A853)
+                ? AppColors.newsTone
                 : isMatched
-                    ? const Color(0xFFD4A853).withValues(alpha: 0.5)
+                    ? AppColors.newsTone.withValues(alpha: 0.5)
                     : Colors.transparent,
             width: isHighlighted ? 2 : 1,
           ),
@@ -618,12 +764,12 @@ class _NewsCard extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: const BoxDecoration(
-                color: Color(0xFFD4E8F0),
+                color: AppColors.newsSurfaceSoft,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.chevron_right,
-                color: Color(0xFF5B8BA8),
+                color: AppColors.newsTone,
                 size: 20,
               ),
             ),
@@ -656,7 +802,7 @@ class _NewsCard extends StatelessWidget {
       spans.add(TextSpan(
         text: text.substring(index, index + query.length),
         style: const TextStyle(
-          backgroundColor: Color(0xFFFFEB3B),
+          backgroundColor: AppColors.newsHighlight,
           fontWeight: FontWeight.bold,
         ),
       ));
@@ -781,7 +927,7 @@ class _PageButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isEnabled ? const Color(0xFFF5F5F5) : Colors.transparent,
+          color: isEnabled ? AppColors.inputBackground : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
@@ -931,7 +1077,7 @@ class NewsDetailScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F5F5),
+                          color: AppColors.inputBackground,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -939,7 +1085,7 @@ class NewsDetailScreen extends StatelessWidget {
                             const Icon(
                               Icons.link,
                               size: 20,
-                              color: Color(0xFF5B8BA8),
+                              color: AppColors.newsTone,
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -947,7 +1093,7 @@ class NewsDetailScreen extends StatelessWidget {
                                 news.sourceUrl!,
                                 style: const TextStyle(
                                   fontSize: 14,
-                                  color: Color(0xFF5B8BA8),
+                                  color: AppColors.newsTone,
                                   decoration: TextDecoration.underline,
                                 ),
                                 maxLines: 1,
@@ -957,7 +1103,7 @@ class NewsDetailScreen extends StatelessWidget {
                             const Icon(
                               Icons.open_in_new,
                               size: 18,
-                              color: Color(0xFF5B8BA8),
+                              color: AppColors.newsTone,
                             ),
                           ],
                         ),
@@ -1021,7 +1167,7 @@ class NewsDetailScreen extends StatelessWidget {
                         backgroundColor: Colors.transparent,
                         border: const Border(
                           left: BorderSide(
-                            color: Color(0xFF333333),
+                            color: AppColors.textPrimary,
                             width: 4,
                           ),
                         ),

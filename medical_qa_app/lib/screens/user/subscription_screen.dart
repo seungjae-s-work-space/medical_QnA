@@ -105,7 +105,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: hasActive ? const Color(0xFFF0D8E8) : const Color(0xFFFAFAFA),
+        color: hasActive ? AppColors.accentSoft : AppColors.surfaceMuted,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -118,15 +118,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 height: 48,
                 decoration: BoxDecoration(
                   color: hasActive
-                      ? const Color(0xFFB87BA8).withValues(alpha: 0.2)
-                      : const Color(0xFFE0E0E0),
+                      ? AppColors.accent.withValues(alpha: 0.2)
+                      : AppColors.borderStrong,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   hasActive ? Icons.workspace_premium : Icons.person_outline,
-                  color: hasActive
-                      ? const Color(0xFFB87BA8)
-                      : AppColors.textSecondary,
+                  color: hasActive ? AppColors.accent : AppColors.textSecondary,
                   size: 24,
                 ),
               ),
@@ -136,9 +134,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: hasActive
-                      ? const Color(0xFFB87BA8)
-                      : AppColors.textPrimary,
+                  color: hasActive ? AppColors.accent : AppColors.textPrimary,
                 ),
               ),
             ],
@@ -169,9 +165,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(
-                                  0xFFB87BA8,
-                                ).withValues(alpha: 0.75),
+                                color: AppColors.accent.withValues(alpha: 0.75),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -181,7 +175,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 fontSize: 30,
                                 height: 1,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFFB87BA8),
+                                color: AppColors.accent,
                               ),
                             ),
                           ],
@@ -233,10 +227,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFF0D8E8) : const Color(0xFFFAFAFA),
+          color: isSelected ? AppColors.accentSoft : AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFFB87BA8) : Colors.transparent,
+            color: isSelected ? AppColors.accent : Colors.transparent,
             width: 2,
           ),
         ),
@@ -248,12 +242,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color:
-                    isSelected ? const Color(0xFFB87BA8) : Colors.transparent,
+                color: isSelected ? AppColors.accent : Colors.transparent,
                 border: Border.all(
-                  color: isSelected
-                      ? const Color(0xFFB87BA8)
-                      : AppColors.textSecondary,
+                  color:
+                      isSelected ? AppColors.accent : AppColors.textSecondary,
                   width: 2,
                 ),
               ),
@@ -279,9 +271,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? const Color(0xFFB87BA8)
-                          : AppColors.textPrimary,
+                      color:
+                          isSelected ? AppColors.accent : AppColors.textPrimary,
                     ),
                   ),
                   if (plan.description != null) ...[
@@ -303,8 +294,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFFB87BA8).withValues(alpha: 0.15)
-                    : const Color(0xFFE8E8E8),
+                    ? AppColors.accent.withValues(alpha: 0.15)
+                    : AppColors.border,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -312,9 +303,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isSelected
-                      ? const Color(0xFFB87BA8)
-                      : AppColors.textPrimary,
+                  color: isSelected ? AppColors.accent : AppColors.textPrimary,
                 ),
               ),
             ),
@@ -333,8 +322,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ? null
             : () => _handlePurchase(provider),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFB87BA8),
-          disabledBackgroundColor: const Color(0xFFE0E0E0),
+          backgroundColor: AppColors.accent,
+          disabledBackgroundColor: AppColors.borderStrong,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),
@@ -365,7 +354,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: AppColors.surfaceMuted,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -385,7 +374,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           _buildInfoItem('구독은 계정에 연결되어 같은 계정으로 로그인하면 자동 적용됩니다.'),
           _buildInfoItem('문의사항은 고객센터로 연락해 주세요.'),
           const SizedBox(height: 16),
-          const Divider(height: 1, color: Color(0xFFE0E0E0)),
+          const Divider(height: 1, color: AppColors.borderStrong),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -494,7 +483,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               _buildStatusChip(
                 label: provider.hasActiveSubscription ? '이용권 활성' : '이용권 없음',
                 color: provider.hasActiveSubscription
-                    ? const Color(0xFFB87BA8)
+                    ? AppColors.accent
                     : Colors.blueGrey,
               ),
               _buildStatusChip(
@@ -676,9 +665,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         text,
         style: const TextStyle(
           fontSize: 14,
-          color: Color(0xFFB87BA8),
+          color: AppColors.accent,
           decoration: TextDecoration.underline,
-          decorationColor: Color(0xFFB87BA8),
+          decorationColor: AppColors.accent,
         ),
       ),
     );
@@ -693,7 +682,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFFB87BA8).withValues(alpha: 0.1),
+            color: AppColors.accent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(999),
           ),
           child: const Text(
@@ -701,7 +690,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: Color(0xFFB87BA8),
+              color: AppColors.accent,
               letterSpacing: -0.1,
             ),
           ),
@@ -796,7 +785,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         const Expanded(
                           child: Center(
                             child: CircularProgressIndicator(
-                              color: Color(0xFFB87BA8),
+                              color: AppColors.accent,
                             ),
                           ),
                         )
@@ -853,7 +842,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             Icon(
               icon,
               size: 42,
-              color: const Color(0xFFB87BA8).withValues(alpha: 0.75),
+              color: AppColors.accent.withValues(alpha: 0.75),
             ),
             const SizedBox(height: 16),
             Text(
@@ -897,7 +886,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: AppColors.surfaceMuted,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFECECEC)),
       ),
@@ -1038,7 +1027,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     if (plan == null) {
       return const Color(0xFF8D8D8D);
     }
-    return const Color(0xFFB87BA8);
+    return AppColors.accent;
   }
 
   Future<void> _handlePurchase(SubscriptionProvider provider) async {

@@ -133,7 +133,7 @@ class _VideoCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFFAFAFA),
+          color: AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(16),
         ),
         clipBehavior: Clip.antiAlias,
@@ -156,7 +156,7 @@ class _VideoCard extends StatelessWidget {
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
-                                  color: const Color(0xFFE0E0E0),
+                                  color: AppColors.borderStrong,
                                   child: const Center(
                                     child: Icon(
                                       Icons.play_circle_outline,
@@ -170,7 +170,7 @@ class _VideoCard extends StatelessWidget {
                           },
                         )
                       : Container(
-                          color: const Color(0xFFE0E0E0),
+                          color: AppColors.borderStrong,
                           child: const Center(
                             child: Icon(
                               Icons.play_circle_outline,
@@ -359,7 +359,7 @@ class _PageButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isEnabled ? const Color(0xFFF5F5F5) : Colors.transparent,
+          color: isEnabled ? AppColors.inputBackground : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
@@ -429,7 +429,7 @@ class VideoDetailScreen extends StatelessWidget {
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
-                                    color: const Color(0xFFE0E0E0),
+                                    color: AppColors.borderStrong,
                                     child: const Center(
                                       child: Icon(
                                         Icons.play_circle_outline,
@@ -443,7 +443,7 @@ class VideoDetailScreen extends StatelessWidget {
                             },
                           )
                         : Container(
-                            color: const Color(0xFFE0E0E0),
+                            color: AppColors.borderStrong,
                             child: const Center(
                               child: Icon(
                                 Icons.play_circle_outline,

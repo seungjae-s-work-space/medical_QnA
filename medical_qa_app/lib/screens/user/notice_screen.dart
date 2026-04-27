@@ -133,7 +133,7 @@ class _NoticeCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFFAFAFA),
+          color: AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -297,7 +297,7 @@ class _PageButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isEnabled ? const Color(0xFFF5F5F5) : Colors.transparent,
+          color: isEnabled ? AppColors.inputBackground : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(

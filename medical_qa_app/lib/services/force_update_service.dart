@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/app_colors.dart';
 
 /// 업데이트 모드
 /// - none: 아무것도 안 뜸
@@ -95,20 +96,20 @@ class ForceUpdateService {
       builder: (context) => PopScope(
         canPop: !isForce,
         child: AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           title: const Row(
             children: [
-              Icon(Icons.system_update, color: Color(0xFFB87BA8)),
+              Icon(Icons.system_update, color: AppColors.accent),
               SizedBox(width: 8),
               Text(
                 '업데이트 안내',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF333333),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -117,7 +118,7 @@ class ForceUpdateService {
             updateMessage,
             style: const TextStyle(
               fontSize: 16,
-              color: Color(0xFF666666),
+              color: AppColors.textSecondary,
               height: 1.5,
             ),
           ),
@@ -129,14 +130,14 @@ class ForceUpdateService {
                   '나중에',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Color(0xFF888888),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),
             ElevatedButton(
               onPressed: () => _openStore(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB87BA8),
+                backgroundColor: AppColors.accent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
