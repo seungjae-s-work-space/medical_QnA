@@ -11,6 +11,7 @@ import '../../providers/subscription_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/free_content_access_dialog.dart';
 import '../../widgets/protected_content.dart';
+import '../../widgets/screenshot_warning_listener.dart';
 import 'package:intl/intl.dart';
 import 'subscription_screen.dart';
 
@@ -977,246 +978,252 @@ class NewsDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
+    return ScreenshotWarningListener(
+      contentType: 'news',
+      contentId: news.id,
+      contentTitle: news.title,
+      child: Scaffold(
         backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          '난임뉴스',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+        appBar: AppBar(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            onPressed: () => Navigator.pop(context),
           ),
+          title: const Text(
+            '난임뉴스',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
         ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: ProtectedContent(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 제목
-                    Text(
-                      news.title,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                        height: 1.4,
+        body: SingleChildScrollView(
+          child: ProtectedContent(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 제목
+                      Text(
+                        news.title,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    // 작성자 및 날짜
-                    Row(
-                      children: [
-                        Text(
-                          news.authorName,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: AppColors.textSecondary,
+                      const SizedBox(height: 12),
+                      // 작성자 및 날짜
+                      Row(
+                        children: [
+                          Text(
+                            news.authorName,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '·',
-                          style: TextStyle(
-                            color:
-                                AppColors.textSecondary.withValues(alpha: 0.5),
+                          const SizedBox(width: 8),
+                          Text(
+                            '·',
+                            style: TextStyle(
+                              color: AppColors.textSecondary
+                                  .withValues(alpha: 0.5),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          DateFormat('yyyy년 M월 d일').format(news.createdAt),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: AppColors.textSecondary,
+                          const SizedBox(width: 8),
+                          Text(
+                            DateFormat('yyyy년 M월 d일').format(news.createdAt),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    const Divider(color: AppColors.divider),
-                    const SizedBox(height: 24),
-                    // 본문 (HTML 렌더링)
-                    // 출처 링크
-                    if (news.sourceUrl != null &&
-                        news.sourceUrl!.isNotEmpty) ...[
-                      GestureDetector(
-                        onTap: () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          final uri = Uri.parse(news.sourceUrl!);
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      const Divider(color: AppColors.divider),
+                      const SizedBox(height: 24),
+                      // 본문 (HTML 렌더링)
+                      // 출처 링크
+                      if (news.sourceUrl != null &&
+                          news.sourceUrl!.isNotEmpty) ...[
+                        GestureDetector(
+                          onTap: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            final uri = Uri.parse(news.sourceUrl!);
 
-                          try {
-                            final launched = await launchUrl(
-                              uri,
-                              mode: LaunchMode.externalApplication,
-                            );
-                            if (!launched) {
+                            try {
+                              final launched = await launchUrl(
+                                uri,
+                                mode: LaunchMode.externalApplication,
+                              );
+                              if (!launched) {
+                                messenger.showSnackBar(
+                                  const SnackBar(
+                                    content: Text('외부 페이지를 열 수 없습니다.'),
+                                  ),
+                                );
+                              }
+                            } catch (_) {
                               messenger.showSnackBar(
                                 const SnackBar(
                                   content: Text('외부 페이지를 열 수 없습니다.'),
                                 ),
                               );
                             }
-                          } catch (_) {
-                            messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text('외부 페이지를 열 수 없습니다.'),
-                              ),
-                            );
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: AppColors.inputBackground,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.link,
-                                size: 20,
-                                color: AppColors.newsTone,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  news.sourceUrl!,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.newsTone,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.inputBackground,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.link,
+                                  size: 20,
+                                  color: AppColors.newsTone,
                                 ),
-                              ),
-                              const Icon(
-                                Icons.open_in_new,
-                                size: 18,
-                                color: AppColors.newsTone,
-                              ),
-                            ],
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    news.sourceUrl!,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.newsTone,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.open_in_new,
+                                  size: 18,
+                                  color: AppColors.newsTone,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                    Html(
-                      data: _cleanHtmlContent(news.content),
-                      extensions: [
-                        TagExtension(
-                          tagsToExtend: {"img"},
-                          builder: (extensionContext) {
-                            final src = extensionContext.attributes['src'];
-                            if (src == null || src.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: CachedNetworkImage(
-                                  imageUrl: src,
-                                  width: double.infinity,
-                                  fit: BoxFit.contain,
-                                  placeholder: (context, url) => Container(
-                                    height: 200,
-                                    color: AppColors.divider,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(),
+                        const SizedBox(height: 24),
+                      ],
+                      Html(
+                        data: _cleanHtmlContent(news.content),
+                        extensions: [
+                          TagExtension(
+                            tagsToExtend: {"img"},
+                            builder: (extensionContext) {
+                              final src = extensionContext.attributes['src'];
+                              if (src == null || src.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: CachedNetworkImage(
+                                    imageUrl: src,
+                                    width: double.infinity,
+                                    fit: BoxFit.contain,
+                                    placeholder: (context, url) => Container(
+                                      height: 200,
+                                      color: AppColors.divider,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
                                     ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                    height: 100,
-                                    color: AppColors.divider,
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.image_not_supported,
-                                        color: AppColors.textSecondary,
+                                    errorWidget: (context, url, error) =>
+                                        Container(
+                                      height: 100,
+                                      color: AppColors.divider,
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          color: AppColors.textSecondary,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                      style: {
-                        "body": Style(
-                          fontSize: FontSize(16),
-                          color: AppColors.textPrimary,
-                          lineHeight: const LineHeight(1.6),
-                          margin: Margins.zero,
-                          padding: HtmlPaddings.zero,
-                        ),
-                        "p": Style(
-                          margin: Margins.only(bottom: 12),
-                        ),
-                        "blockquote": Style(
-                          backgroundColor: Colors.transparent,
-                          border: const Border(
-                            left: BorderSide(
-                              color: AppColors.textPrimary,
-                              width: 4,
-                            ),
+                              );
+                            },
                           ),
-                          padding: HtmlPaddings.symmetric(
-                              horizontal: 16, vertical: 8),
-                          margin: Margins.symmetric(vertical: 8),
-                        ),
-                        "strong": Style(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        "em": Style(
-                          fontStyle: FontStyle.italic,
-                        ),
-                        "h1": Style(
-                          fontSize: FontSize(24),
-                          fontWeight: FontWeight.bold,
-                          margin: Margins.only(top: 24, bottom: 12),
-                        ),
-                        "h2": Style(
-                          fontSize: FontSize(20),
-                          fontWeight: FontWeight.bold,
-                          margin: Margins.only(top: 20, bottom: 10),
-                        ),
-                        "h3": Style(
-                          fontSize: FontSize(18),
-                          fontWeight: FontWeight.w600,
-                          margin: Margins.only(top: 16, bottom: 8),
-                        ),
-                        "ul": Style(
-                          margin: Margins.only(left: 16, bottom: 16),
-                        ),
-                        "ol": Style(
-                          margin: Margins.only(left: 16, bottom: 16),
-                        ),
-                        "li": Style(
-                          margin: Margins.only(bottom: 4),
-                        ),
-                      },
-                    ),
-                    const SizedBox(height: 40),
-                  ],
+                        ],
+                        style: {
+                          "body": Style(
+                            fontSize: FontSize(16),
+                            color: AppColors.textPrimary,
+                            lineHeight: const LineHeight(1.6),
+                            margin: Margins.zero,
+                            padding: HtmlPaddings.zero,
+                          ),
+                          "p": Style(
+                            margin: Margins.only(bottom: 12),
+                          ),
+                          "blockquote": Style(
+                            backgroundColor: Colors.transparent,
+                            border: const Border(
+                              left: BorderSide(
+                                color: AppColors.textPrimary,
+                                width: 4,
+                              ),
+                            ),
+                            padding: HtmlPaddings.symmetric(
+                                horizontal: 16, vertical: 8),
+                            margin: Margins.symmetric(vertical: 8),
+                          ),
+                          "strong": Style(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          "em": Style(
+                            fontStyle: FontStyle.italic,
+                          ),
+                          "h1": Style(
+                            fontSize: FontSize(24),
+                            fontWeight: FontWeight.bold,
+                            margin: Margins.only(top: 24, bottom: 12),
+                          ),
+                          "h2": Style(
+                            fontSize: FontSize(20),
+                            fontWeight: FontWeight.bold,
+                            margin: Margins.only(top: 20, bottom: 10),
+                          ),
+                          "h3": Style(
+                            fontSize: FontSize(18),
+                            fontWeight: FontWeight.w600,
+                            margin: Margins.only(top: 16, bottom: 8),
+                          ),
+                          "ul": Style(
+                            margin: Margins.only(left: 16, bottom: 16),
+                          ),
+                          "ol": Style(
+                            margin: Margins.only(left: 16, bottom: 16),
+                          ),
+                          "li": Style(
+                            margin: Margins.only(bottom: 4),
+                          ),
+                        },
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
