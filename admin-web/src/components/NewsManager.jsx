@@ -702,8 +702,10 @@ function NewsManager({ readOnly = false }) {
           {paginatedArticles.map((article) => (
             <Grid item xs={12} sm={6} md={4} key={article.id}>
               <Card
+                {...nonCopyableContentProps}
                 onClick={() => handleArticleOpen(article)}
                 sx={{
+                  ...protectedContentSx,
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',

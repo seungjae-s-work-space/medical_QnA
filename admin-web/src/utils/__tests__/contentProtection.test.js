@@ -16,10 +16,15 @@ describe('content protection utilities', () => {
   it('exposes props that block common copy paths', () => {
     const eventNames = [
       'onCopy',
+      'onCopyCapture',
       'onCut',
+      'onCutCapture',
       'onDragStart',
+      'onDragStartCapture',
       'onMouseDown',
+      'onMouseDownCapture',
       'onContextMenu',
+      'onContextMenuCapture',
     ];
 
     for (const eventName of eventNames) {

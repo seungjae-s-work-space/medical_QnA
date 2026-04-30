@@ -5,10 +5,15 @@ export function preventContentCopy(event) {
 export const nonCopyableContentProps = {
   draggable: false,
   onCopy: preventContentCopy,
+  onCopyCapture: preventContentCopy,
   onCut: preventContentCopy,
+  onCutCapture: preventContentCopy,
   onDragStart: preventContentCopy,
+  onDragStartCapture: preventContentCopy,
   onMouseDown: preventContentCopy,
+  onMouseDownCapture: preventContentCopy,
   onContextMenu: preventContentCopy,
+  onContextMenuCapture: preventContentCopy,
 };
 
 export const protectedContentSx = {
