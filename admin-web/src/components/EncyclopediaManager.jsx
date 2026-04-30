@@ -61,6 +61,7 @@ import StorePurchaseDialogContent from './StorePurchaseDialogContent';
 import FreeContentAccessDialogContent from './FreeContentAccessDialogContent';
 import { consumeFreeContentAccess } from '../utils/freeContentAccess';
 import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
+import { getArticleContentSx } from '../utils/articleContentStyles';
 
 // 이미지 리사이즈 모듈 등록
 Quill.register('modules/imageResize', ImageResize);
@@ -1268,29 +1269,7 @@ function EncyclopediaManager({ readOnly = false }) {
                 {viewArticle.title}
               </Typography>
               <Box
-                sx={{
-                  lineHeight: 1.6,
-                  color: colors.textPrimary,
-                  fontSize: 15,
-                  '& p': { margin: 0 },
-                  '& h1, & h2, & h3': {
-                    fontWeight: 700,
-                    margin: '1em 0 0.3em 0',
-                    color: colors.textPrimary,
-                  },
-                  '& h1': { fontSize: '1.75em' },
-                  '& h2': { fontSize: '1.5em' },
-                  '& h3': { fontSize: '1.25em' },
-                  '& blockquote': {
-                    borderLeft: `4px solid ${colors.textPrimary}`,
-                    backgroundColor: 'transparent',
-                    padding: '8px 16px',
-                    margin: '8px 0',
-                    color: colors.textPrimary,
-                  },
-                  '& ul, & ol': { paddingLeft: '1.5em', margin: '0.3em 0' },
-                  '& li': { marginBottom: '0.15em' },
-                }}
+                sx={getArticleContentSx(colors)}
                 dangerouslySetInnerHTML={{ __html: viewArticle.content }}
               />
             </DialogContent>
