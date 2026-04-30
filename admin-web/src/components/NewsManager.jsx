@@ -59,6 +59,7 @@ import { v4 as uuidv4 } from 'uuid';
 import StorePurchaseDialogContent from './StorePurchaseDialogContent';
 import FreeContentAccessDialogContent from './FreeContentAccessDialogContent';
 import { consumeFreeContentAccess } from '../utils/freeContentAccess';
+import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
 
 // 이미지 리사이즈 모듈 등록
 Quill.register('modules/imageResize', ImageResize);
@@ -1266,7 +1267,7 @@ function NewsManager({ readOnly = false }) {
                 </IconButton>
               </Box>
             </DialogTitle>
-            <DialogContent>
+            <DialogContent {...nonCopyableContentProps} sx={protectedContentSx}>
               <Typography
                 variant="h5"
                 sx={{ fontWeight: 700, color: colors.textPrimary, mb: 3 }}

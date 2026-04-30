@@ -60,6 +60,7 @@ import { v4 as uuidv4 } from 'uuid';
 import StorePurchaseDialogContent from './StorePurchaseDialogContent';
 import FreeContentAccessDialogContent from './FreeContentAccessDialogContent';
 import { consumeFreeContentAccess } from '../utils/freeContentAccess';
+import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
 
 // 이미지 리사이즈 모듈 등록
 Quill.register('modules/imageResize', ImageResize);
@@ -1256,7 +1257,7 @@ function EncyclopediaManager({ readOnly = false }) {
                 </IconButton>
               </Box>
             </DialogTitle>
-            <DialogContent>
+            <DialogContent {...nonCopyableContentProps} sx={protectedContentSx}>
               <Typography variant="h5" fontWeight={700} sx={{ mb: 3, color: colors.textPrimary }}>
                 {viewArticle.title}
               </Typography>
