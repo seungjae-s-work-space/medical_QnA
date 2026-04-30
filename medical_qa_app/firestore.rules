@@ -24,6 +24,19 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // deviceTokens 컬렉션 (설치/기기 단위 FCM 목적지)
+    match /deviceTokens/{deviceId} {
+      allow read: if isAuthenticated() &&
+                    (isAdmin() || resource.data.userId == request.auth.uid);
+      allow create, update: if isAuthenticated() &&
+                              request.resource.data.deviceId == deviceId &&
+                              request.resource.data.userId == request.auth.uid &&
+                              request.resource.data.fcmToken is string &&
+                              request.resource.data.platform in ['ios', 'android'];
+      allow delete: if isAuthenticated() &&
+                       (isAdmin() || resource.data.userId == request.auth.uid);
+    }
+
     // conversations 컬렉션
     match /conversations/{conversationId} {
       // 읽기: 인증된 사용자이고, 관리자이거나 본인 대화방인 경우

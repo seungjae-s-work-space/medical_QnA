@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -151,6 +152,7 @@ class AuthProvider with ChangeNotifier {
 
   // 로그아웃
   Future<void> signOut() async {
+    await NotificationService().removeToken();
     await _authService.signOut();
     _currentUser = null;
     _isGuest = false;

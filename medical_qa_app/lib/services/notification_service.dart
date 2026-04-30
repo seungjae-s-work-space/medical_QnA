@@ -3,6 +3,10 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+import 'device_token_record.dart';
 
 // 모바일 전용 (Windows에서는 사용 안함)
 import 'package:firebase_messaging/firebase_messaging.dart'
@@ -25,6 +29,9 @@ class NotificationService {
   // 모바일 전용
   FirebaseMessaging? _messaging;
   FlutterLocalNotificationsPlugin? _localNotifications;
+  StreamSubscription<String>? _tokenRefreshSubscription;
+  StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
+  StreamSubscription<RemoteMessage>? _messageOpenedSubscription;
 
   // Windows 전용
   StreamSubscription? _conversationSubscription;
@@ -134,13 +141,18 @@ class NotificationService {
     await _saveToken();
 
     // 토큰 갱신 리스너
-    _messaging!.onTokenRefresh.listen(_updateToken);
+    await _tokenRefreshSubscription?.cancel();
+    _tokenRefreshSubscription = _messaging!.onTokenRefresh.listen(_updateToken);
 
     // 포그라운드 메시지 처리
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    await _foregroundMessageSubscription?.cancel();
+    _foregroundMessageSubscription =
+        FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
     // 백그라운드에서 알림 탭해서 앱 열었을 때
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+    await _messageOpenedSubscription?.cancel();
+    _messageOpenedSubscription =
+        FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
     // 앱이 종료된 상태에서 알림 탭해서 열렸을 때
     final initialMessage = await _messaging!.getInitialMessage();
@@ -186,7 +198,8 @@ class NotificationService {
     );
 
     final androidPlugin = _localNotifications!
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(chatChannel);
@@ -236,28 +249,80 @@ class NotificationService {
 
     final token = await _messaging!.getToken();
     if (token != null) {
-      await _updateToken(token);
+      await _registerDeviceToken(token);
     }
   }
 
   /// 모바일: 토큰 Firestore에 업데이트
   Future<void> _updateToken(String token) async {
+    await _registerDeviceToken(token);
+  }
+
+  Future<String> _getOrCreateDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(DeviceTokenRecord.deviceIdPreferenceKey);
+    if (existing != null && existing.isNotEmpty) {
+      return existing;
+    }
+
+    final deviceId = const Uuid().v4();
+    await prefs.setString(DeviceTokenRecord.deviceIdPreferenceKey, deviceId);
+    return deviceId;
+  }
+
+  Future<String?> _getExistingDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(DeviceTokenRecord.deviceIdPreferenceKey);
+    return existing == null || existing.isEmpty ? null : existing;
+  }
+
+  Future<void> _registerDeviceToken(String token) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
+    final platform = Platform.isIOS ? 'ios' : 'android';
+    final updatedAt = FieldValue.serverTimestamp();
+    final userRef = _firestore.collection('users').doc(user.uid);
+
     try {
-      await _firestore.collection('users').doc(user.uid).set({
+      // 기존 앱/Functions 경로와의 호환을 먼저 보장한다.
+      await userRef.set({
         'fcmToken': token,
-        'platform': Platform.isIOS ? 'ios' : 'android',
-        'tokenUpdatedAt': FieldValue.serverTimestamp(),
+        'platform': platform,
+        'tokenUpdatedAt': updatedAt,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      if (kDebugMode) {
+        print('FCM 기존 토큰 저장 실패: $e');
+      }
+    }
+
+    try {
+      final deviceId = await _getOrCreateDeviceId();
+      final packageInfo = await PackageInfo.fromPlatform();
+      await _firestore.doc(DeviceTokenRecord.documentPath(deviceId)).set(
+            DeviceTokenRecord.buildData(
+              deviceId: deviceId,
+              userId: user.uid,
+              fcmToken: token,
+              platform: platform,
+              appVersion: packageInfo.version,
+              buildNumber: packageInfo.buildNumber,
+              updatedAt: updatedAt,
+            ),
+            SetOptions(merge: true),
+          );
+
+      await userRef.set({
+        'lastDeviceId': deviceId,
       }, SetOptions(merge: true));
 
       if (kDebugMode) {
-        print('FCM 토큰 저장 완료: ${token.substring(0, 20)}...');
+        print('FCM 기기 토큰 저장 완료: $deviceId / ${token.substring(0, 20)}...');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('FCM 토큰 저장 실패: $e');
+        print('FCM 기기 토큰 저장 실패: $e');
       }
     }
   }
@@ -294,12 +359,34 @@ class NotificationService {
     if (user == null) return;
 
     try {
-      await _firestore.collection('users').doc(user.uid).update({
-        'fcmToken': FieldValue.delete(),
-      });
+      await _tokenRefreshSubscription?.cancel();
+      await _foregroundMessageSubscription?.cancel();
+      await _messageOpenedSubscription?.cancel();
+      _tokenRefreshSubscription = null;
+      _foregroundMessageSubscription = null;
+      _messageOpenedSubscription = null;
+
+      final token = await _messaging?.getToken();
+      final deviceId = await _getExistingDeviceId();
+      if (deviceId != null) {
+        await _firestore.doc(DeviceTokenRecord.documentPath(deviceId)).delete();
+      }
+
+      if (token != null) {
+        final userRef = _firestore.collection('users').doc(user.uid);
+        final userSnapshot = await userRef.get();
+        if (userSnapshot.data()?['fcmToken'] == token) {
+          await userRef.update({
+            'fcmToken': FieldValue.delete(),
+            'tokenUpdatedAt': FieldValue.delete(),
+            'lastDeviceId': FieldValue.delete(),
+          });
+        }
+        await _messaging?.deleteToken();
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('FCM 토큰 삭제 실패: $e');
+        print('FCM 기기 토큰 삭제 실패: $e');
       }
     }
   }

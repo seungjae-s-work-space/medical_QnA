@@ -1,8 +1,13 @@
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, Timestamp } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
+const {
+  buildRecipientTokenEntries,
+  dedupeTokenEntries,
+  isInvalidRegistrationTokenError,
+} = require("./notificationRecipients");
 
 initializeApp();
 
@@ -25,6 +30,86 @@ function isNotificationEnabled(userData, category) {
   if (userData.notificationsEnabled === false) return false;
   const categoryKey = `notification${category.charAt(0).toUpperCase() + category.slice(1)}`;
   return userData[categoryKey] !== false;
+}
+
+async function getRecipientTokenEntriesForUser(userId, userData, userRef) {
+  if (!userId) return [];
+
+  const deviceSnapshot = await db.collection("deviceTokens")
+    .where("userId", "==", userId)
+    .get();
+
+  let allowLegacyToken = true;
+  if (deviceSnapshot.empty && userData?.fcmToken) {
+    const tokenOwnerSnapshot = await db.collection("deviceTokens")
+      .where("fcmToken", "==", userData.fcmToken)
+      .limit(1)
+      .get();
+
+    allowLegacyToken = tokenOwnerSnapshot.empty ||
+      tokenOwnerSnapshot.docs[0].data()?.userId === userId;
+  }
+
+  return buildRecipientTokenEntries({
+    deviceDocs: deviceSnapshot.docs,
+    legacyToken: userData?.fcmToken,
+    legacyRef: userRef,
+    allowLegacyToken,
+  });
+}
+
+async function removeInvalidTokenEntry(entry) {
+  if (entry.source === "device" && entry.ref) {
+    await entry.ref.delete();
+    return;
+  }
+
+  if (entry.source === "legacy" && entry.ref) {
+    const snapshot = await entry.ref.get();
+    if (snapshot.exists && snapshot.data()?.fcmToken === entry.token) {
+      await entry.ref.update({ fcmToken: FieldValue.delete() });
+    }
+  }
+}
+
+async function sendNotificationToTokenEntries(entries, buildMessage) {
+  const recipients = dedupeTokenEntries(entries);
+  if (recipients.length === 0) return 0;
+
+  const results = await Promise.allSettled(
+    recipients.map((entry) => messaging.send({
+      token: entry.token,
+      ...buildMessage(entry),
+    }))
+  );
+
+  const cleanupTasks = [];
+  let successCount = 0;
+  results.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      successCount += 1;
+      return;
+    }
+
+    const error = result.reason;
+    if (isInvalidRegistrationTokenError(error)) {
+      cleanupTasks.push(removeInvalidTokenEntry(recipients[index]));
+    } else {
+      console.error("Error sending notification:", error);
+    }
+  });
+
+  await Promise.allSettled(cleanupTasks);
+  return successCount;
+}
+
+function messageBody(message) {
+  if (message.text) {
+    return message.text.length > 100
+      ? message.text.substring(0, 100) + "..."
+      : message.text;
+  }
+  return "새 메시지가 도착했습니다";
 }
 
 // ==================== 채팅 메시지 알림 ====================
@@ -62,20 +147,18 @@ exports.sendMessageNotification = onDocumentCreated(
 async function sendNotificationToUser(userId, message, conversationId, messageId) {
   if (!userId) return;
 
-  const userDoc = await db.collection("users").doc(userId).get();
+  const userRef = db.collection("users").doc(userId);
+  const userDoc = await userRef.get();
   if (!userDoc.exists) return;
 
   const userData = userDoc.data();
   if (!isNotificationEnabled(userData, "chat")) return;
-  if (!userData.fcmToken) return;
 
-  const notification = {
-    token: userData.fcmToken,
+  const entries = await getRecipientTokenEntriesForUser(userId, userData, userRef);
+  await sendNotificationToTokenEntries(entries, () => ({
     notification: {
       title: "난임&상담톡",
-      body: message.text.length > 100
-        ? message.text.substring(0, 100) + "..."
-        : message.text,
+      body: messageBody(message),
     },
     data: {
       conversationId,
@@ -84,39 +167,31 @@ async function sendNotificationToUser(userId, message, conversationId, messageId
     },
     android: { priority: "high", notification: { channelId: "chat_messages", sound: "default" } },
     apns: { payload: { aps: { badge: 1, sound: "default" } } },
-  };
-
-  await messaging.send(notification);
+  }));
 }
 
 async function sendNotificationToAdmins(userName, message, conversationId, messageId) {
   const adminsSnapshot = await db.collection("users").where("role", "==", "admin").get();
   if (adminsSnapshot.empty) return;
 
-  const tokens = [];
-  adminsSnapshot.forEach((doc) => {
+  const entries = [];
+  for (const doc of adminsSnapshot.docs) {
     const adminData = doc.data();
-    if (isNotificationEnabled(adminData, "chat") && adminData.fcmToken) {
-      tokens.push(adminData.fcmToken);
+    if (isNotificationEnabled(adminData, "chat")) {
+      const adminEntries = await getRecipientTokenEntriesForUser(doc.id, adminData, doc.ref);
+      entries.push(...adminEntries);
     }
-  });
+  }
 
-  if (tokens.length === 0) return;
-
-  const notifications = tokens.map((token) => ({
-    token,
+  await sendNotificationToTokenEntries(entries, () => ({
     notification: {
       title: `${userName}님의 새 질문`,
-      body: message.text.length > 100
-        ? message.text.substring(0, 100) + "..."
-        : message.text,
+      body: messageBody(message),
     },
     data: { conversationId, messageId, type: "new_question" },
     android: { priority: "high", notification: { channelId: "chat_messages", sound: "default" } },
     apns: { payload: { aps: { badge: 1, sound: "default" } } },
   }));
-
-  await Promise.allSettled(notifications.map((n) => messaging.send(n)));
 }
 
 // ==================== 콘텐츠 알림 (뉴스/공지/백과/영상) ====================
@@ -128,27 +203,22 @@ async function sendContentNotificationToAllUsers({ title, body, data, channelId 
   const usersSnapshot = await db.collection("users").where("role", "!=", "admin").get();
   if (usersSnapshot.empty) return;
 
-  const tokens = [];
-  usersSnapshot.forEach((doc) => {
+  const entries = [];
+  for (const doc of usersSnapshot.docs) {
     const userData = doc.data();
-    if (isNotificationEnabled(userData, "content") && userData.fcmToken) {
-      tokens.push(userData.fcmToken);
+    if (isNotificationEnabled(userData, "content")) {
+      const userEntries = await getRecipientTokenEntriesForUser(doc.id, userData, doc.ref);
+      entries.push(...userEntries);
     }
-  });
+  }
 
-  if (tokens.length === 0) return;
-
-  const notifications = tokens.map((token) => ({
-    token,
+  const successCount = await sendNotificationToTokenEntries(entries, () => ({
     notification: { title, body },
     data,
     android: { priority: "high", notification: { channelId, sound: "default" } },
     apns: { payload: { aps: { badge: 1, sound: "default" } } },
   }));
-
-  const results = await Promise.allSettled(notifications.map((n) => messaging.send(n)));
-  const successCount = results.filter((r) => r.status === "fulfilled").length;
-  console.log(`Content notification sent: ${successCount}/${tokens.length}`);
+  console.log(`Content notification sent: ${successCount}/${dedupeTokenEntries(entries).length}`);
 }
 
 function truncate(text, maxLength) {
@@ -263,20 +333,20 @@ exports.sendVideoPublishedNotification = onDocumentUpdated("videos/{videoId}", a
  */
 async function sendSubscriptionNotificationToUser(userId, { title, body, data }) {
   if (!userId) return;
-  const userDoc = await db.collection("users").doc(userId).get();
+  const userRef = db.collection("users").doc(userId);
+  const userDoc = await userRef.get();
   if (!userDoc.exists) return;
 
   const userData = userDoc.data();
   if (!isNotificationEnabled(userData, "subscription")) return;
-  if (!userData.fcmToken) return;
 
-  await messaging.send({
-    token: userData.fcmToken,
+  const entries = await getRecipientTokenEntriesForUser(userId, userData, userRef);
+  await sendNotificationToTokenEntries(entries, () => ({
     notification: { title, body },
     data,
     android: { priority: "high", notification: { channelId: "subscription", sound: "default" } },
     apns: { payload: { aps: { badge: 1, sound: "default" } } },
-  });
+  }));
 }
 
 // --- 구독 결제 완료 (구독 문서 생성 시) ---
