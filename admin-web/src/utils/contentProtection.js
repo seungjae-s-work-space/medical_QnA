@@ -1,5 +1,6 @@
 export function preventContentCopy(event) {
   event.preventDefault();
+  window.getSelection?.()?.removeAllRanges?.();
 }
 
 export const nonCopyableContentProps = {
@@ -12,24 +13,28 @@ export const nonCopyableContentProps = {
   onDragStartCapture: preventContentCopy,
   onMouseDown: preventContentCopy,
   onMouseDownCapture: preventContentCopy,
+  onMouseUp: preventContentCopy,
+  onMouseUpCapture: preventContentCopy,
+  onSelect: preventContentCopy,
+  onSelectCapture: preventContentCopy,
   onContextMenu: preventContentCopy,
   onContextMenuCapture: preventContentCopy,
 };
 
 export const protectedContentSx = {
-  userSelect: 'none',
-  WebkitUserSelect: 'none',
-  MozUserSelect: 'none',
-  msUserSelect: 'none',
-  WebkitTouchCallout: 'none',
+  userSelect: 'none !important',
+  WebkitUserSelect: 'none !important',
+  MozUserSelect: 'none !important',
+  msUserSelect: 'none !important',
+  WebkitTouchCallout: 'none !important',
   '& *': {
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-    MozUserSelect: 'none',
-    msUserSelect: 'none',
-    WebkitTouchCallout: 'none',
+    userSelect: 'none !important',
+    WebkitUserSelect: 'none !important',
+    MozUserSelect: 'none !important',
+    msUserSelect: 'none !important',
+    WebkitTouchCallout: 'none !important',
   },
   '& img': {
-    WebkitUserDrag: 'none',
+    WebkitUserDrag: 'none !important',
   },
 };

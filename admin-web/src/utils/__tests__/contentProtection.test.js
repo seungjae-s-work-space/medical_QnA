@@ -13,6 +13,18 @@ describe('content protection utilities', () => {
     expect(event.preventDefault).toHaveBeenCalledTimes(1);
   });
 
+  it('clears any selection range left by a drag gesture', () => {
+    const removeAllRanges = jest.fn();
+    const originalGetSelection = window.getSelection;
+    window.getSelection = jest.fn(() => ({ removeAllRanges }));
+
+    preventContentCopy({ preventDefault: jest.fn() });
+
+    expect(removeAllRanges).toHaveBeenCalledTimes(1);
+
+    window.getSelection = originalGetSelection;
+  });
+
   it('exposes props that block common copy paths', () => {
     const eventNames = [
       'onCopy',
@@ -23,6 +35,10 @@ describe('content protection utilities', () => {
       'onDragStartCapture',
       'onMouseDown',
       'onMouseDownCapture',
+      'onMouseUp',
+      'onMouseUpCapture',
+      'onSelect',
+      'onSelectCapture',
       'onContextMenu',
       'onContextMenuCapture',
     ];
@@ -40,10 +56,10 @@ describe('content protection utilities', () => {
 
   it('disables text selection through CSS', () => {
     expect(protectedContentSx).toMatchObject({
-      userSelect: 'none',
-      WebkitUserSelect: 'none',
-      MozUserSelect: 'none',
-      msUserSelect: 'none',
+      userSelect: 'none !important',
+      WebkitUserSelect: 'none !important',
+      MozUserSelect: 'none !important',
+      msUserSelect: 'none !important',
     });
   });
 });

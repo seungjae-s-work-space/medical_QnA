@@ -1229,6 +1229,10 @@ function EncyclopediaManager({ readOnly = false }) {
 
       {/* View Dialog */}
       <Dialog
+        PaperProps={{
+          ...nonCopyableContentProps,
+          sx: protectedContentSx,
+        }}
         open={!!viewArticle}
         onClose={() => setViewArticle(null)}
         maxWidth="md"
