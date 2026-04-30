@@ -3,6 +3,9 @@ export function getArticleContentSx(colors) {
     lineHeight: 1.6,
     color: colors.textPrimary,
     fontSize: 15,
+    maxWidth: '100%',
+    overflowX: 'hidden',
+    boxSizing: 'border-box',
     '& p': { margin: 0 },
     '& h1, & h2, & h3': {
       fontWeight: 700,
@@ -21,8 +24,14 @@ export function getArticleContentSx(colors) {
     },
     '& ul, & ol': { paddingLeft: '1.5em', margin: '0.3em 0' },
     '& li': { marginBottom: '0.15em' },
+    '& p, & figure, & span, & div': {
+      maxWidth: '100%',
+      boxSizing: 'border-box',
+    },
     '& img': {
+      width: 'auto !important',
       maxWidth: '100% !important',
+      minWidth: '0 !important',
       height: 'auto !important',
       display: 'block',
       objectFit: 'contain',
