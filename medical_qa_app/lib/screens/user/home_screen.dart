@@ -12,9 +12,7 @@ import 'encyclopedia_screen.dart';
 import 'news_screen.dart';
 import 'notice_screen.dart';
 import 'video_screen.dart';
-import 'subscription_screen.dart';
 import 'notification_settings_screen.dart';
-import '../../providers/subscription_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -375,26 +373,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openSubscriptionScreen() {
-    if (_checkGuestAndShowLogin('무제한 상담')) return;
-
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final subscriptionProvider =
-        Provider.of<SubscriptionProvider>(context, listen: false);
-
-    // 구독 프로바이더 초기화
-    if (authProvider.currentUser != null) {
-      subscriptionProvider.initialize(authProvider.currentUser!.userId);
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const SubscriptionScreen(),
-      ),
-    );
-  }
-
   void _pushFeaturePage({
     required String title,
     required Widget child,
@@ -447,7 +425,6 @@ class _HomeScreenState extends State<HomeScreen> {
         const gap = 14.0;
         final largeWidth = (constraints.maxWidth - gap) / 2;
         final largeHeight = largeWidth * 0.86;
-        final compactHeight = (largeHeight - gap) / 2;
 
         return Column(
           children: [
@@ -486,7 +463,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: gap),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: SizedBox(
@@ -504,34 +480,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: gap),
                 Expanded(
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: compactHeight,
-                        child: _CompactFeatureCard(
-                          title: '아기성공TV',
-                          icon: Icons.smart_display_outlined,
-                          tone: const Color(0xFF981F00),
-                          surfaceTint: const Color(0xFFF39764),
-                          imageAsset: 'assets/grid/tv.png',
-                          imageAlignment: Alignment.center,
-                          onTap: _openVideoScreen,
-                        ),
-                      ),
-                      const SizedBox(height: gap),
-                      SizedBox(
-                        height: compactHeight,
-                        child: _CompactFeatureCard(
-                          title: '무제한 상담',
-                          icon: Icons.coffee_outlined,
-                          tone: const Color(0xFF8E7922),
-                          surfaceTint: const Color(0xFFF8EEC4),
-                          imageAsset: 'assets/grid/counseling.png',
-                          imageAlignment: Alignment.center,
-                          onTap: _openSubscriptionScreen,
-                        ),
-                      ),
-                    ],
+                  child: SizedBox(
+                    height: largeHeight,
+                    child: _LargeFeatureCard(
+                      title: '아기성공TV',
+                      icon: Icons.smart_display_outlined,
+                      tone: const Color(0xFF981F00),
+                      surfaceTint: const Color(0xFFF39764),
+                      imageAsset: 'assets/grid/tv.png',
+                      imageAlignment: Alignment.center,
+                      onTap: _openVideoScreen,
+                    ),
                   ),
                 ),
               ],
@@ -1134,94 +1093,6 @@ class _LargeFeatureCard extends StatelessWidget {
                     const Spacer(),
                     _ViewPill(tone: tone),
                   ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CompactFeatureCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color tone;
-  final Color surfaceTint;
-  final String imageAsset;
-  final Alignment imageAlignment;
-  final VoidCallback onTap;
-
-  const _CompactFeatureCard({
-    required this.title,
-    required this.icon,
-    required this.tone,
-    required this.surfaceTint,
-    required this.imageAsset,
-    required this.imageAlignment,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        onTap: onTap,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: surfaceTint,
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-          ),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: _FeatureImageLayer(
-                  imageAsset: imageAsset,
-                  surfaceTint: surfaceTint,
-                  imageAlignment: imageAlignment,
-                  borderRadius: BorderRadius.circular(AppRadii.lg),
-                  imageOpacity: 0.32,
-                ),
-              ),
-              Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.sm,
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        icon,
-                        size: 24,
-                        color: tone,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.titleMedium?.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            color: tone,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: tone,
-                        size: 28,
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ],

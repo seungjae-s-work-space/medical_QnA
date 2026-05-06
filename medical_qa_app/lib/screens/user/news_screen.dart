@@ -2,18 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:provider/provider.dart';
 import '../../models/news_model.dart';
+import '../../services/app_access_policy.dart';
 import '../../services/news_service.dart';
-import '../../services/free_content_access_service.dart';
 import '../../utils/app_colors.dart';
-import '../../providers/subscription_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../widgets/free_content_access_dialog.dart';
 import '../../widgets/protected_content.dart';
 import '../../widgets/screenshot_warning_listener.dart';
 import 'package:intl/intl.dart';
-import 'subscription_screen.dart';
 
 class NewsScreen extends StatefulWidget {
   const NewsScreen({super.key});
@@ -24,8 +19,6 @@ class NewsScreen extends StatefulWidget {
 
 class _NewsScreenState extends State<NewsScreen> {
   final NewsService _service = NewsService();
-  final FreeContentAccessService _freeContentAccessService =
-      FreeContentAccessService();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -34,7 +27,7 @@ class _NewsScreenState extends State<NewsScreen> {
   List<NewsModel> _newsList = [];
   bool _isLoading = true;
 
-  List<int> _matchedIndices = [];
+  final List<int> _matchedIndices = [];
   int _currentMatchIndex = 0;
   String _searchQuery = '';
   bool _isSearching = false;
@@ -143,230 +136,6 @@ class _NewsScreenState extends State<NewsScreen> {
       _currentMatchIndex = 0;
       _isSearching = false;
     });
-  }
-
-  Future<void> _showFreeAccessGuideDialog({
-    required int remainingViews,
-    required int limit,
-  }) {
-    return showDialog<void>(
-      context: context,
-      builder: (dialogContext) => FreeContentAccessDialog(
-        remainingViews: remainingViews,
-        limit: limit,
-      ),
-    );
-  }
-
-  void _showSubscriptionRequiredSheet({bool isTrialExhausted = false}) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(context).padding.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.borderStrong,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.accentSoft,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Icon(
-                Icons.workspace_premium,
-                size: 40,
-                color: AppColors.accent,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              isTrialExhausted ? '무료 열람을 모두 사용했어요' : '이용권이 필요해요',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              isTrialExhausted
-                  ? '백과/뉴스 무료 열람 5회를 모두 사용했습니다.\n계속 보시려면 이용권이 필요합니다.'
-                  : '뉴스를 보시려면\n이용권이 필요합니다.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SubscriptionScreen(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  '이용권 구매하기',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                '나중에 할게요',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLoginRequiredSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(context).padding.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.borderStrong,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.accentSoft,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Icon(
-                Icons.lock_outline_rounded,
-                size: 40,
-                color: AppColors.accent,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              '로그인이 필요해요',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '게스트 모드에서는 뉴스 상세를 볼 수 없어요.\n로그인 후 이용해 주세요.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Provider.of<AuthProvider>(
-                    this.context,
-                    listen: false,
-                  ).exitGuestMode();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  '로그인하기',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                '나중에 할게요',
-                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -593,55 +362,15 @@ class _NewsScreenState extends State<NewsScreen> {
   Future<void> _openNewsDetail(NewsModel news) async {
     if (_isOpeningNews) return;
 
-    final subscriptionProvider =
-        Provider.of<SubscriptionProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
     setState(() {
       _isOpeningNews = true;
     });
 
-    if (!subscriptionProvider.hasActiveSubscription) {
-      final currentUser = authProvider.currentUser;
-      if (authProvider.isGuest || currentUser == null) {
-        _showLoginRequiredSheet();
-        setState(() {
-          _isOpeningNews = false;
-        });
-        return;
-      }
-
-      try {
-        final accessResult =
-            await _freeContentAccessService.consumeView(currentUser.userId);
-        if (!mounted) return;
-
-        if (!accessResult.granted) {
-          _showSubscriptionRequiredSheet(isTrialExhausted: true);
-          setState(() {
-            _isOpeningNews = false;
-          });
-          return;
-        }
-
-        await _showFreeAccessGuideDialog(
-          remainingViews: accessResult.remainingViews,
-          limit: accessResult.limit,
-        );
-        if (!mounted) return;
-      } catch (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('무료 열람 권한을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'),
-            ),
-          );
-          setState(() {
-            _isOpeningNews = false;
-          });
-        }
-        return;
-      }
+    if (!AppAccessPolicy.canOpen(AppAccessFeature.news)) {
+      setState(() {
+        _isOpeningNews = false;
+      });
+      return;
     }
 
     Navigator.push(

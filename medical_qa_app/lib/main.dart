@@ -6,7 +6,6 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
-import 'providers/subscription_provider.dart';
 import 'screens/auth/email_verification_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/user/home_screen.dart';
@@ -83,7 +82,6 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ],
       child: MaterialApp(
         title: '골통주부의 난임&상담톡',
@@ -232,13 +230,6 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
     if (!_notificationInitialized) {
       _notificationInitialized = true;
       _notificationService.initialize();
-
-      // 구독 프로바이더 초기화 (build 중 notifyListeners 방지)
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final subscriptionProvider =
-            Provider.of<SubscriptionProvider>(context, listen: false);
-        subscriptionProvider.initialize(authProvider.currentUser!.userId);
-      });
 
       // Windows 관리자: Firestore 리스너 시작
       if (Platform.isWindows && authProvider.isAdmin) {

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/subscription_provider.dart';
+import '../../services/app_access_policy.dart';
 import '../../services/firestore_service.dart';
 import '../../services/storage_service.dart';
 import '../../models/message_model.dart';
@@ -13,7 +13,6 @@ import '../../widgets/date_divider.dart';
 import '../../design/app_radii.dart';
 import '../../design/app_spacing.dart';
 import '../../utils/app_colors.dart';
-import 'subscription_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -290,11 +289,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_conversationId == null) return;
     if (_isSending) return;
 
-    // 구독 상태 확인
-    final subscriptionProvider =
-        Provider.of<SubscriptionProvider>(context, listen: false);
-    if (!subscriptionProvider.hasActiveSubscription) {
-      _showSubscriptionRequiredSheet();
+    if (!AppAccessPolicy.canOpen(AppAccessFeature.chat)) {
+      _showErrorSnackBar('지금은 채팅을 이용할 수 없습니다');
       return;
     }
 
@@ -326,101 +322,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     setState(() => _isSending = false);
-  }
-
-  void _showSubscriptionRequiredSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          left: AppSpacing.xl,
-          right: AppSpacing.xl,
-          top: AppSpacing.xl,
-          bottom: MediaQuery.of(context).padding.bottom + AppSpacing.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 드래그 핸들
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.borderStrong,
-                borderRadius: BorderRadius.circular(AppSpacing.xxs / 2),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            // 아이콘
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.accentSoft,
-                borderRadius: BorderRadius.circular(AppRadii.xl),
-              ),
-              child: const Icon(
-                Icons.workspace_premium,
-                size: 40,
-                color: AppColors.accentDeep,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            // 제목
-            const Text(
-              '이용권이 필요해요',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            // 설명
-            const Text(
-              '메시지를 보내시려면\n이용권이 필요합니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            // 이용권 구매 버튼
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SubscriptionScreen(),
-                    ),
-                  );
-                },
-                child: const Text(
-                  '이용권 구매하기',
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            // 나중에 버튼
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('나중에 할게요'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   List<Widget> _buildMessagesWithDateDividers(
