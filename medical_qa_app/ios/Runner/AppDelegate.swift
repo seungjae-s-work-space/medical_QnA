@@ -5,7 +5,7 @@ import FirebaseMessaging
 import UserNotifications
 
 @main
-@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate, FlutterStreamHandler {
+@objc class AppDelegate: FlutterAppDelegate, FlutterStreamHandler {
   private var screenshotEventChannel: FlutterEventChannel?
   private var screenshotEventSink: FlutterEventSink?
 
@@ -15,6 +15,7 @@ import UserNotifications
   ) -> Bool {
     // Firebase 초기화
     FirebaseApp.configure()
+    GeneratedPluginRegistrant.register(with: self)
 
     // 푸시 알림 권한 요청
     UNUserNotificationCenter.current().delegate = self
@@ -39,10 +40,6 @@ import UserNotifications
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-  }
-
-  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
-    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
 
   func onListen(withArguments arguments: Any?,
