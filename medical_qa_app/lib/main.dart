@@ -12,6 +12,7 @@ import 'screens/user/home_screen.dart';
 import 'screens/admin/admin_conversations_screen.dart';
 import 'services/notification_service.dart';
 import 'services/force_update_service.dart';
+import 'services/app_navigation.dart';
 import 'design/app_theme.dart';
 import 'utils/app_colors.dart';
 
@@ -85,6 +86,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: '골통주부의 난임&상담톡',
+        navigatorKey: appNavigatorKey,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         home: const AuthWrapper(),

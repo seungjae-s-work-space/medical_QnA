@@ -15,7 +15,9 @@ import '../../design/app_spacing.dart';
 import '../../utils/app_colors.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final String? initialConversationId;
+
+  const ChatScreen({super.key, this.initialConversationId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -40,10 +42,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _initializeConversation() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.currentUser != null) {
-      _conversationId = await _firestoreService.getOrCreateConversation(
-        authProvider.currentUser!.userId,
-        authProvider.currentUser!.name,
-      );
+      _conversationId = widget.initialConversationId ??
+          await _firestoreService.getOrCreateConversation(
+            authProvider.currentUser!.userId,
+            authProvider.currentUser!.name,
+          );
       setState(() {});
     }
   }

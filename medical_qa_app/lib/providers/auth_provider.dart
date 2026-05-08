@@ -1,13 +1,16 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 
 class AuthProvider with ChangeNotifier {
-  final AuthService _authService = AuthService();
-  StreamSubscription<User?>? _authSubscription;
+  final AuthClient _authService;
+  final Duration _initialRestoreTimeout;
+  final Duration _restoreRetryDelay;
+  StreamSubscription<String?>? _authSubscription;
+  bool _isDisposed = false;
 
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -24,13 +27,20 @@ class AuthProvider with ChangeNotifier {
   bool get isAdmin => _currentUser?.isAdmin ?? false;
   bool get isGuest => _isGuest;
   bool get requiresEmailVerification => _requiresEmailVerification;
-  String get verificationEmail =>
-      _authService.currentUser?.email ?? _currentUser?.email ?? '';
+  String get verificationEmail => _authService.currentEmail.isNotEmpty
+      ? _authService.currentEmail
+      : _currentUser?.email ?? '';
 
   /// 로그인된 사용자 또는 게스트 (홈 화면 접근 가능 여부)
   bool get canAccessHome => _currentUser != null || _isGuest;
 
-  AuthProvider() {
+  AuthProvider({
+    AuthClient? authClient,
+    Duration initialRestoreTimeout = const Duration(seconds: 5),
+    Duration restoreRetryDelay = const Duration(milliseconds: 250),
+  })  : _authService = authClient ?? AuthService(),
+        _initialRestoreTimeout = initialRestoreTimeout,
+        _restoreRetryDelay = restoreRetryDelay {
     _init();
   }
 
@@ -41,36 +51,97 @@ class AuthProvider with ChangeNotifier {
         _authService.requiresEmailVerification;
   }
 
-  // 초기화: Firebase Auth 상태 변화 리스닝 + 로컬 자동 로그인
-  void _init() async {
-    // 로컬 저장소에서 사용자 정보 확인
-    if (_authService.currentUser != null) {
-      await _authService.reloadAndCheckEmailVerified();
-    }
-    _currentUser = await _authService.getLocalUser();
-    _updateEmailVerificationRequirement();
-    _isInitialized = true;
-    notifyListeners();
+  // 초기화: Firebase의 저장된 세션을 먼저 복구한 뒤 이후 auth stream을 감시한다.
+  void _init() {
+    unawaited(_restoreInitialUserThenListen());
+  }
 
-    // Firebase Auth 상태 변화 리스닝
-    _authSubscription =
-        _authService.authStateChanges.listen((User? user) async {
-      if (user == null) {
+  Future<void> _restoreInitialUserThenListen() async {
+    try {
+      final restoredUser = await _authService.restoreCurrentUser(
+        timeout: _initialRestoreTimeout,
+        retryDelay: _restoreRetryDelay,
+      );
+      if (_isDisposed) return;
+
+      if (restoredUser != null) {
+        _isGuest = false;
+        _currentUser = restoredUser;
+        _updateEmailVerificationRequirement();
+      } else {
         _currentUser = null;
         _requiresEmailVerification = false;
-        notifyListeners();
-      } else {
-        await _authService.reloadAndCheckEmailVerified();
-        await _loadUserData(user.uid);
-        _updateEmailVerificationRequirement();
+      }
+    } catch (e) {
+      debugPrint('초기 인증 상태 복원 오류: $e');
+      if (_isDisposed) return;
+      _currentUser = null;
+      _requiresEmailVerification = false;
+    } finally {
+      if (!_isDisposed) {
+        _isInitialized = true;
+        _listenToAuthChanges();
         notifyListeners();
       }
-    });
+    }
+  }
+
+  void _listenToAuthChanges() {
+    unawaited(_authSubscription?.cancel());
+    _authSubscription = _authService.authUserIdChanges.listen(
+      _handleAuthUserIdChanged,
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('인증 상태 구독 오류: $error');
+        if (_isDisposed) return;
+        _currentUser = null;
+        _requiresEmailVerification = false;
+        _isInitialized = true;
+        notifyListeners();
+      },
+    );
+  }
+
+  Future<void> _handleAuthUserIdChanged(String? userId) async {
+    try {
+      if (userId == null) {
+        final currentAuthUserId = _authService.currentUserId;
+        if (currentAuthUserId != null && currentAuthUserId.isNotEmpty) {
+          _isGuest = false;
+          await _loadUserData(currentAuthUserId);
+          _updateEmailVerificationRequirement();
+        } else {
+          _currentUser = null;
+          _requiresEmailVerification = false;
+        }
+      } else {
+        _isGuest = false;
+        await _loadUserData(userId);
+        try {
+          await _authService.reloadAndCheckEmailVerified();
+        } catch (e) {
+          debugPrint('이메일 인증 상태 새로고침 실패: $e');
+        }
+        _updateEmailVerificationRequirement();
+      }
+    } catch (e) {
+      debugPrint('인증 상태 복원 오류: $e');
+      _currentUser = null;
+      _requiresEmailVerification = false;
+    } finally {
+      if (!_isDisposed) {
+        _isInitialized = true;
+        notifyListeners();
+      }
+    }
   }
 
   // 사용자 데이터 로드
   Future<void> _loadUserData(String userId) async {
     _currentUser = await _authService.getUserData(userId);
+    _currentUser ??= await _authService.restoreCurrentUser(
+      timeout: _restoreRetryDelay,
+      retryDelay: _restoreRetryDelay,
+    );
   }
 
   // 회원가입
@@ -267,6 +338,7 @@ class AuthProvider with ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _authSubscription?.cancel();
     super.dispose();
   }

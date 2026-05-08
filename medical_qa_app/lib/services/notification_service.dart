@@ -3,10 +3,18 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import '../providers/auth_provider.dart' as app_auth;
+import '../screens/admin/admin_chat_screen.dart';
+import '../screens/user/chat_screen.dart';
+import 'app_navigation.dart';
 import 'device_token_record.dart';
+import 'firestore_service.dart';
+import 'notification_navigation.dart';
 
 // 모바일 전용 (Windows에서는 사용 안함)
 import 'package:firebase_messaging/firebase_messaging.dart'
@@ -25,6 +33,7 @@ class NotificationService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirestoreService _firestoreService = FirestoreService();
 
   // 모바일 전용
   FirebaseMessaging? _messaging;
@@ -340,10 +349,43 @@ class NotificationService {
       print('알림 탭해서 앱 열림: ${message.data}');
     }
 
-    final conversationId = message.data['conversationId'];
-    if (conversationId != null) {
-      // Navigator로 해당 채팅 화면으로 이동 로직
+    final target = NotificationNavigationTarget.fromData(message.data);
+    if (target == null) return;
+
+    _openChatFromNotification(target);
+  }
+
+  Future<void> _openChatFromNotification(
+    NotificationNavigationTarget target,
+  ) async {
+    final navigator = appNavigatorKey.currentState;
+    final context = appNavigatorKey.currentContext;
+    if (navigator == null || context == null) return;
+
+    final authProvider = context.read<app_auth.AuthProvider>();
+    final user = authProvider.currentUser;
+    if (user == null || authProvider.isGuest) return;
+
+    if (user.isAdmin) {
+      final conversation =
+          await _firestoreService.getConversation(target.conversationId);
+      if (conversation == null) return;
+
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => AdminChatScreen(conversation: conversation),
+        ),
+      );
+      return;
     }
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          initialConversationId: target.conversationId,
+        ),
+      ),
+    );
   }
 
   // ==================== 공통 ====================
