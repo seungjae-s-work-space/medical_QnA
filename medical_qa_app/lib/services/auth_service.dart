@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -169,6 +171,20 @@ class AuthService implements AuthClient {
       timeout: timeout,
       retryDelay: retryDelay,
     );
+  }
+
+  Future<void> _reloadCurrentUser(User user) async {
+    try {
+      await user.reload();
+    } catch (e) {
+      debugPrint('저장된 인증 세션 새로고침 실패: $e');
+    }
+  }
+
+  Future<void> _refreshCachedUser(User user) async {
+    await _reloadCurrentUser(user);
+    final activeUser = currentUser ?? user;
+    await getUserData(activeUser.uid);
   }
 
   // 회원가입
@@ -432,20 +448,20 @@ class AuthService implements AuthClient {
       );
       if (user == null) return null;
 
-      try {
-        await user.reload();
-      } catch (e) {
-        debugPrint('저장된 인증 세션 새로고침 실패: $e');
+      final activeUser = currentUser ?? user;
+      final cachedUser = await _getCachedUser(activeUser.uid);
+      if (cachedUser != null) {
+        unawaited(_refreshCachedUser(activeUser));
+        return cachedUser;
       }
 
-      final activeUser = currentUser ?? user;
-      final firestoreUser = await getUserData(activeUser.uid);
+      await _reloadCurrentUser(activeUser);
+
+      final refreshedActiveUser = currentUser ?? activeUser;
+      final firestoreUser = await getUserData(refreshedActiveUser.uid);
       if (firestoreUser != null) return firestoreUser;
 
-      final cachedUser = await _getCachedUser(activeUser.uid);
-      if (cachedUser != null) return cachedUser;
-
-      final fallbackUser = await _buildFallbackUser(activeUser);
+      final fallbackUser = await _buildFallbackUser(refreshedActiveUser);
       await _cacheUser(fallbackUser);
       return fallbackUser;
     } catch (e) {

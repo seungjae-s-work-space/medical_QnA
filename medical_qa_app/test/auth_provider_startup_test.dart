@@ -39,6 +39,40 @@ void main() {
     expect(authProvider.canAccessHome, isFalse);
   });
 
+  test('recovers a user that appears after the startup restore pass', () async {
+    final user = UserModel(
+      userId: 'user-1',
+      role: 'user',
+      name: '테스트 사용자',
+      email: '',
+      createdAt: DateTime(2026),
+    );
+    final lateRestoreCompleter = Completer<UserModel?>();
+    final authClient = _FakeAuthClient(
+      restoreResults: [
+        null,
+        lateRestoreCompleter.future,
+      ],
+    );
+    final authProvider = AuthProvider(
+      authClient: authClient,
+      postStartupRestoreTimeout: const Duration(seconds: 1),
+    );
+
+    await _flushMicrotasks();
+
+    expect(authProvider.isInitialized, isTrue);
+    expect(authProvider.currentUser, isNull);
+
+    authClient.currentAuthUserId = 'user-1';
+    lateRestoreCompleter.complete(user);
+    await _flushMicrotasks();
+
+    expect(authClient.restoreCalls, 2);
+    expect(authProvider.currentUser?.userId, 'user-1');
+    expect(authProvider.canAccessHome, isTrue);
+  });
+
   test('waits for startup restore before marking auth initialized', () async {
     final user = UserModel(
       userId: 'user-1',
@@ -138,11 +172,14 @@ class _FakeAuthClient implements AuthClient {
     Map<String, UserModel>? users,
     this.restoredUser,
     this.restoreCompleter,
-  }) : _users = users ?? {};
+    List<FutureOr<UserModel?>>? restoreResults,
+  })  : _users = users ?? {},
+        _restoreResults = restoreResults ?? [];
 
   final Map<String, UserModel> _users;
   final UserModel? restoredUser;
   final Completer<UserModel?>? restoreCompleter;
+  final List<FutureOr<UserModel?>> _restoreResults;
   int restoreCalls = 0;
   final StreamController<String?> _authStateController =
       StreamController<String?>.broadcast();
@@ -173,6 +210,9 @@ class _FakeAuthClient implements AuthClient {
     required Duration retryDelay,
   }) async {
     restoreCalls += 1;
+    if (_restoreResults.length >= restoreCalls) {
+      return _restoreResults[restoreCalls - 1];
+    }
     if (restoreCompleter != null && !restoreCompleter!.isCompleted) {
       return restoreCompleter!.future;
     }

@@ -8,9 +8,11 @@ import '../services/notification_service.dart';
 class AuthProvider with ChangeNotifier {
   final AuthClient _authService;
   final Duration _initialRestoreTimeout;
+  final Duration _postStartupRestoreTimeout;
   final Duration _restoreRetryDelay;
   StreamSubscription<String?>? _authSubscription;
   bool _isDisposed = false;
+  bool _isRecoveringAfterStartup = false;
 
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -37,9 +39,11 @@ class AuthProvider with ChangeNotifier {
   AuthProvider({
     AuthClient? authClient,
     Duration initialRestoreTimeout = const Duration(seconds: 5),
+    Duration postStartupRestoreTimeout = const Duration(seconds: 30),
     Duration restoreRetryDelay = const Duration(milliseconds: 250),
   })  : _authService = authClient ?? AuthService(),
         _initialRestoreTimeout = initialRestoreTimeout,
+        _postStartupRestoreTimeout = postStartupRestoreTimeout,
         _restoreRetryDelay = restoreRetryDelay {
     _init();
   }
@@ -57,6 +61,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> _restoreInitialUserThenListen() async {
+    var needsLateRecovery = false;
     try {
       final restoredUser = await _authService.restoreCurrentUser(
         timeout: _initialRestoreTimeout,
@@ -71,18 +76,56 @@ class AuthProvider with ChangeNotifier {
       } else {
         _currentUser = null;
         _requiresEmailVerification = false;
+        needsLateRecovery = true;
       }
     } catch (e) {
       debugPrint('초기 인증 상태 복원 오류: $e');
       if (_isDisposed) return;
       _currentUser = null;
       _requiresEmailVerification = false;
+      needsLateRecovery = true;
     } finally {
       if (!_isDisposed) {
         _isInitialized = true;
         _listenToAuthChanges();
         notifyListeners();
+        if (needsLateRecovery) {
+          unawaited(_recoverLateStartupUser());
+        }
       }
+    }
+  }
+
+  Future<void> _recoverLateStartupUser() async {
+    if (_isRecoveringAfterStartup || _isDisposed) return;
+    _isRecoveringAfterStartup = true;
+
+    try {
+      final restoredUser = await _authService.restoreCurrentUser(
+        timeout: _postStartupRestoreTimeout,
+        retryDelay: _restoreRetryDelay,
+      );
+      if (_isDisposed ||
+          restoredUser == null ||
+          _currentUser != null ||
+          _isGuest) {
+        return;
+      }
+
+      final currentAuthUserId = _authService.currentUserId;
+      if (currentAuthUserId != null &&
+          currentAuthUserId != restoredUser.userId) {
+        return;
+      }
+
+      _currentUser = restoredUser;
+      _requiresEmailVerification = false;
+      _updateEmailVerificationRequirement();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('지연 인증 상태 복원 오류: $e');
+    } finally {
+      _isRecoveringAfterStartup = false;
     }
   }
 
