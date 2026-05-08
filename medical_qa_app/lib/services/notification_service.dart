@@ -196,16 +196,6 @@ class NotificationService {
       enableVibration: true,
     );
 
-    // 구독 채널
-    const subscriptionChannel = AndroidNotificationChannel(
-      'subscription',
-      '구독 알림',
-      description: '구독 결제, 만료 등 구독 관련 알림을 받습니다',
-      importance: Importance.high,
-      playSound: true,
-      enableVibration: true,
-    );
-
     final androidPlugin = _localNotifications!
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
@@ -213,7 +203,6 @@ class NotificationService {
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(chatChannel);
       await androidPlugin.createNotificationChannel(contentChannel);
-      await androidPlugin.createNotificationChannel(subscriptionChannel);
       if (kDebugMode) {
         print('Android 알림 채널 생성 완료');
       }
@@ -488,14 +477,13 @@ class NotificationService {
   }
 
   /// 카테고리별 알림 설정 전체 조회
-  /// 반환: { 'notificationsEnabled': bool, 'notificationChat': bool, 'notificationContent': bool, 'notificationSubscription': bool }
+  /// 반환: { 'notificationsEnabled': bool, 'notificationChat': bool, 'notificationContent': bool }
   Future<Map<String, bool>> getNotificationSettings() async {
     final user = _auth.currentUser;
     const defaults = {
       'notificationsEnabled': true,
       'notificationChat': true,
       'notificationContent': true,
-      'notificationSubscription': true,
     };
     if (user == null) return defaults;
 
@@ -506,7 +494,6 @@ class NotificationService {
         'notificationsEnabled': data['notificationsEnabled'] ?? true,
         'notificationChat': data['notificationChat'] ?? true,
         'notificationContent': data['notificationContent'] ?? true,
-        'notificationSubscription': data['notificationSubscription'] ?? true,
       };
     } catch (e) {
       if (kDebugMode) print('알림 설정 조회 실패: $e');
@@ -515,7 +502,7 @@ class NotificationService {
   }
 
   /// 카테고리별 알림 설정 변경
-  /// key: 'notificationChat' | 'notificationContent' | 'notificationSubscription'
+  /// key: 'notificationChat' | 'notificationContent'
   Future<void> setCategoryNotification(String key, bool enabled) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -529,7 +516,7 @@ class NotificationService {
     }
   }
 
-  /// 알림 설정 스트림 (실시간 구독)
+  /// 알림 설정 스트림 (실시간 리스너)
   Stream<bool> notificationEnabledStream() {
     final user = _auth.currentUser;
     if (user == null) return Stream.value(true);

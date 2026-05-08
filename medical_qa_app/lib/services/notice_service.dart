@@ -12,9 +12,7 @@ class NoticeService {
         .where('isPublished', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .get();
-    return snapshot.docs
-        .map((doc) => NoticeModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => NoticeModel.fromFirestore(doc)).toList();
   }
 
   // 공지사항 목록 조회 (관리자용 - 모든 글, 일회성)
@@ -23,9 +21,7 @@ class NoticeService {
         .collection(_collection)
         .orderBy('createdAt', descending: true)
         .get();
-    return snapshot.docs
-        .map((doc) => NoticeModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => NoticeModel.fromFirestore(doc)).toList();
   }
 
   // 단일 공지사항 조회

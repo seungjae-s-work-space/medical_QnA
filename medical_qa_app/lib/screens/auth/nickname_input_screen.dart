@@ -26,13 +26,13 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final nickname = _nicknameController.text.trim();
 
-    print('닉네임 입력 시도: $nickname');
+    debugPrint('닉네임 입력 시도: $nickname');
 
     final success = await authProvider.signInWithNickname(nickname);
 
-    print('로그인 성공 여부: $success');
+    debugPrint('로그인 성공 여부: $success');
     if (!success) {
-      print('에러 메시지: ${authProvider.errorMessage}');
+      debugPrint('에러 메시지: ${authProvider.errorMessage}');
     }
 
     if (!success && mounted) {
@@ -62,7 +62,7 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.medical_services_outlined,
                     size: 64,
                     color: AppColors.textSecondary,
@@ -89,7 +89,6 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
                     ),
                   ),
                   const SizedBox(height: 48),
-
                   TextFormField(
                     controller: _nicknameController,
                     decoration: InputDecoration(
@@ -144,7 +143,6 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
                     onFieldSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 24),
-
                   ElevatedButton(
                     onPressed: authProvider.isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
@@ -177,7 +175,6 @@ class _NicknameInputScreenState extends State<NicknameInputScreen> {
                           ),
                   ),
                   const SizedBox(height: 32),
-
                   const Text(
                     '입력하신 닉네임은 관리자에게만 표시됩니다\n다음 방문 시 자동으로 로그인됩니다',
                     textAlign: TextAlign.center,

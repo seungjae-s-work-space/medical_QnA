@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
@@ -22,7 +23,7 @@ class StorageService {
 
       return downloadUrl;
     } catch (e) {
-      print('이미지 업로드 오류: $e');
+      debugPrint('이미지 업로드 오류: $e');
       rethrow;
     }
   }
@@ -60,7 +61,7 @@ class StorageService {
 
       return downloadUrl;
     } catch (e) {
-      print('영상 업로드 오류: $e');
+      debugPrint('영상 업로드 오류: $e');
       rethrow;
     }
   }
@@ -89,7 +90,7 @@ class StorageService {
 
       return downloadUrl;
     } catch (e) {
-      print('파일 업로드 오류: $e');
+      debugPrint('파일 업로드 오류: $e');
       rethrow;
     }
   }
@@ -131,7 +132,7 @@ class StorageService {
         thumbnailUrl: thumbnailUrl,
       );
     } catch (e) {
-      print('첨부파일 업로드 오류: $e');
+      debugPrint('첨부파일 업로드 오류: $e');
       rethrow;
     }
   }
@@ -142,7 +143,7 @@ class StorageService {
       Reference ref = _storage.refFromURL(imageUrl);
       await ref.delete();
     } catch (e) {
-      print('이미지 삭제 오류: $e');
+      debugPrint('이미지 삭제 오류: $e');
       // 이미지 삭제 실패는 크리티컬하지 않으므로 에러를 던지지 않음
     }
   }
@@ -153,7 +154,7 @@ class StorageService {
       Reference ref = _storage.refFromURL(fileUrl);
       await ref.delete();
     } catch (e) {
-      print('파일 삭제 오류: $e');
+      debugPrint('파일 삭제 오류: $e');
     }
   }
 

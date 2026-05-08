@@ -23,7 +23,9 @@ class ConversationTile extends StatelessWidget {
         color: AppColors.backgroundAlt,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: hasUnread ? AppColors.textSecondary.withOpacity(0.3) : AppColors.buttonBorder,
+          color: hasUnread
+              ? AppColors.textSecondary.withValues(alpha: 0.3)
+              : AppColors.buttonBorder,
           width: 1,
         ),
       ),
@@ -33,7 +35,7 @@ class ConversationTile extends StatelessWidget {
         leading: Container(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.adminMessage,
             shape: BoxShape.circle,
           ),

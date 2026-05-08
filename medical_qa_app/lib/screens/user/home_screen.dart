@@ -577,7 +577,7 @@ class _HomeScreenState extends State<HomeScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.premiumSoft,
+          color: AppColors.goldSoft,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -713,7 +713,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildSettingItem(
                   icon: Icons.info_outline,
                   title: '난임톡톡 소개',
-                  iconColor: AppColors.premium,
+                  iconColor: AppColors.goldAccent,
                   onTap: _showAboutSheet,
                 ),
                 const Padding(
@@ -764,7 +764,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         content: const Text(
           '정말 탈퇴하시겠습니까?\n\n'
-          '탈퇴 시 모든 데이터(상담 내역, 구독 정보 등)가 삭제되며 복구할 수 없습니다.',
+          '탈퇴 시 모든 데이터(상담 내역 등)가 삭제되며 복구할 수 없습니다.',
           style: TextStyle(
             fontSize: 16,
             color: AppColors.textSecondary,

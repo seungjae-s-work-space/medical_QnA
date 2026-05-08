@@ -1,7 +1,6 @@
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
-const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const {
   buildRecipientTokenEntries,
@@ -18,7 +17,6 @@ const messaging = getMessaging();
  * 알림 카테고리
  * - chat: 상담 알림 (채팅 메시지)
  * - content: 콘텐츠 알림 (뉴스/공지/백과/영상)
- * - subscription: 구독 알림 (결제 완료, 만료 임박, 만료)
  */
 
 /**
@@ -325,103 +323,3 @@ exports.sendVideoPublishedNotification = onDocumentUpdated("videos/{videoId}", a
     });
   }
 });
-
-// ==================== 구독 알림 ====================
-
-/**
- * 특정 유저에게 구독 알림 전송
- */
-async function sendSubscriptionNotificationToUser(userId, { title, body, data }) {
-  if (!userId) return;
-  const userRef = db.collection("users").doc(userId);
-  const userDoc = await userRef.get();
-  if (!userDoc.exists) return;
-
-  const userData = userDoc.data();
-  if (!isNotificationEnabled(userData, "subscription")) return;
-
-  const entries = await getRecipientTokenEntriesForUser(userId, userData, userRef);
-  await sendNotificationToTokenEntries(entries, () => ({
-    notification: { title, body },
-    data,
-    android: { priority: "high", notification: { channelId: "subscription", sound: "default" } },
-    apns: { payload: { aps: { badge: 1, sound: "default" } } },
-  }));
-}
-
-// --- 구독 결제 완료 (구독 문서 생성 시) ---
-exports.sendSubscriptionPurchasedNotification = onDocumentCreated(
-  "subscriptions/{subscriptionId}",
-  async (event) => {
-    const sub = event.data?.data();
-    if (!sub || sub.status !== "active") return;
-
-    const endDate = sub.endDate?.toDate();
-    const endDateStr = endDate ? `${endDate.getFullYear()}.${endDate.getMonth() + 1}.${endDate.getDate()}` : "";
-
-    await sendSubscriptionNotificationToUser(sub.userId, {
-      title: "✅ 구독이 시작되었습니다",
-      body: `이용 기간: ~${endDateStr}`,
-      data: { type: "subscription_purchased" },
-    });
-  }
-);
-
-// --- 구독 만료 임박 (매일 체크, 3일 전) ---
-exports.checkSubscriptionExpiringSoon = onSchedule(
-  { schedule: "every day 09:00", timeZone: "Asia/Seoul" },
-  async () => {
-    const now = new Date();
-    const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-    const startOfDay = new Date(threeDaysLater.getFullYear(), threeDaysLater.getMonth(), threeDaysLater.getDate());
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-
-    const snapshot = await db.collection("subscriptions")
-      .where("status", "==", "active")
-      .where("endDate", ">=", Timestamp.fromDate(startOfDay))
-      .where("endDate", "<", Timestamp.fromDate(endOfDay))
-      .get();
-
-    console.log(`Expiring soon: ${snapshot.size}`);
-
-    for (const doc of snapshot.docs) {
-      const sub = doc.data();
-      await sendSubscriptionNotificationToUser(sub.userId, {
-        title: "⏰ 구독 만료 임박",
-        body: "3일 후 구독이 만료됩니다. 계속 이용하려면 연장해주세요.",
-        data: { type: "subscription_expiring" },
-      });
-    }
-  }
-);
-
-// --- 구독 만료 (매일 체크) ---
-exports.checkSubscriptionExpired = onSchedule(
-  { schedule: "every day 09:10", timeZone: "Asia/Seoul" },
-  async () => {
-    const now = Timestamp.now();
-    const snapshot = await db.collection("subscriptions")
-      .where("status", "==", "active")
-      .where("endDate", "<", now)
-      .get();
-
-    console.log(`Expired: ${snapshot.size}`);
-
-    for (const doc of snapshot.docs) {
-      const sub = doc.data();
-
-      // 상태 업데이트
-      await doc.ref.update({ status: "expired", updatedAt: now });
-      await db.collection("users").doc(sub.userId).update({
-        subscriptionStatus: "expired",
-      });
-
-      // 알림 전송
-      await sendSubscriptionNotificationToUser(sub.userId, {
-        title: "🔔 구독이 만료되었습니다",
-        body: "계속 이용하려면 구독을 갱신해주세요.",
-        data: { type: "subscription_expired" },
-      });
-    }
-  }
-);

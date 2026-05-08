@@ -51,14 +51,8 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
-import StorePurchaseDialogContent from './StorePurchaseDialogContent';
-import FreeContentAccessDialogContent from './FreeContentAccessDialogContent';
-import { consumeFreeContentAccess } from '../utils/freeContentAccess';
 import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
 import { getArticleContentSx } from '../utils/articleContentStyles';
 
@@ -127,8 +121,6 @@ const mergeConsecutiveBlockquotes = (html) => {
 const ITEMS_PER_PAGE = 17;
 
 function NewsManager({ readOnly = false }) {
-  const { user, isLoggedIn, isAdmin, hasActiveSubscription } = useAuth();
-  const navigate = useNavigate();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -138,9 +130,6 @@ function NewsManager({ readOnly = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewArticle, setViewArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [accessModal, setAccessModal] = useState(null); // 'login' | 'subscribe' | 'trialEnded' | null
-  const [freeAccessGuide, setFreeAccessGuide] = useState(null);
-  const [openingArticleId, setOpeningArticleId] = useState(null);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -224,54 +213,6 @@ function NewsManager({ readOnly = false }) {
   };
 
   const handleArticleOpen = async (article) => {
-    if (!readOnly) {
-      setViewArticle(article);
-      return;
-    }
-
-    if (!isLoggedIn) {
-      setAccessModal('login');
-      return;
-    }
-
-    if (isAdmin || hasActiveSubscription) {
-      setViewArticle(article);
-      return;
-    }
-
-    if (!user?.uid || openingArticleId) return;
-
-    setOpeningArticleId(article.id);
-
-    try {
-      const accessResult = await consumeFreeContentAccess({ db, userId: user.uid });
-
-      if (accessResult.granted) {
-        setFreeAccessGuide({
-          article,
-          remainingViews: accessResult.remainingViews,
-          limit: accessResult.limit,
-        });
-      } else {
-        setAccessModal('trialEnded');
-      }
-    } catch (error) {
-      console.error('무료 열람 처리 오류:', error);
-      setSnackbar({
-        open: true,
-        message: '무료 열람 권한 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.',
-        severity: 'error',
-      });
-    } finally {
-      setOpeningArticleId(null);
-    }
-  };
-
-  const handleFreeAccessGuideClose = () => {
-    if (!freeAccessGuide) return;
-
-    const { article } = freeAccessGuide;
-    setFreeAccessGuide(null);
     setViewArticle(article);
   };
 
@@ -1318,46 +1259,6 @@ function NewsManager({ readOnly = false }) {
         </Alert>
       </Snackbar>
 
-      {/* 로그인 필요 모달 */}
-      <Dialog open={accessModal === 'login'} onClose={() => setAccessModal(null)} maxWidth="xs" fullWidth>
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <LockOutlinedIcon sx={{ fontSize: 48, color: colors.primary, mb: 2 }} />
-          <Typography sx={{ fontSize: 18, fontWeight: 600, mb: 1 }}>로그인이 필요합니다</Typography>
-          <Typography sx={{ fontSize: 14, color: colors.textSecondary, mb: 3 }}>
-            글을 보시려면 로그인해 주세요.
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-            <Button variant="outlined" onClick={() => setAccessModal(null)}>닫기</Button>
-            <Button variant="contained" onClick={() => navigate('/login')}>로그인하기</Button>
-          </Box>
-        </Box>
-      </Dialog>
-
-      {/* 구독 필요 모달 */}
-      <Dialog
-        open={accessModal === 'subscribe' || accessModal === 'trialEnded'}
-        onClose={() => setAccessModal(null)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <StorePurchaseDialogContent
-          onClose={() => setAccessModal(null)}
-          title={accessModal === 'trialEnded' ? '무료 열람을 모두 사용했어요' : undefined}
-          description={
-            accessModal === 'trialEnded'
-              ? '회원가입 후 제공되는 백과/뉴스 무료 열람 5회를 모두 사용했습니다.\n계속 보시려면 이용권을 구매해 주세요.'
-              : undefined
-          }
-        />
-      </Dialog>
-
-      <Dialog open={Boolean(freeAccessGuide)} onClose={handleFreeAccessGuideClose} maxWidth="xs" fullWidth>
-        <FreeContentAccessDialogContent
-          onClose={handleFreeAccessGuideClose}
-          remainingViews={freeAccessGuide?.remainingViews ?? 0}
-          limit={freeAccessGuide?.limit ?? 5}
-        />
-      </Dialog>
     </Box>
   );
 }

@@ -12,9 +12,7 @@ class VideoService {
         .where('isPublished', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .get();
-    return snapshot.docs
-        .map((doc) => VideoModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => VideoModel.fromFirestore(doc)).toList();
   }
 
   // 단일 영상 가져오기

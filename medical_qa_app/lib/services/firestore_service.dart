@@ -86,7 +86,8 @@ class FirestoreService {
     });
 
     // 대화방 정보 업데이트
-    String unreadField = user.role == 'admin' ? 'unreadByUser' : 'unreadByAdmin';
+    String unreadField =
+        user.role == 'admin' ? 'unreadByUser' : 'unreadByAdmin';
 
     await _db.collection('conversations').doc(conversationId).update({
       'lastMessage': lastMessageText,
@@ -103,8 +104,9 @@ class FirestoreService {
         .collection('messages')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => MessageModel.fromFirestore(doc)).toList());
+        .map((snapshot) => snapshot.docs
+            .map((doc) => MessageModel.fromFirestore(doc))
+            .toList());
   }
 
   // 관리자: 모든 대화방 목록 실시간 스트림
@@ -132,7 +134,8 @@ class FirestoreService {
   }
 
   // 메시지 읽음 처리
-  Future<void> markMessagesAsRead(String conversationId, String userRole) async {
+  Future<void> markMessagesAsRead(
+      String conversationId, String userRole) async {
     // 읽지 않은 메시지들을 읽음으로 표시
     QuerySnapshot unreadMessages = await _db
         .collection('conversations')
@@ -156,7 +159,10 @@ class FirestoreService {
     if (userRole == 'admin') {
       updateData['hasAdminViewed'] = true;
     }
-    await _db.collection('conversations').doc(conversationId).update(updateData);
+    await _db
+        .collection('conversations')
+        .doc(conversationId)
+        .update(updateData);
   }
 
   // 특정 대화방 가져오기
@@ -208,7 +214,8 @@ class FirestoreService {
 
     QuerySnapshot snapshot = await _db
         .collection('conversations')
-        .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+        .where('createdAt',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
         .get();
     return snapshot.docs.length;
   }

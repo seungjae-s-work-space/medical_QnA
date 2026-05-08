@@ -1,7 +1,7 @@
 # Design System — 골통주부의 난임&상담톡
 
 ## Product Context
-- **What this is:** 난임 치료 과정에 있는 사용자가 상담, 백과, 뉴스, 공지, 구독 기능을 한 앱 안에서 이용하는 Flutter 기반 정보/상담 앱.
+- **What this is:** 난임 치료 과정에 있는 사용자가 상담, 백과, 뉴스, 공지 기능을 한 앱 안에서 이용하는 Flutter 기반 정보/상담 앱.
 - **Who it's for:** 난임 치료 중이거나 정보를 찾는 사용자, 그리고 운영자/상담자.
 - **Space/industry:** 의료 정보, 여성 건강, 프라이빗 상담형 모바일 앱.
 - **Project type:** 모바일 앱 중심의 Flutter product. 이 문서는 `medical_qa_app` UI를 우선 대상으로 한다.
@@ -37,7 +37,7 @@
 ## Color
 - **Approach:** balanced
 - **Primary:** `#70B789` sage green, 브랜드 강조, CTA, 활성 상태
-- **Secondary:** `#D4A853` champagne gold, 프리미엄 상태와 유료 기능 강조
+- **Secondary:** `#D4A853` champagne gold, 보조 강조에 제한적으로 사용
 - **Neutrals:** clean white to cocoa
   - `#FFFFFFFF` background
   - `#FFFFFFFF` surface
@@ -70,7 +70,7 @@
 - **Buttons:** 주 행동은 sage green filled button, 보조 행동은 text/outlined button. 버튼 radius는 최소 20 이상.
 - **Inputs:** 밝은 웜그레이 배경 fill을 사용한다. 포커스는 primary accent border로만 강조한다.
 - **Cards and sheets:** 순백 surface 위에 얇은 border와 큰 radius를 사용한다. 강한 그림자는 피한다.
-- **Premium UI:** gold는 프리미엄 상태, 구독, 혜택 안내에만 제한적으로 쓴다.
+- **Supporting accents:** gold는 주 CTA가 아닌 보조 강조가 필요할 때만 제한적으로 쓴다.
 - **Chat UI:** 사용자 말풍선은 info blue, 상담자 말풍선은 muted surface 계열. 텍스트 대비가 항상 확보되어야 한다.
 
 ## Decisions Log

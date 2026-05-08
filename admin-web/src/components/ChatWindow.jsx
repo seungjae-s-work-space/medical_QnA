@@ -69,7 +69,7 @@ function ChatWindow() {
     };
     fetchConversation();
 
-    // 메시지 실시간 구독
+    // 메시지 실시간 리스너
     const q = query(
       collection(db, 'conversations', conversationId, 'messages'),
       orderBy('createdAt', 'asc')

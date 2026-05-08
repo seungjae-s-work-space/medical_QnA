@@ -228,7 +228,7 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
     }
 
     // 로그인된 사용자
-    // 알림 및 구독 초기화 (한 번만)
+    // 알림 초기화 (한 번만)
     if (!_notificationInitialized) {
       _notificationInitialized = true;
       _notificationService.initialize();

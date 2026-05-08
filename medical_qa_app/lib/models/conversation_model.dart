@@ -32,7 +32,8 @@ class ConversationModel {
       userName: data['userName'] ?? '익명',
       userProfileImage: data['userProfileImage'],
       lastMessage: data['lastMessage'] ?? '',
-      lastMessageAt: (data['lastMessageAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lastMessageAt:
+          (data['lastMessageAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       unreadByAdmin: data['unreadByAdmin'] ?? 0,
       unreadByUser: data['unreadByUser'] ?? 0,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),

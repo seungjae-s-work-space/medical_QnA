@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// The visual direction stays close to the current product:
 /// clean white surfaces, muted cocoa text, sage-green emphasis, and
-/// a champagne accent for premium actions.
+/// a restrained champagne accent for secondary emphasis.
 class AppColors {
   AppColors._();
 
@@ -30,8 +30,8 @@ class AppColors {
   static const Color accentSoftMuted = Color(0xFFEEF8F1);
 
   // Supporting accents
-  static const Color premium = Color(0xFFD4A853);
-  static const Color premiumSoft = Color(0xFFF8F8F8);
+  static const Color goldAccent = Color(0xFFD4A853);
+  static const Color goldSoft = Color(0xFFF8F8F8);
   static const Color info = Color(0xFF5B8BA8);
   static const Color infoSoft = Color(0xFFE8F4FC);
   static const Color success = Color(0xFF6FA87B);

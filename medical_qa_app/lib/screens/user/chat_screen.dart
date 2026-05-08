@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/app_access_policy.dart';
 import '../../services/firestore_service.dart';
 import '../../services/storage_service.dart';
 import '../../models/message_model.dart';
@@ -291,11 +290,6 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty && _pendingAttachments.isEmpty) return;
     if (_conversationId == null) return;
     if (_isSending) return;
-
-    if (!AppAccessPolicy.canOpen(AppAccessFeature.chat)) {
-      _showErrorSnackBar('지금은 채팅을 이용할 수 없습니다');
-      return;
-    }
 
     setState(() => _isSending = true);
 

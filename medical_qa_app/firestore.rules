@@ -108,20 +108,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // subscriptions 컬렉션 (구독)
-    match /subscriptions/{subscriptionId} {
-      // 읽기: 본인 구독 정보 또는 관리자
-      allow read: if isAuthenticated() &&
-                     (resource.data.userId == request.auth.uid || isAdmin());
-      // 생성: 본인 구독 또는 관리자가 부여
-      allow create: if isAuthenticated() &&
-                       (request.resource.data.userId == request.auth.uid || isAdmin());
-      // 수정: 관리자만 (기간 연장, 차단 등)
-      allow update: if isAdmin();
-      // 삭제: 관리자만
-      allow delete: if isAdmin();
-    }
-
     // screenshot_events 컬렉션 (콘텐츠 캡처 감지 기록)
     match /screenshot_events/{eventId} {
       allow create: if isAuthenticated() &&

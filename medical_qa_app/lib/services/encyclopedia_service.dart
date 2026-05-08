@@ -39,7 +39,8 @@ class EncyclopediaService {
 
   // 게시글 생성
   Future<String> createArticle(EncyclopediaModel article) async {
-    final docRef = await _firestore.collection(_collection).add(article.toMap());
+    final docRef =
+        await _firestore.collection(_collection).add(article.toMap());
     return docRef.id;
   }
 

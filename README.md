@@ -10,12 +10,12 @@ gukitso/
 ├── medical_qa_app/             # Flutter 앱 (사용자 + 관리자)
 │   ├── lib/
 │   │   ├── main.dart
-│   │   ├── models/             # User, Subscription, Message, News, Encyclopedia 모델
-│   │   ├── services/           # Firebase Auth, Firestore, Storage, IAP, News, Encyclopedia
-│   │   ├── providers/          # AuthProvider, SubscriptionProvider
+│   │   ├── models/             # User, Message, News, Encyclopedia 모델
+│   │   ├── services/           # Firebase Auth, Firestore, Storage, News, Encyclopedia
+│   │   ├── providers/          # AuthProvider
 │   │   ├── screens/
 │   │   │   ├── auth/           # 로그인, 회원가입
-│   │   │   ├── user/           # 채팅, 구독, 뉴스, 백과, 공지
+│   │   │   ├── user/           # 채팅, 뉴스, 백과, 공지
 │   │   │   └── admin/          # 관리자 채팅, 뉴스/백과/공지 관리
 │   │   └── widgets/
 │   ├── pubspec.yaml
@@ -29,7 +29,7 @@ gukitso/
 │   │       ├── Login.jsx
 │   │       ├── ConversationList.jsx
 │   │       ├── ChatWindow.jsx
-│   │       ├── SubscriptionManager.jsx
+│   │       ├── UserManagement.jsx
 │   │       ├── NewsManager.jsx
 │   │       ├── EncyclopediaManager.jsx
 │   │       ├── NoticeManager.jsx
@@ -42,12 +42,9 @@ gukitso/
 ## 주요 기능
 
 ### Flutter 앱 (사용자)
-- ✅ **1:1 채팅** - 난임 전문가와 실시간 상담 (구독 필요)
-- ✅ **인앱결제 (IAP)** - iOS App Store / Android Google Play
-  - 월간 이용권 (1개월), 6개월 이용권, 12개월 이용권
-  - 구독 기간 누적 (잔여 기간 + 새 기간)
-- ✅ **난임뉴스** - 목록 무료 공개, 개별 글 구독 필요
-- ✅ **난임백과** - 목록 무료 공개, 개별 글 구독 필요
+- ✅ **1:1 채팅** - 로그인 사용자와 난임 전문가 간 실시간 상담
+- ✅ **난임뉴스** - 목록 및 상세 글 공개
+- ✅ **난임백과** - 목록 및 상세 글 공개
 - ✅ **공지사항** - 전체 공개
 - ✅ **게스트 모드** - 로그인 없이 일부 기능 이용
 - ✅ **이미지 첨부** - 채팅 내 이미지/파일 전송
@@ -57,33 +54,19 @@ gukitso/
 - ✅ 뉴스/백과/공지 콘텐츠 관리
 
 ### 관리자 웹
-- ✅ 구독자 관리 (사용자별 그룹화, 히스토리 조회)
-- ✅ 구독 부여/연장/만료 처리
-- ✅ 미구독 사용자 목록 및 구독 부여
+- ✅ 사용자 관리 (가입 사용자 목록 조회)
 - ✅ 뉴스 / 백과 / 공지 / 영상 콘텐츠 관리
 - ✅ 실시간 채팅
 
-## 인앱결제 상품 ID
+## 접근 정책
 
-| 플랜 | iOS (App Store) | Android (Google Play) |
-|------|----------------|----------------------|
-| 월간 | `net.agisungong.nanimtalktalk.monthly` | `subscription_monthly` |
-| 6개월 | `net.agisungong.nanimtalktalk.6months` | `subscription_6months` |
-| 12개월 | `net.agisungong.nanimtalktalk.12months` | `subscription_12months` |
-
-- iOS: 소모품(Consumable) 타입
-- Android: 일회성 제품(One-time product) 타입
-
-## 구독 접근 제어
-
-| 기능 | 비구독 | 구독 |
-|------|-------|------|
-| 채팅 | 메시지 전송 불가 | ✅ |
-| 뉴스 목록 | ✅ | ✅ |
-| 뉴스 상세 | 구독 유도 | ✅ |
-| 백과 목록 | ✅ | ✅ |
-| 백과 상세 | 구독 유도 | ✅ |
+| 기능 | 비로그인 | 로그인 |
+|------|----------|--------|
+| 채팅 | 로그인 필요 | ✅ |
+| 뉴스 목록/상세 | ✅ | ✅ |
+| 백과 목록/상세 | ✅ | ✅ |
 | 공지사항 | ✅ | ✅ |
+| 영상 | ✅ | ✅ |
 
 ## 데이터베이스 구조
 
@@ -95,23 +78,7 @@ users/
     - role: "user" | "admin"
     - name: string
     - email: string
-    - subscriptionId: string
-    - subscriptionStatus: "free" | "active" | "expired" | "cancelled"
-    - subscriptionEndDate: Timestamp
     - createdAt: Timestamp
-
-subscriptions/
-  {subscriptionId}
-    - userId: string
-    - planId: "plan_monthly" | "plan_6months" | "plan_12months" | "admin_grant"
-    - status: "active" | "expired" | "cancelled"
-    - platform: "ios" | "android" | "admin"
-    - platformProductId: string
-    - transactionId: string
-    - startDate: Timestamp
-    - endDate: Timestamp
-    - createdAt: Timestamp
-    - updatedAt: Timestamp
 
 conversations/
   user_{userId}
@@ -178,7 +145,6 @@ npm start
 ### Flutter 앱
 - Flutter 3.0+
 - Firebase (Core, Auth, Firestore, Storage)
-- in_app_purchase (iOS/Android IAP)
 - Provider (상태관리)
 - flutter_html, cached_network_image
 

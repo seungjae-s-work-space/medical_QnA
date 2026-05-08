@@ -33,7 +33,8 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
   }
 
   /// 메시지를 날짜별로 그룹화하여 DateDivider와 함께 렌더링
-  List<Widget> _buildMessagesWithDateDividers(List<MessageModel> messages, String currentUserId) {
+  List<Widget> _buildMessagesWithDateDividers(
+      List<MessageModel> messages, String currentUserId) {
     final List<Widget> widgets = [];
     DateTime? lastDate;
 
@@ -85,7 +86,8 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
           // 메시지 목록
           Expanded(
             child: StreamBuilder<List<MessageModel>>(
-              stream: _firestoreService.getMessages(widget.conversation.conversationId),
+              stream: _firestoreService
+                  .getMessages(widget.conversation.conversationId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -99,7 +101,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                         Icon(
                           Icons.chat_bubble_outline,
                           size: 48,
-                          color: AppColors.textSecondary.withOpacity(0.3),
+                          color: AppColors.textSecondary.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 16),
                         const Text(
@@ -133,7 +135,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
           // 답변 입력 영역
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.backgroundAlt,
               border: Border(
                 top: BorderSide(

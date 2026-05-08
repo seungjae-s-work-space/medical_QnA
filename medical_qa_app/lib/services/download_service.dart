@@ -153,9 +153,11 @@ class DownloadService {
       final result = await OpenFilex.open(tempPath);
 
       if (result.type == ResultType.done) {
-        return DownloadResult(success: true, message: '파일 열기 성공', filePath: tempPath);
+        return DownloadResult(
+            success: true, message: '파일 열기 성공', filePath: tempPath);
       } else {
-        return DownloadResult(success: false, message: '파일을 열 수 없습니다: ${result.message}');
+        return DownloadResult(
+            success: false, message: '파일을 열 수 없습니다: ${result.message}');
       }
     } catch (e) {
       debugPrint('파일 열기 오류: $e');
@@ -183,9 +185,8 @@ class DownloadService {
   String _getSafeFileName(String fileName) {
     // 타임스탬프 추가로 중복 방지
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final extension = fileName.contains('.')
-        ? '.${fileName.split('.').last}'
-        : '';
+    final extension =
+        fileName.contains('.') ? '.${fileName.split('.').last}' : '';
     final baseName = fileName.contains('.')
         ? fileName.substring(0, fileName.lastIndexOf('.'))
         : fileName;

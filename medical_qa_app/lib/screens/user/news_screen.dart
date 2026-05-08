@@ -3,7 +3,6 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/news_model.dart';
-import '../../services/app_access_policy.dart';
 import '../../services/news_service.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/protected_content.dart';
@@ -365,13 +364,6 @@ class _NewsScreenState extends State<NewsScreen> {
     setState(() {
       _isOpeningNews = true;
     });
-
-    if (!AppAccessPolicy.canOpen(AppAccessFeature.news)) {
-      setState(() {
-        _isOpeningNews = false;
-      });
-      return;
-    }
 
     Navigator.push(
       context,

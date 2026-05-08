@@ -11,26 +11,25 @@
 
 ```
 medical_qa_app/          # Flutter 클라이언트 앱 (iOS/Android/Windows)
-admin-web/               # React 관리자 웹 (백과/뉴스/구독/영상/공지 관리)
+admin-web/               # React 관리자 웹 (백과/뉴스/사용자/영상/공지 관리)
 functions/               # Firebase Cloud Functions (푸시 알림)
 ```
 
 ## 주요 기능
 
 ### 사용자 앱
-- **상담톡**: 관리자(이승주)와 1:1 실시간 채팅 (이미지/동영상/파일 첨부, 구독자 전용)
-- **난임백과**: 난임 관련 백과사전 (검색, 페이지네이션, 구독자 전용 개별 글)
-- **난임뉴스**: 난임 관련 뉴스 (검색, 페이지네이션, 구독자 전용 개별 글)
+- **상담톡**: 관리자(이승주)와 1:1 실시간 채팅 (이미지/동영상/파일 첨부, 로그인 사용자 전용)
+- **난임백과**: 난임 관련 백과사전 (검색, 페이지네이션, 상세 글 공개)
+- **난임뉴스**: 난임 관련 뉴스 (검색, 페이지네이션, 상세 글 공개)
 - **아기성공TV**: 유튜브 영상 모음 (페이지네이션)
 - **공지사항**: 관리자 공지 (전체 공개)
-- **구독 시스템**: iOS/Android 인앱결제 (1개월/6개월/12개월)
-- **마이페이지**: FAB 버튼으로 접근, 프로필/구독 관리
+- **마이페이지**: FAB 버튼으로 접근, 프로필/알림 관리
 - **강제 업데이트**: Firebase Remote Config 기반 (none/recommend/force 모드)
 
 ### 관리자 웹
 - 상담 대화 관리 (실시간 채팅, 파일 첨부, 드래그 앤 드롭)
 - 난임백과/뉴스/공지/영상 CRUD (작성자: 이승주)
-- 구독 관리 (사용자별 그룹, 이력 조회, 부여/연장/차단)
+- 사용자 관리 (가입 사용자 목록 조회)
 
 ### 관리자 앱 (Flutter)
 - 상담 대화 목록 및 응답
@@ -43,8 +42,8 @@ functions/               # Firebase Cloud Functions (푸시 알림)
 3. **강제 업데이트 체크** → `ForceUpdateService` (Remote Config)
 4. **라우팅 결정** (`AuthWrapper`):
    - 인증 완료 + 관리자 → `AdminConversationsScreen`
-   - 인증 완료 + 일반 유저 → `HomeScreen` + 구독 실시간 리스너 시작
-   - 게스트 모드 → `HomeScreen` (제한된 기능)
+   - 인증 완료 + 일반 유저 → `HomeScreen`
+   - 게스트 모드 → `HomeScreen` (채팅 전송은 로그인 필요)
    - 미인증 → `LoginScreen`
 
 ### 로그인 방식
@@ -52,26 +51,15 @@ functions/               # Firebase Cloud Functions (푸시 알림)
 - 닉네임 로그인 (Firebase 익명 인증 + Firestore 닉네임 저장, 트랜잭션으로 race condition 방지)
 - 게스트 모드 (비로그인 둘러보기, 앱 재시작 시 풀림)
 
-## 구독 (인앱결제)
+## 접근 정책
 
-### 상품 ID
-| 플랜 | iOS | Android |
-|------|-----|---------|
-| 1개월 | `subscription_monthly` | `subscription_monthly` |
-| 6개월 | `subscription_6months` | `subscription_6months` |
-| 12개월 | `subscription_12months` | `subscription_12months` |
-
-### 결제 플로우
-1. `buyConsumable(autoConsume: false)` 로 구매 시작
-2. 구매 성공 → `saveSubscription()`으로 Firestore 저장
-3. 중복 구매 방지: `transactionId`로 기존 구매 확인
-4. 기간 누적: 기존 구독 만료일 이후로 추가
-5. 저장 완료 후 `completePurchase()` 호출
-
-### 구독 상태 관리
-- **실시간 리스너**: `SubscriptionProvider`가 Firestore `subscriptions` 컬렉션을 실시간 감시
-- **관리자 부여/연장**: 관리자 웹에서 조작 시 `users` 문서도 동기화 업데이트
-- **접근 제어**: 채팅은 구독자만, 백과/뉴스는 목록 공개 + 개별 글 구독자 전용
+| 기능 | 비로그인 | 로그인 |
+|------|----------|--------|
+| 상담톡 | 로그인 필요 | 메시지 전송 가능 |
+| 난임백과 | 목록/상세 열람 가능 | 목록/상세 열람 가능 |
+| 난임뉴스 | 목록/상세 열람 가능 | 목록/상세 열람 가능 |
+| 공지사항 | 열람 가능 | 열람 가능 |
+| 아기성공TV | 열람 가능 | 열람 가능 |
 
 ## 강제 업데이트 (Remote Config)
 
@@ -92,7 +80,6 @@ Firebase Remote Config 파라미터:
 - `users`: 본인만 생성/수정, 관리자 전체 접근
 - `conversations`: 본인 대화만 생성, 관리자 전체 접근
 - `messages`: 본인 대화의 메시지만 생성/수정, 소유자 검증
-- `subscriptions`: 본인 구독만 생성(관리자도 생성 가능), 관리자만 수정/삭제
 - `encyclopedia/news/notices/videos`: 공개 글 읽기 허용, 생성/수정/삭제 관리자만
 
 ### Storage Rules
@@ -107,7 +94,6 @@ Firebase Remote Config 파라미터:
 |----------|--------|----------|
 | 상담 | `notificationChat` | 채팅 메시지 |
 | 콘텐츠 | `notificationContent` | 뉴스/공지/백과/영상 신규 등록 |
-| 구독 | `notificationSubscription` | 결제 완료, 만료 임박(3일 전), 만료 |
 
 모두 `users` 문서에 저장. 기본값 `true`. 마스터 스위치 `notificationsEnabled`가 false이면 전체 무시.
 
@@ -119,14 +105,10 @@ Firebase Remote Config 파라미터:
 | `sendNoticeNotification` / `sendNoticePublishedNotification` | 공지 생성/공개 전환 | content |
 | `sendEncyclopediaNotification` / `sendEncyclopediaPublishedNotification` | 백과 생성/공개 전환 | content |
 | `sendVideoNotification` / `sendVideoPublishedNotification` | 영상 생성/공개 전환 | content |
-| `sendSubscriptionPurchasedNotification` | subscriptions 문서 생성 | subscription |
-| `checkSubscriptionExpiringSoon` | 매일 09:00 (KST), 3일 전 | subscription |
-| `checkSubscriptionExpired` | 매일 09:10 (KST), 자동 만료 처리 | subscription |
 
 ### Android 알림 채널
 - `chat_messages` — 상담
 - `content` — 뉴스/공지/백과/영상
-- `subscription` — 구독
 
 ## 모니터링 & 분석
 
@@ -139,7 +121,6 @@ Firebase Remote Config 파라미터:
 - **Frontend**: Flutter 3.x, Provider (상태관리)
 - **Backend**: Firebase (Auth, Firestore, Storage, Cloud Functions, Messaging, Remote Config)
 - **Admin**: React, Material-UI
-- **IAP**: `in_app_purchase` 패키지
 - **이미지 캐싱**: `cached_network_image`
 - **데스크톱**: Windows 지원 (window_manager, tray_manager, local_notifier)
 

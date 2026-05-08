@@ -85,5 +85,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'medicalqa-e5313.firebasestorage.app',
     measurementId: 'G-KP79Z8TC6R',
   );
-
 }

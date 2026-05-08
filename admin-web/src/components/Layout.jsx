@@ -22,7 +22,7 @@ import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
 import CampaignRoundedIcon from '@mui/icons-material/CampaignRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
-import CardMembershipRoundedIcon from '@mui/icons-material/CardMembershipRounded';
+import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
 import { colors } from '../theme';
@@ -35,7 +35,7 @@ function Layout({ children }) {
   const { isAdmin, isLoggedIn } = useAuth();
   const [unreadChatCount, setUnreadChatCount] = useState(0);
 
-  // 안 읽은 채팅방 개수 실시간 구독 (관리자만)
+  // 안 읽은 채팅방 개수 실시간 리스너 (관리자만)
   useEffect(() => {
     if (!isAdmin) {
       setUnreadChatCount(0);
@@ -98,10 +98,10 @@ function Layout({ children }) {
         visible: true, // 모든 사용자
       },
       {
-        path: '/subscription',
-        label: '구독 관리',
-        icon: <CardMembershipRoundedIcon />,
-        description: '구독자 현황 관리',
+        path: '/users',
+        label: '사용자 관리',
+        icon: <PeopleAltRoundedIcon />,
+        description: '사용자 목록 조회',
         badge: 0,
         visible: isAdmin, // 관리자만
       },

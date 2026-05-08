@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../../models/encyclopedia_model.dart';
-import '../../services/app_access_policy.dart';
 import '../../services/encyclopedia_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/app_colors.dart';
@@ -383,13 +382,6 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
     setState(() {
       _isOpeningArticle = true;
     });
-
-    if (!AppAccessPolicy.canOpen(AppAccessFeature.encyclopedia)) {
-      setState(() {
-        _isOpeningArticle = false;
-      });
-      return;
-    }
 
     // 게스트 모드가 아닐 때만 조회수 증가
     if (!authProvider.isGuest) {

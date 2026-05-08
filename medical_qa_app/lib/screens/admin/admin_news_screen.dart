@@ -247,118 +247,122 @@ class _AdminNewsCard extends StatelessWidget {
           ),
         ),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // 공개 상태
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: news.isPublished
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // 공개 상태
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: news.isPublished
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    news.isPublished ? '공개' : '비공개',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: news.isPublished ? Colors.green : Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                child: Text(
-                  news.isPublished ? '공개' : '비공개',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: news.isPublished ? Colors.green : Colors.orange,
-                    fontWeight: FontWeight.w500,
-                  ),
+                const Spacer(),
+                // 메뉴 버튼
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert,
+                      color: AppColors.textSecondary),
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'edit':
+                        onEdit();
+                        break;
+                      case 'toggle':
+                        onTogglePublish();
+                        break;
+                      case 'delete':
+                        onDelete();
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 18),
+                          SizedBox(width: 8),
+                          Text('수정'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'toggle',
+                      child: Row(
+                        children: [
+                          Icon(
+                            news.isPublished
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(news.isPublished ? '비공개로 전환' : '공개로 전환'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 18, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('삭제', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // 제목
+            Text(
+              news.title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
-              const Spacer(),
-              // 메뉴 버튼
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-                onSelected: (value) {
-                  switch (value) {
-                    case 'edit':
-                      onEdit();
-                      break;
-                    case 'toggle':
-                      onTogglePublish();
-                      break;
-                    case 'delete':
-                      onDelete();
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 18),
-                        SizedBox(width: 8),
-                        Text('수정'),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'toggle',
-                    child: Row(
-                      children: [
-                        Icon(
-                          news.isPublished ? Icons.visibility_off : Icons.visibility,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(news.isPublished ? '비공개로 전환' : '공개로 전환'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 18, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('삭제', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            // 내용 미리보기
+            Text(
+              _stripHtml(news.content),
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppColors.textSecondary,
+                height: 1.4,
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // 제목
-          Text(
-            news.title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          // 내용 미리보기
-          Text(
-            _stripHtml(news.content),
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-              height: 1.4,
+            const SizedBox(height: 12),
+            // 메타 정보
+            Text(
+              DateFormat('yyyy.MM.dd HH:mm').format(news.createdAt),
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textTertiary,
+              ),
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 12),
-          // 메타 정보
-          Text(
-            DateFormat('yyyy.MM.dd HH:mm').format(news.createdAt),
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textTertiary,
-            ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -607,10 +611,8 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
 
     try {
       final fileName = '${const Uuid().v4()}.jpg';
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('news_images')
-          .child(fileName);
+      final ref =
+          FirebaseStorage.instance.ref().child('news_images').child(fileName);
 
       await ref.putFile(_selectedImage!);
       final downloadUrl = await ref.getDownloadURL();
@@ -801,7 +803,8 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
             child: Text(
               _isEditing ? '수정' : '등록',
               style: TextStyle(
-                color: _isLoading ? AppColors.textTertiary : AppColors.accentDeep,
+                color:
+                    _isLoading ? AppColors.textTertiary : AppColors.accentDeep,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -850,15 +853,18 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
                       fillColor: AppColors.inputBackground,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.inputBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.inputBorder),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.inputBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.inputBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.accentDeep),
+                        borderSide:
+                            const BorderSide(color: AppColors.accentDeep),
                       ),
                     ),
                     validator: (value) {
@@ -890,15 +896,18 @@ class _NewsEditScreenState extends State<NewsEditScreen> {
                       fillColor: AppColors.inputBackground,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.inputBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.inputBorder),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.inputBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.inputBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.accentDeep),
+                        borderSide:
+                            const BorderSide(color: AppColors.accentDeep),
                       ),
                     ),
                     validator: (value) {

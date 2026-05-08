@@ -134,7 +134,7 @@ class AuthProvider with ChangeNotifier {
     _authSubscription = _authService.authUserIdChanges.listen(
       _handleAuthUserIdChanged,
       onError: (Object error, StackTrace stackTrace) {
-        debugPrint('인증 상태 구독 오류: $error');
+        debugPrint('인증 상태 리스너 오류: $error');
         if (_isDisposed) return;
         _currentUser = null;
         _requiresEmailVerification = false;

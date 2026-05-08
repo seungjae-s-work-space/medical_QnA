@@ -10,7 +10,7 @@ import EncyclopediaManager from './components/EncyclopediaManager';
 import NewsManager from './components/NewsManager';
 import NoticeManager from './components/NoticeManager';
 import VideoManager from './components/VideoManager';
-import SubscriptionManager from './components/SubscriptionManager';
+import UserManagement from './components/UserManagement';
 import { CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colors } from './theme';
@@ -102,9 +102,9 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
       description: '난임과 임신 준비에 도움이 되는 영상 콘텐츠를 볼 수 있습니다.',
       shouldIndex: true,
     },
-    '/subscription': {
-      title: `구독 관리 | ${SITE_NAME}`,
-      description: '관리자가 구독자 현황과 결제 상태를 관리하는 화면입니다.',
+    '/users': {
+      title: `사용자 관리 | ${SITE_NAME}`,
+      description: '관리자가 가입 사용자 목록을 조회하는 화면입니다.',
       shouldIndex: false,
     },
   };
@@ -232,13 +232,13 @@ function AppRoutes() {
           }
         />
 
-        {/* 구독 관리 (관리자 전용) */}
+        {/* 사용자 관리 (관리자 전용) */}
         <Route
-          path="/subscription"
+          path="/users"
           element={
             isAdmin ? (
               <Layout>
-                <SubscriptionManager />
+                <UserManagement />
               </Layout>
             ) : (
               <Navigate to="/" />

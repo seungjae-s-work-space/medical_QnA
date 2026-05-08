@@ -12,9 +12,7 @@ class NewsService {
         .where('isPublished', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .get();
-    return snapshot.docs
-        .map((doc) => NewsModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => NewsModel.fromFirestore(doc)).toList();
   }
 
   // 뉴스 목록 조회 (관리자용 - 모든 글, 일회성)
@@ -23,9 +21,7 @@ class NewsService {
         .collection(_collection)
         .orderBy('createdAt', descending: true)
         .get();
-    return snapshot.docs
-        .map((doc) => NewsModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => NewsModel.fromFirestore(doc)).toList();
   }
 
   // 단일 뉴스 조회

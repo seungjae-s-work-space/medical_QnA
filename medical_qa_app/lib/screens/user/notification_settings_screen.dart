@@ -17,7 +17,6 @@ class _NotificationSettingsScreenState
   bool _masterEnabled = true;
   bool _chatEnabled = true;
   bool _contentEnabled = true;
-  bool _subscriptionEnabled = true;
   bool _loading = true;
 
   @override
@@ -33,7 +32,6 @@ class _NotificationSettingsScreenState
       _masterEnabled = settings['notificationsEnabled'] ?? true;
       _chatEnabled = settings['notificationChat'] ?? true;
       _contentEnabled = settings['notificationContent'] ?? true;
-      _subscriptionEnabled = settings['notificationSubscription'] ?? true;
       _loading = false;
     });
   }
@@ -51,9 +49,6 @@ class _NotificationSettingsScreenState
           break;
         case 'notificationContent':
           _contentEnabled = value;
-          break;
-        case 'notificationSubscription':
-          _subscriptionEnabled = value;
           break;
       }
     });
@@ -122,16 +117,6 @@ class _NotificationSettingsScreenState
                           value: _contentEnabled,
                           onChanged: (v) =>
                               _toggleCategory('notificationContent', v),
-                        ),
-                        const Divider(height: 1, indent: 60),
-                        _buildTile(
-                          icon: Icons.card_membership_outlined,
-                          iconColor: const Color(0xFFB8A05B),
-                          title: '구독 알림',
-                          subtitle: '결제 완료, 만료 임박, 만료 알림',
-                          value: _subscriptionEnabled,
-                          onChanged: (v) =>
-                              _toggleCategory('notificationSubscription', v),
                         ),
                       ],
                     ),

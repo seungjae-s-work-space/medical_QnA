@@ -221,7 +221,8 @@ class _PaginationBar extends StatelessWidget {
           // 이전 버튼
           _PageButton(
             icon: Icons.chevron_left,
-            onTap: currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
+            onTap:
+                currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
           ),
           const SizedBox(width: 8),
           // 페이지 번호들
@@ -230,7 +231,9 @@ class _PaginationBar extends StatelessWidget {
           // 다음 버튼
           _PageButton(
             icon: Icons.chevron_right,
-            onTap: currentPage < totalPages - 1 ? () => onPageChanged(currentPage + 1) : null,
+            onTap: currentPage < totalPages - 1
+                ? () => onPageChanged(currentPage + 1)
+                : null,
           ),
         ],
       ),
@@ -258,7 +261,8 @@ class _PaginationBar extends StatelessWidget {
             height: 36,
             margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: i == currentPage ? AppColors.textPrimary : Colors.transparent,
+              color:
+                  i == currentPage ? AppColors.textPrimary : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -266,8 +270,10 @@ class _PaginationBar extends StatelessWidget {
                 '${i + 1}',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: i == currentPage ? FontWeight.w600 : FontWeight.normal,
-                  color: i == currentPage ? Colors.white : AppColors.textSecondary,
+                  fontWeight:
+                      i == currentPage ? FontWeight.w600 : FontWeight.normal,
+                  color:
+                      i == currentPage ? Colors.white : AppColors.textSecondary,
                 ),
               ),
             ),

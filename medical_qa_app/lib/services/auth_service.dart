@@ -504,23 +504,13 @@ class AuthService implements AuthClient {
         batch.delete(doc.reference);
       }
 
-      // 2. 구독 정보 삭제
-      final subscriptionsQuery = await _db
-          .collection('subscriptions')
-          .where('userId', isEqualTo: userId)
-          .get();
-
-      for (final doc in subscriptionsQuery.docs) {
-        batch.delete(doc.reference);
-      }
-
-      // 3. 사용자 문서 삭제
+      // 2. 사용자 문서 삭제
       batch.delete(_db.collection('users').doc(userId));
 
       // 배치 실행
       await batch.commit();
 
-      // 4. 로컬 저장소 초기화
+      // 3. 로컬 저장소 초기화
       await _clearCachedUser();
 
       // 5. Firebase Auth 계정 삭제

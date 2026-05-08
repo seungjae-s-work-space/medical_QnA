@@ -34,7 +34,8 @@ class AdminEncyclopediaScreen extends StatefulWidget {
   const AdminEncyclopediaScreen({super.key});
 
   @override
-  State<AdminEncyclopediaScreen> createState() => _AdminEncyclopediaScreenState();
+  State<AdminEncyclopediaScreen> createState() =>
+      _AdminEncyclopediaScreenState();
 }
 
 class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
@@ -45,62 +46,62 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
     return Stack(
       children: [
         FutureBuilder<List<EncyclopediaModel>>(
-        future: _service.getAllArticles(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          future: _service.getAllArticles(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          final articles = snapshot.data ?? [];
+            final articles = snapshot.data ?? [];
 
-          if (articles.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.article_outlined,
-                    size: 64,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    '등록된 글이 없습니다',
-                    style: TextStyle(
-                      fontSize: 18,
+            if (articles.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.article_outlined,
+                      size: 64,
                       color: AppColors.textSecondary,
                     ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    '+ 버튼을 눌러 새 글을 작성하세요',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textTertiary,
+                    SizedBox(height: 16),
+                    Text(
+                      '등록된 글이 없습니다',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: articles.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final article = articles[index];
-              return _AdminArticleCard(
-                article: article,
-                onTap: () => _viewArticle(article),
-                onEdit: () => _editArticle(article),
-                onDelete: () => _confirmDelete(article),
-                onTogglePublish: () => _togglePublish(article),
+                    SizedBox(height: 8),
+                    Text(
+                      '+ 버튼을 눌러 새 글을 작성하세요',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
               );
-            },
-          );
-        },
-      ),
+            }
+
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: articles.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final article = articles[index];
+                return _AdminArticleCard(
+                  article: article,
+                  onTap: () => _viewArticle(article),
+                  onEdit: () => _editArticle(article),
+                  onDelete: () => _confirmDelete(article),
+                  onTogglePublish: () => _togglePublish(article),
+                );
+              },
+            );
+          },
+        ),
         Positioned(
           right: 16,
           bottom: 16,
@@ -236,146 +237,152 @@ class _AdminArticleCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: article.isPublished ? AppColors.divider : Colors.orange.withValues(alpha: 0.5),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.inputBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: article.isPublished
+                ? AppColors.divider
+                : Colors.orange.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // 공개 상태
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: article.isPublished
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    article.isPublished ? '공개' : '비공개',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: article.isPublished ? Colors.green : Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                // 메뉴 버튼
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert,
+                      color: AppColors.textSecondary),
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'edit':
+                        onEdit();
+                        break;
+                      case 'toggle':
+                        onTogglePublish();
+                        break;
+                      case 'delete':
+                        onDelete();
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 18),
+                          SizedBox(width: 8),
+                          Text('수정'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'toggle',
+                      child: Row(
+                        children: [
+                          Icon(
+                            article.isPublished
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(article.isPublished ? '비공개로 전환' : '공개로 전환'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 18, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('삭제', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // 제목
+            Text(
+              article.title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            // 내용 미리보기
+            Text(
+              _stripHtml(article.content),
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            // 메타 정보
+            Row(
+              children: [
+                Text(
+                  DateFormat('yyyy.MM.dd HH:mm').format(article.createdAt),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.visibility_outlined,
+                  size: 14,
+                  color: AppColors.textTertiary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${article.viewCount}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // 공개 상태
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: article.isPublished
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  article.isPublished ? '공개' : '비공개',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: article.isPublished ? Colors.green : Colors.orange,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              // 메뉴 버튼
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-                onSelected: (value) {
-                  switch (value) {
-                    case 'edit':
-                      onEdit();
-                      break;
-                    case 'toggle':
-                      onTogglePublish();
-                      break;
-                    case 'delete':
-                      onDelete();
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 18),
-                        SizedBox(width: 8),
-                        Text('수정'),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'toggle',
-                    child: Row(
-                      children: [
-                        Icon(
-                          article.isPublished ? Icons.visibility_off : Icons.visibility,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(article.isPublished ? '비공개로 전환' : '공개로 전환'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 18, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('삭제', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // 제목
-          Text(
-            article.title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          // 내용 미리보기
-          Text(
-            _stripHtml(article.content),
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 12),
-          // 메타 정보
-          Row(
-            children: [
-              Text(
-                DateFormat('yyyy.MM.dd HH:mm').format(article.createdAt),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              const Spacer(),
-              Icon(
-                Icons.visibility_outlined,
-                size: 14,
-                color: AppColors.textTertiary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${article.viewCount}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
     );
   }
 }
@@ -394,7 +401,8 @@ String _cleanHtmlContent(String html) {
 
   // 빈 blockquote 제거
   cleaned = cleaned.replaceAllMapped(
-    RegExp(r'<blockquote[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</blockquote>', caseSensitive: false),
+    RegExp(r'<blockquote[^>]*>\s*(<br\s*/?>|\s|&nbsp;)*\s*</blockquote>',
+        caseSensitive: false),
     (match) => '',
   );
 
@@ -459,7 +467,8 @@ class AdminArticleDetailScreen extends StatelessWidget {
                 children: [
                   // 공개 상태
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: article.isPublished
                           ? Colors.green.withValues(alpha: 0.1)
@@ -470,7 +479,8 @@ class AdminArticleDetailScreen extends StatelessWidget {
                       article.isPublished ? '공개' : '비공개',
                       style: TextStyle(
                         fontSize: 14,
-                        color: article.isPublished ? Colors.green : Colors.orange,
+                        color:
+                            article.isPublished ? Colors.green : Colors.orange,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -513,7 +523,7 @@ class AdminArticleDetailScreen extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      Icon(
+                      const Icon(
                         Icons.visibility_outlined,
                         size: 14,
                         color: AppColors.textTertiary,
@@ -592,7 +602,8 @@ class AdminArticleDetailScreen extends StatelessWidget {
                             width: 4,
                           ),
                         ),
-                        padding: HtmlPaddings.symmetric(horizontal: 16, vertical: 8),
+                        padding:
+                            HtmlPaddings.symmetric(horizontal: 16, vertical: 8),
                         margin: Margins.symmetric(vertical: 8),
                       ),
                       "strong": Style(
@@ -907,7 +918,8 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
             child: Text(
               _isEditing ? '수정' : '등록',
               style: TextStyle(
-                color: _isLoading ? AppColors.textTertiary : AppColors.accentDeep,
+                color:
+                    _isLoading ? AppColors.textTertiary : AppColors.accentDeep,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -956,15 +968,18 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
                       fillColor: AppColors.inputBackground,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.inputBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.inputBorder),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.inputBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.inputBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.accentDeep),
+                        borderSide:
+                            const BorderSide(color: AppColors.accentDeep),
                       ),
                     ),
                     validator: (value) {
@@ -996,15 +1011,18 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
                       fillColor: AppColors.inputBackground,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.inputBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.inputBorder),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.inputBorder),
+                        borderSide:
+                            const BorderSide(color: AppColors.inputBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.accentDeep),
+                        borderSide:
+                            const BorderSide(color: AppColors.accentDeep),
                       ),
                     ),
                     validator: (value) {
