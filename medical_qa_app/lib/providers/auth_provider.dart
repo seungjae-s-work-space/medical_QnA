@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
-import '../utils/startup_debug_log.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthClient _authService;
@@ -47,16 +46,7 @@ class AuthProvider with ChangeNotifier {
         _initialRestoreTimeout = initialRestoreTimeout,
         _postStartupRestoreTimeout = postStartupRestoreTimeout,
         _restoreRetryDelay = restoreRetryDelay {
-    _log('ctor', {
-      'initialTimeoutMs': _initialRestoreTimeout.inMilliseconds,
-      'postStartupTimeoutMs': _postStartupRestoreTimeout.inMilliseconds,
-      'retryDelayMs': _restoreRetryDelay.inMilliseconds,
-    });
     _init();
-  }
-
-  void _log(String event, [Map<String, Object?> details = const {}]) {
-    StartupDebugLog.instance.add('AuthProvider.$event', details);
   }
 
   void _updateEmailVerificationRequirement() {
@@ -68,13 +58,11 @@ class AuthProvider with ChangeNotifier {
 
   // 초기화: Firebase의 저장된 세션을 먼저 복구한 뒤 이후 auth stream을 감시한다.
   void _init() {
-    _log('init.start');
     unawaited(_restoreInitialUserThenListen());
   }
 
   Future<void> _restoreInitialUserThenListen() async {
     var needsLateRecovery = false;
-    _log('initialRestore.start');
     try {
       final restoredUser = await _authService.restoreCurrentUser(
         timeout: _initialRestoreTimeout,
@@ -83,21 +71,15 @@ class AuthProvider with ChangeNotifier {
       if (_isDisposed) return;
 
       if (restoredUser != null) {
-        _log('initialRestore.userFound', {
-          'uid': restoredUser.userId,
-          'role': restoredUser.role,
-        });
         _isGuest = false;
         _currentUser = restoredUser;
         _updateEmailVerificationRequirement();
       } else {
-        _log('initialRestore.noUser');
         _currentUser = null;
         _requiresEmailVerification = false;
         needsLateRecovery = true;
       }
     } catch (e) {
-      _log('initialRestore.error', {'error': e});
       debugPrint('초기 인증 상태 복원 오류: $e');
       if (_isDisposed) return;
       _currentUser = null;
@@ -108,11 +90,6 @@ class AuthProvider with ChangeNotifier {
         _isInitialized = true;
         _listenToAuthChanges();
         notifyListeners();
-        _log('initialRestore.initialized', {
-          'hasUser': _currentUser != null,
-          'needsLateRecovery': needsLateRecovery,
-          'isGuest': _isGuest,
-        });
         if (needsLateRecovery) {
           unawaited(_recoverLateStartupUser());
         }
@@ -121,15 +98,8 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> _recoverLateStartupUser() async {
-    if (_isRecoveringAfterStartup || _isDisposed) {
-      _log('lateRecovery.skipped', {
-        'recovering': _isRecoveringAfterStartup,
-        'disposed': _isDisposed,
-      });
-      return;
-    }
+    if (_isRecoveringAfterStartup || _isDisposed) return;
     _isRecoveringAfterStartup = true;
-    _log('lateRecovery.start');
 
     try {
       final restoredUser = await _authService.restoreCurrentUser(
@@ -140,32 +110,20 @@ class AuthProvider with ChangeNotifier {
           restoredUser == null ||
           _currentUser != null ||
           _isGuest) {
-        _log('lateRecovery.notApplied', {
-          'disposed': _isDisposed,
-          'restoredUid': restoredUser?.userId,
-          'hasCurrentUser': _currentUser != null,
-          'isGuest': _isGuest,
-        });
         return;
       }
 
       final currentAuthUserId = _authService.currentUserId;
       if (currentAuthUserId != null &&
           currentAuthUserId != restoredUser.userId) {
-        _log('lateRecovery.uidMismatch', {
-          'currentAuthUid': currentAuthUserId,
-          'restoredUid': restoredUser.userId,
-        });
         return;
       }
 
-      _log('lateRecovery.applied', {'uid': restoredUser.userId});
       _currentUser = restoredUser;
       _requiresEmailVerification = false;
       _updateEmailVerificationRequirement();
       notifyListeners();
     } catch (e) {
-      _log('lateRecovery.error', {'error': e});
       debugPrint('지연 인증 상태 복원 오류: $e');
     } finally {
       _isRecoveringAfterStartup = false;
@@ -173,12 +131,10 @@ class AuthProvider with ChangeNotifier {
   }
 
   void _listenToAuthChanges() {
-    _log('authListener.start');
     unawaited(_authSubscription?.cancel());
     _authSubscription = _authService.authUserIdChanges.listen(
       _handleAuthUserIdChanged,
       onError: (Object error, StackTrace stackTrace) {
-        _log('authListener.error', {'error': error});
         debugPrint('인증 상태 리스너 오류: $error');
         if (_isDisposed) return;
         _currentUser = null;
@@ -190,42 +146,30 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> _handleAuthUserIdChanged(String? userId) async {
-    _log('authEvent', {
-      'eventUid': userId,
-      'currentAuthUid': _authService.currentUserId,
-      'currentUserUid': _currentUser?.userId,
-    });
     try {
       if (userId == null) {
         final currentAuthUserId = _authService.currentUserId;
         if (currentAuthUserId != null && currentAuthUserId.isNotEmpty) {
-          _log('authEvent.nullButCurrentAuthUser', {
-            'currentAuthUid': currentAuthUserId,
-          });
           _isGuest = false;
           await _loadUserData(currentAuthUserId);
           _updateEmailVerificationRequirement();
         } else if (await _recoverTransientNullAuthEvent()) {
           // FirebaseAuth can briefly report null on some Android cold starts.
         } else {
-          _log('authEvent.clearUser');
           _currentUser = null;
           _requiresEmailVerification = false;
         }
       } else {
-        _log('authEvent.userIdReceived', {'uid': userId});
         _isGuest = false;
         await _loadUserData(userId);
         try {
           await _authService.reloadAndCheckEmailVerified();
         } catch (e) {
-          _log('emailVerification.reloadError', {'error': e});
           debugPrint('이메일 인증 상태 새로고침 실패: $e');
         }
         _updateEmailVerificationRequirement();
       }
     } catch (e) {
-      _log('authEvent.error', {'error': e});
       debugPrint('인증 상태 복원 오류: $e');
       _currentUser = null;
       _requiresEmailVerification = false;
@@ -239,27 +183,15 @@ class AuthProvider with ChangeNotifier {
 
   Future<bool> _recoverTransientNullAuthEvent() async {
     if (_currentUser == null || _isGuest || _isSigningOut) {
-      _log('transientNull.skip', {
-        'hasCurrentUser': _currentUser != null,
-        'isGuest': _isGuest,
-        'isSigningOut': _isSigningOut,
-      });
       return false;
     }
 
     try {
-      _log('transientNull.restore.start', {
-        'currentUserUid': _currentUser?.userId,
-      });
       final restoredUser = await _authService.restoreCurrentUser(
         timeout: _initialRestoreTimeout,
         retryDelay: _restoreRetryDelay,
       );
       if (_isDisposed || restoredUser == null) {
-        _log('transientNull.restore.noUser', {
-          'disposed': _isDisposed,
-          'restoredUid': restoredUser?.userId,
-        });
         return false;
       }
 
@@ -267,20 +199,14 @@ class AuthProvider with ChangeNotifier {
       if (currentAuthUserId != null &&
           currentAuthUserId.isNotEmpty &&
           currentAuthUserId != restoredUser.userId) {
-        _log('transientNull.restore.uidMismatch', {
-          'currentAuthUid': currentAuthUserId,
-          'restoredUid': restoredUser.userId,
-        });
         return false;
       }
 
-      _log('transientNull.restore.applied', {'uid': restoredUser.userId});
       _isGuest = false;
       _currentUser = restoredUser;
       _updateEmailVerificationRequirement();
       return true;
     } catch (e) {
-      _log('transientNull.restore.error', {'error': e});
       debugPrint('일시적인 인증 null 이벤트 복구 실패: $e');
       return false;
     }
@@ -288,17 +214,11 @@ class AuthProvider with ChangeNotifier {
 
   // 사용자 데이터 로드
   Future<void> _loadUserData(String userId) async {
-    _log('loadUserData.start', {'uid': userId});
     _currentUser = await _authService.getUserData(userId);
     _currentUser ??= await _authService.restoreCurrentUser(
       timeout: _restoreRetryDelay,
       retryDelay: _restoreRetryDelay,
     );
-    _log('loadUserData.done', {
-      'requestedUid': userId,
-      'loadedUid': _currentUser?.userId,
-      'hasUser': _currentUser != null,
-    });
   }
 
   // 회원가입
@@ -346,12 +266,10 @@ class AuthProvider with ChangeNotifier {
         password: password,
       );
       _updateEmailVerificationRequirement();
-      _log('signIn.success', {'uid': _currentUser?.userId});
       _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
-      _log('signIn.error', {'error': e});
       _errorMessage = _getErrorMessage(e);
       _isLoading = false;
       notifyListeners();
@@ -383,7 +301,6 @@ class AuthProvider with ChangeNotifier {
   // 로그아웃
   Future<void> signOut() async {
     _isSigningOut = true;
-    _log('signOut.start', {'uid': _currentUser?.userId});
     try {
       await NotificationService().removeToken();
       await _authService.signOut();
@@ -392,7 +309,6 @@ class AuthProvider with ChangeNotifier {
       _isGuest = false;
       _requiresEmailVerification = false;
       _isSigningOut = false;
-      _log('signOut.done');
       notifyListeners();
     }
   }

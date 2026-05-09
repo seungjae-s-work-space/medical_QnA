@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
-import '../utils/startup_debug_log.dart';
 import 'auth_session_waiter.dart';
 
 abstract class AuthClient {
@@ -52,10 +51,6 @@ class AuthService implements AuthClient {
   static const String _cachedUserEmailKey = 'cachedUserEmail';
   static const String _cachedUserCreatedAtMillisKey =
       'cachedUserCreatedAtMillis';
-
-  void _log(String event, [Map<String, Object?> details = const {}]) {
-    StartupDebugLog.instance.add('AuthService.$event', details);
-  }
 
   // 현재 사용자 스트림
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -166,43 +161,30 @@ class AuthService implements AuthClient {
     required Duration timeout,
     required Duration retryDelay,
   }) async {
-    _log('waitForFirebaseUser.start', {
-      'timeoutMs': timeout.inMilliseconds,
-      'retryDelayMs': retryDelay.inMilliseconds,
-      'currentUid': currentUser?.uid,
-    });
-    final user = await AuthSessionWaiter<User>(
+    return AuthSessionWaiter<User>(
       currentUser: () => currentUser,
       authStateChanges: authStateChanges,
       onError: (Object error, StackTrace stackTrace) {
-        _log('waitForFirebaseUser.streamError', {'error': error});
         debugPrint('인증 상태 이벤트 대기 오류: $error');
       },
     ).wait(
       timeout: timeout,
       retryDelay: retryDelay,
     );
-    _log('waitForFirebaseUser.done', {'uid': user?.uid});
-    return user;
   }
 
   Future<void> _reloadCurrentUser(User user) async {
     try {
-      _log('reloadCurrentUser.start', {'uid': user.uid});
       await user.reload();
-      _log('reloadCurrentUser.done', {'uid': currentUser?.uid ?? user.uid});
     } catch (e) {
-      _log('reloadCurrentUser.error', {'uid': user.uid, 'error': e});
       debugPrint('저장된 인증 세션 새로고침 실패: $e');
     }
   }
 
   Future<void> _refreshCachedUser(User user) async {
-    _log('refreshCachedUser.start', {'uid': user.uid});
     await _reloadCurrentUser(user);
     final activeUser = currentUser ?? user;
     await getUserData(activeUser.uid);
-    _log('refreshCachedUser.done', {'uid': activeUser.uid});
   }
 
   // 회원가입
@@ -254,7 +236,6 @@ class AuthService implements AuthClient {
     required String password,
   }) async {
     try {
-      _log('signIn.start', {'email': email});
       UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -282,10 +263,8 @@ class AuthService implements AuthClient {
 
       final userModel = UserModel.fromFirestore(doc);
       await _cacheUser(userModel);
-      _log('signIn.done', {'uid': userModel.userId});
       return userModel;
     } catch (e) {
-      _log('signIn.error', {'error': e});
       debugPrint('로그인 오류: $e');
       rethrow;
     }
@@ -294,31 +273,20 @@ class AuthService implements AuthClient {
   // 로그아웃
   @override
   Future<void> signOut() async {
-    _log('signOut.start', {'uid': currentUser?.uid});
     await _auth.signOut();
     await _clearCachedUser();
-    _log('signOut.done');
   }
 
   // 사용자 정보 가져오기
   @override
   Future<UserModel?> getUserData(String userId) async {
     try {
-      _log('getUserData.start', {'uid': userId});
       DocumentSnapshot doc = await _db.collection('users').doc(userId).get();
-      if (!doc.exists) {
-        _log('getUserData.missing', {'uid': userId});
-        return null;
-      }
+      if (!doc.exists) return null;
       final user = UserModel.fromFirestore(doc);
       await _cacheUser(user);
-      _log('getUserData.done', {
-        'uid': user.userId,
-        'role': user.role,
-      });
       return user;
     } catch (e) {
-      _log('getUserData.error', {'uid': userId, 'error': e});
       debugPrint('사용자 정보 가져오기 오류: $e');
       return null;
     }
@@ -474,51 +442,29 @@ class AuthService implements AuthClient {
     required Duration retryDelay,
   }) async {
     try {
-      _log('restoreCurrentUser.start', {
-        'timeoutMs': timeout.inMilliseconds,
-        'retryDelayMs': retryDelay.inMilliseconds,
-        'currentUid': currentUser?.uid,
-      });
       final user = await _waitForFirebaseUser(
         timeout: timeout,
         retryDelay: retryDelay,
       );
-      if (user == null) {
-        _log('restoreCurrentUser.noFirebaseUser');
-        return null;
-      }
+      if (user == null) return null;
 
       final activeUser = currentUser ?? user;
-      _log('restoreCurrentUser.firebaseUser', {'uid': activeUser.uid});
       final cachedUser = await _getCachedUser(activeUser.uid);
       if (cachedUser != null) {
-        _log('restoreCurrentUser.cachedUser', {
-          'uid': cachedUser.userId,
-          'role': cachedUser.role,
-        });
         unawaited(_refreshCachedUser(activeUser));
         return cachedUser;
       }
-      _log('restoreCurrentUser.noCachedUser', {'uid': activeUser.uid});
 
       await _reloadCurrentUser(activeUser);
 
       final refreshedActiveUser = currentUser ?? activeUser;
       final firestoreUser = await getUserData(refreshedActiveUser.uid);
-      if (firestoreUser != null) {
-        _log('restoreCurrentUser.firestoreUser', {
-          'uid': firestoreUser.userId,
-          'role': firestoreUser.role,
-        });
-        return firestoreUser;
-      }
+      if (firestoreUser != null) return firestoreUser;
 
       final fallbackUser = await _buildFallbackUser(refreshedActiveUser);
       await _cacheUser(fallbackUser);
-      _log('restoreCurrentUser.fallbackUser', {'uid': fallbackUser.userId});
       return fallbackUser;
     } catch (e) {
-      _log('restoreCurrentUser.error', {'error': e});
       debugPrint('자동 로그인 사용자 복원 오류: $e');
       return null;
     }

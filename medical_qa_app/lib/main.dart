@@ -15,8 +15,6 @@ import 'services/force_update_service.dart';
 import 'services/app_navigation.dart';
 import 'design/app_theme.dart';
 import 'utils/app_colors.dart';
-import 'utils/startup_debug_log.dart';
-import 'widgets/startup_debug_log_overlay.dart';
 
 // 모바일 전용 import
 import 'package:firebase_messaging/firebase_messaging.dart'
@@ -30,22 +28,15 @@ import 'package:tray_manager/tray_manager.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  StartupDebugLog.instance.add('backgroundMessage', {
-    'messageId': message.messageId,
-  });
   debugPrint('백그라운드 메시지 수신: ${message.messageId}');
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  StartupDebugLog.instance.add('main.ensureInitialized', {
-    'platform': Platform.operatingSystem,
-  });
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  StartupDebugLog.instance.add('main.firebaseInitialized');
 
   // Crashlytics 초기화 (모바일만)
   if (Platform.isAndroid || Platform.isIOS) {
@@ -54,13 +45,11 @@ void main() async {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
-    StartupDebugLog.instance.add('main.crashlyticsConfigured');
   }
 
   // 모바일에서만 FCM 백그라운드 핸들러 등록
   if (Platform.isAndroid || Platform.isIOS) {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    StartupDebugLog.instance.add('main.fcmBackgroundHandlerRegistered');
   }
 
   // Windows 초기화
@@ -83,7 +72,6 @@ void main() async {
     });
   }
 
-  StartupDebugLog.instance.add('main.runApp');
   runApp(const MyApp());
 }
 
@@ -101,9 +89,6 @@ class MyApp extends StatelessWidget {
         navigatorKey: appNavigatorKey,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
-        builder: (context, child) => StartupDebugLogOverlay(
-          child: child ?? const SizedBox.shrink(),
-        ),
         home: const AuthWrapper(),
       ),
     );
@@ -119,16 +104,12 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
   bool _notificationInitialized = false;
-  String? _lastRouteLog;
   final NotificationService _notificationService = NotificationService();
   final ForceUpdateService _forceUpdateService = ForceUpdateService();
 
   @override
   void initState() {
     super.initState();
-    StartupDebugLog.instance.add('AuthWrapper.initState', {
-      'platform': Platform.operatingSystem,
-    });
     if (Platform.isWindows) {
       trayManager.addListener(this);
       _initSystemTray();
@@ -137,12 +118,8 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
   }
 
   Future<void> _checkForUpdate() async {
-    StartupDebugLog.instance.add('ForceUpdate.check.start');
     await _forceUpdateService.loadCurrentVersion();
     await _forceUpdateService.initialize();
-    StartupDebugLog.instance.add('ForceUpdate.check.done', {
-      'needsUpdate': _forceUpdateService.needsUpdate,
-    });
     if (mounted) {
       if (_forceUpdateService.needsUpdate) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -199,27 +176,12 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
     trayManager.popUpContextMenu();
   }
 
-  void _logAfterFrame(String message,
-      [Map<String, Object?> details = const {}]) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      StartupDebugLog.instance.add(message, details);
-    });
-  }
-
-  void _logRoute(String route) {
-    if (_lastRouteLog == route) return;
-    _lastRouteLog = route;
-    _logAfterFrame('AuthWrapper.route.$route');
-  }
-
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
     // 초기화 중 → Splash 화면
     if (!authProvider.isInitialized) {
-      _logRoute('splash');
       return Scaffold(
         backgroundColor: AppColors.backgroundWarm,
         body: Center(
@@ -248,7 +210,6 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
 
     // 로그인도 안 되어 있고, 게스트도 아닌 경우 → 로그인 화면
     if (!authProvider.canAccessHome) {
-      _logRoute('login');
       _notificationInitialized = false;
       _notificationService.stopListening();
       return const LoginScreen();
@@ -256,13 +217,11 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
 
     // 게스트 모드인 경우 → 홈 화면 (알림 초기화 없음)
     if (authProvider.isGuest) {
-      _logRoute('guestHome');
       return const HomeScreen();
     }
 
     // 이메일 인증이 필요한 경우 → 인증 안내 화면
     if (authProvider.requiresEmailVerification) {
-      _logRoute('emailVerification');
       _notificationInitialized = false;
       _notificationService.stopListening();
       return const EmailVerificationScreen();
@@ -272,9 +231,6 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
     // 알림 초기화 (한 번만)
     if (!_notificationInitialized) {
       _notificationInitialized = true;
-      _logAfterFrame('Notification.initialize.start', {
-        'isAdmin': authProvider.isAdmin,
-      });
       _notificationService.initialize();
 
       // Windows 관리자: Firestore 리스너 시작
@@ -285,10 +241,8 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
 
     // 관리자는 관리자 화면, 일반 사용자는 홈 화면
     if (authProvider.isAdmin) {
-      _logRoute('admin');
       return const AdminConversationsScreen();
     } else {
-      _logRoute('home');
       return const HomeScreen();
     }
   }
