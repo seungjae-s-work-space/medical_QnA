@@ -140,6 +140,36 @@ void main() {
     expect(authProvider.canAccessHome, isTrue);
   });
 
+  test('recovers the current user when a transient null auth event arrives',
+      () async {
+    final user = UserModel(
+      userId: 'user-1',
+      role: 'user',
+      name: '테스트 사용자',
+      email: '',
+      createdAt: DateTime(2026),
+    );
+    final authClient = _FakeAuthClient(
+      restoreResults: [
+        user,
+        user,
+      ],
+    );
+    final authProvider = AuthProvider(authClient: authClient);
+
+    await _flushMicrotasks();
+    expect(authProvider.currentUser?.userId, 'user-1');
+
+    authClient.currentAuthUserId = null;
+    authClient.emitAuthUserId(null);
+    await _flushMicrotasks();
+
+    expect(authClient.restoreCalls, 2);
+    expect(authProvider.isInitialized, isTrue);
+    expect(authProvider.currentUser?.userId, 'user-1');
+    expect(authProvider.canAccessHome, isTrue);
+  });
+
   test('clears the current user after a post-startup sign out event', () async {
     final user = UserModel(
       userId: 'user-1',
@@ -148,7 +178,12 @@ void main() {
       email: '',
       createdAt: DateTime(2026),
     );
-    final authClient = _FakeAuthClient(restoredUser: user);
+    final authClient = _FakeAuthClient(
+      restoreResults: [
+        user,
+        null,
+      ],
+    );
     final authProvider = AuthProvider(authClient: authClient);
 
     await _flushMicrotasks();

@@ -1,17 +1,36 @@
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
+const { getStorage } = require("firebase-admin/storage");
 const {
   buildRecipientTokenEntries,
   dedupeTokenEntries,
   isInvalidRegistrationTokenError,
 } = require("./notificationRecipients");
+const {
+  cleanupExpiredChatAttachmentObjects,
+} = require("./chatAttachmentRetention");
 
 initializeApp();
 
 const db = getFirestore();
 const messaging = getMessaging();
+const storage = getStorage();
+
+exports.cleanupExpiredChatAttachments = onSchedule(
+  {
+    schedule: "every day 03:30",
+    timeZone: "Asia/Seoul",
+  },
+  async () => {
+    const result = await cleanupExpiredChatAttachmentObjects({
+      bucket: storage.bucket(),
+    });
+    console.log("Expired chat attachment cleanup completed", result);
+  },
+);
 
 /**
  * 알림 카테고리

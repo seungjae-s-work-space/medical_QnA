@@ -13,6 +13,7 @@ class AuthProvider with ChangeNotifier {
   StreamSubscription<String?>? _authSubscription;
   bool _isDisposed = false;
   bool _isRecoveringAfterStartup = false;
+  bool _isSigningOut = false;
 
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -152,6 +153,8 @@ class AuthProvider with ChangeNotifier {
           _isGuest = false;
           await _loadUserData(currentAuthUserId);
           _updateEmailVerificationRequirement();
+        } else if (await _recoverTransientNullAuthEvent()) {
+          // FirebaseAuth can briefly report null on some Android cold starts.
         } else {
           _currentUser = null;
           _requiresEmailVerification = false;
@@ -175,6 +178,37 @@ class AuthProvider with ChangeNotifier {
         _isInitialized = true;
         notifyListeners();
       }
+    }
+  }
+
+  Future<bool> _recoverTransientNullAuthEvent() async {
+    if (_currentUser == null || _isGuest || _isSigningOut) {
+      return false;
+    }
+
+    try {
+      final restoredUser = await _authService.restoreCurrentUser(
+        timeout: _initialRestoreTimeout,
+        retryDelay: _restoreRetryDelay,
+      );
+      if (_isDisposed || restoredUser == null) {
+        return false;
+      }
+
+      final currentAuthUserId = _authService.currentUserId;
+      if (currentAuthUserId != null &&
+          currentAuthUserId.isNotEmpty &&
+          currentAuthUserId != restoredUser.userId) {
+        return false;
+      }
+
+      _isGuest = false;
+      _currentUser = restoredUser;
+      _updateEmailVerificationRequirement();
+      return true;
+    } catch (e) {
+      debugPrint('일시적인 인증 null 이벤트 복구 실패: $e');
+      return false;
     }
   }
 
@@ -266,12 +300,17 @@ class AuthProvider with ChangeNotifier {
 
   // 로그아웃
   Future<void> signOut() async {
-    await NotificationService().removeToken();
-    await _authService.signOut();
-    _currentUser = null;
-    _isGuest = false;
-    _requiresEmailVerification = false;
-    notifyListeners();
+    _isSigningOut = true;
+    try {
+      await NotificationService().removeToken();
+      await _authService.signOut();
+    } finally {
+      _currentUser = null;
+      _isGuest = false;
+      _requiresEmailVerification = false;
+      _isSigningOut = false;
+      notifyListeners();
+    }
   }
 
   // 게스트 모드로 진입

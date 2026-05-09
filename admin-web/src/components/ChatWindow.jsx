@@ -38,7 +38,9 @@ import SlideshowIcon from '@mui/icons-material/Slideshow';
 import FolderZipIcon from '@mui/icons-material/FolderZip';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { colors } from '../theme';
+import { isChatAttachmentExpired } from '../utils/chatAttachmentRetention';
 
 function ChatWindow() {
   const { conversationId } = useParams();
@@ -477,8 +479,31 @@ function ChatWindow() {
     );
   };
 
-  const renderAttachments = (attachments, isAdmin) => {
+  const renderExpiredAttachmentNotice = (isAdmin) => (
+    <Box
+      sx={{
+        mt: 1,
+        p: 1.5,
+        bgcolor: isAdmin ? 'rgba(255,255,255,0.1)' : colors.divider,
+        borderRadius: 2,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+      }}
+    >
+      <AccessTimeIcon sx={{ fontSize: 18, color: colors.textTertiary }} />
+      <Typography sx={{ fontSize: 13, color: colors.textTertiary }}>
+        첨부파일 보관 기간이 만료되었습니다
+      </Typography>
+    </Box>
+  );
+
+  const renderAttachments = (message, isAdmin) => {
+    const attachments = message?.attachments;
     if (!attachments || attachments.length === 0) return null;
+    if (isChatAttachmentExpired(message.createdAt)) {
+      return renderExpiredAttachmentNotice(isAdmin);
+    }
 
     // 이미지와 다른 파일 분리
     const images = attachments.filter(att => att.type === 'image');
@@ -764,23 +789,27 @@ function ChatWindow() {
                       </Typography>
                     )}
                     {/* 첨부파일 표시 */}
-                    {renderAttachments(msg.attachments, isAdmin)}
+                    {renderAttachments(msg, isAdmin)}
                     {/* 하위호환: imageUrl */}
                     {msg.imageUrl && !msg.attachments?.length && (
-                      <Box
-                        sx={{ mt: msg.text ? 1 : 0, cursor: 'pointer' }}
-                        onClick={() => setPreviewImage(msg.imageUrl)}
-                      >
-                        <img
-                          src={msg.imageUrl}
-                          alt="첨부 이미지"
-                          style={{
-                            maxWidth: '100%',
-                            maxHeight: 200,
-                            borderRadius: 8,
-                          }}
-                        />
-                      </Box>
+                      isChatAttachmentExpired(msg.createdAt)
+                        ? renderExpiredAttachmentNotice(isAdmin)
+                        : (
+                          <Box
+                            sx={{ mt: msg.text ? 1 : 0, cursor: 'pointer' }}
+                            onClick={() => setPreviewImage(msg.imageUrl)}
+                          >
+                            <img
+                              src={msg.imageUrl}
+                              alt="첨부 이미지"
+                              style={{
+                                maxWidth: '100%',
+                                maxHeight: 200,
+                                borderRadius: 8,
+                              }}
+                            />
+                          </Box>
+                        )
                     )}
                     <Typography
                       sx={{

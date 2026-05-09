@@ -6,6 +6,7 @@ import '../design/app_spacing.dart';
 import '../models/message_model.dart';
 import '../services/download_service.dart';
 import '../utils/app_colors.dart';
+import '../utils/chat_attachment_retention.dart';
 
 /// 메시지 버블 - 모던하고 깔끔한 디자인
 class MessageRecord extends StatefulWidget {
@@ -38,6 +39,12 @@ class _MessageRecordState extends State<MessageRecord> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final attachmentsExpired =
+        ChatAttachmentRetention.isExpired(widget.message.createdAt);
+    final hasStructuredAttachments = widget.message.attachments.isNotEmpty;
+    final hasLegacyImage =
+        widget.message.imageUrl != null && widget.message.attachments.isEmpty;
+    final hasChatAttachment = hasStructuredAttachments || hasLegacyImage;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -114,46 +121,15 @@ class _MessageRecordState extends State<MessageRecord> {
                       ),
 
                     // 첨부파일들
-                    if (widget.message.hasAttachments) ...[
+                    if (hasChatAttachment) ...[
                       if (widget.message.text.isNotEmpty)
                         const SizedBox(height: 10),
-                      _buildAttachments(context),
-                    ],
-
-                    // 이미지가 있으면 (하위 호환성)
-                    if (widget.message.imageUrl != null &&
-                        widget.message.attachments.isEmpty) ...[
-                      if (widget.message.text.isNotEmpty)
-                        const SizedBox(height: 10),
-                      GestureDetector(
-                        onTap: () => _showFullScreenImage(
-                            context, widget.message.imageUrl!, null),
-                        onLongPress: () => _showImageOptions(
-                            context, widget.message.imageUrl!, null),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: CachedNetworkImage(
-                            imageUrl: widget.message.imageUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              height: 150,
-                              color: AppColors.surfaceRaised,
-                              child: const Center(
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              height: 100,
-                              color: AppColors.surfaceRaised,
-                              child: const Icon(
-                                Icons.error,
-                                color: AppColors.textTertiary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      if (attachmentsExpired)
+                        _buildExpiredAttachmentNotice()
+                      else if (hasStructuredAttachments)
+                        _buildAttachments(context)
+                      else
+                        _buildLegacyImage(context),
                     ],
 
                     // 시간
@@ -172,6 +148,73 @@ class _MessageRecordState extends State<MessageRecord> {
                     ),
                   ],
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegacyImage(BuildContext context) {
+    return GestureDetector(
+      onTap: () =>
+          _showFullScreenImage(context, widget.message.imageUrl!, null),
+      onLongPress: () =>
+          _showImageOptions(context, widget.message.imageUrl!, null),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSpacing.xs),
+        child: CachedNetworkImage(
+          imageUrl: widget.message.imageUrl!,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            height: 150,
+            color: AppColors.surfaceRaised,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            height: 100,
+            color: AppColors.surfaceRaised,
+            child: const Icon(
+              Icons.error,
+              color: AppColors.textTertiary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpiredAttachmentNotice() {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: widget.isUser
+            ? Colors.white.withValues(alpha: 0.15)
+            : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.xs),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.schedule_rounded,
+            size: 20,
+            color: widget.isUser
+                ? Colors.white.withValues(alpha: 0.8)
+                : AppColors.textSecondary,
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Flexible(
+            child: Text(
+              '첨부파일 보관 기간이 만료되었습니다',
+              style: TextStyle(
+                fontSize: 13,
+                color: widget.isUser
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : AppColors.textSecondary,
               ),
             ),
           ),
