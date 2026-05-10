@@ -26,6 +26,8 @@ import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
 import { colors } from '../theme';
+import MembershipRequiredDialog from './MembershipRequiredDialog';
+import { shouldShowMembershipPrompt } from '../utils/membershipAccess';
 
 const DRAWER_WIDTH = 280;
 
@@ -34,6 +36,15 @@ function Layout({ children }) {
   const location = useLocation();
   const { isAdmin, isLoggedIn } = useAuth();
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [membershipPromptOpen, setMembershipPromptOpen] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowMembershipPrompt(location.pathname, isLoggedIn)) {
+      setMembershipPromptOpen(true);
+    } else {
+      setMembershipPromptOpen(false);
+    }
+  }, [location.pathname, isLoggedIn]);
 
   // 안 읽은 채팅방 개수 실시간 리스너 (관리자만)
   useEffect(() => {
@@ -119,6 +130,25 @@ function Layout({ children }) {
 
   const handleLogin = () => {
     navigate('/login');
+  };
+
+  const handleMembershipLogin = () => {
+    setMembershipPromptOpen(false);
+    navigate('/login');
+  };
+
+  const handleMenuNavigation = (path) => {
+    if (shouldShowMembershipPrompt(path, isLoggedIn)) {
+      const normalizedCurrentPath =
+        location.pathname.replace(/\/+$/, '') || '/';
+      if (normalizedCurrentPath === path) {
+        setMembershipPromptOpen(true);
+      }
+      navigate(path);
+      return;
+    }
+
+    navigate(path);
   };
 
   // 타이틀 결정
@@ -214,7 +244,7 @@ function Layout({ children }) {
             return (
               <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
-                  onClick={() => navigate(item.path)}
+                  onClick={() => handleMenuNavigation(item.path)}
                   sx={{
                     borderRadius: 2.5,
                     py: 1.5,
@@ -346,6 +376,11 @@ function Layout({ children }) {
       >
         {children}
       </Box>
+      <MembershipRequiredDialog
+        open={membershipPromptOpen}
+        onContinue={() => setMembershipPromptOpen(false)}
+        onLogin={handleMembershipLogin}
+      />
     </Box>
   );
 }

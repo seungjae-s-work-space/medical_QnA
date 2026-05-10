@@ -7,6 +7,7 @@ import '../../services/notification_service.dart';
 import '../../services/notice_service.dart';
 import '../../models/notice_model.dart';
 import '../../utils/app_colors.dart';
+import '../../widgets/membership_required_dialog.dart';
 import 'chat_screen.dart';
 import 'encyclopedia_screen.dart';
 import 'news_screen.dart';
@@ -94,6 +95,33 @@ class _HomeScreenState extends State<HomeScreen> {
       return true; // 게스트임
     }
     return false; // 게스트 아님
+  }
+
+  void _showMembershipRequiredDialog(VoidCallback onContinue) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => MembershipRequiredDialog(
+        onContinuePressed: () {
+          Navigator.pop(dialogContext);
+          onContinue();
+        },
+        onLoginPressed: () {
+          Navigator.pop(dialogContext);
+          authProvider.exitGuestMode();
+        },
+      ),
+    );
+  }
+
+  bool _checkGuestAndShowMembershipPrompt(VoidCallback onContinue) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isGuest) {
+      _showMembershipRequiredDialog(onContinue);
+      return true;
+    }
+    return false;
   }
 
   // 추천 전문의 리스트
@@ -406,10 +434,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openNewsScreen() {
+    if (_checkGuestAndShowMembershipPrompt(_openNewsScreenContent)) return;
+    _openNewsScreenContent();
+  }
+
+  void _openNewsScreenContent() {
     _pushFeaturePage(
       title: '난임뉴스',
       child: const NewsScreen(),
     );
+  }
+
+  void _openEncyclopediaScreen() {
+    if (_checkGuestAndShowMembershipPrompt(_openEncyclopediaContent)) return;
+    _openEncyclopediaContent();
+  }
+
+  void _openEncyclopediaContent() {
+    setState(() => _currentIndex = 1);
   }
 
   void _openVideoScreen() {
@@ -440,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       surfaceTint: const Color(0xFFFADC4A),
                       imageAsset: 'assets/grid/encyclopedia.png',
                       imageAlignment: Alignment.centerRight,
-                      onTap: () => setState(() => _currentIndex = 1),
+                      onTap: _openEncyclopediaScreen,
                     ),
                   ),
                 ),

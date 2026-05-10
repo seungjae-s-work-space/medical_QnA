@@ -198,7 +198,7 @@ function AppRoutes() {
           }
         />
 
-        {/* 공개 콘텐츠 - 모든 사용자 접근 가능 (비로그인 포함) */}
+        {/* 공개 콘텐츠 - 모든 사용자 접근 가능 (비로그인은 가입 유도 모달 표시) */}
         <Route
           path="/encyclopedia"
           element={
