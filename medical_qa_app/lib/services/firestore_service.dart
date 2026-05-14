@@ -3,10 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
+import 'paginated_result.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  static const int defaultMessagePageSize = 20;
+  static const int defaultConversationPageSize = 50;
 
   // 대화방 생성 또는 가져오기
   Future<String> getOrCreateConversation(String userId, String userName) async {
@@ -97,16 +100,43 @@ class FirestoreService {
   }
 
   // 메시지 목록 실시간 스트림
-  Stream<List<MessageModel>> getMessages(String conversationId) {
+  Stream<List<MessageModel>> getMessages(
+    String conversationId, {
+    int pageSize = defaultMessagePageSize,
+  }) {
     return _db
         .collection('conversations')
         .doc(conversationId)
         .collection('messages')
         .orderBy('createdAt', descending: true)
+        .limit(pageSize)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => MessageModel.fromFirestore(doc))
             .toList());
+  }
+
+  // 이전 메시지 페이지 가져오기
+  Future<PaginatedResult<MessageModel>> getOlderMessagesPage({
+    required String conversationId,
+    required DateTime startAfter,
+    int pageSize = defaultMessagePageSize,
+  }) async {
+    final snapshot = await _db
+        .collection('conversations')
+        .doc(conversationId)
+        .collection('messages')
+        .orderBy('createdAt', descending: true)
+        .startAfter([Timestamp.fromDate(startAfter)])
+        .limit(pageSize)
+        .get();
+
+    return PaginatedResult(
+      items:
+          snapshot.docs.map((doc) => MessageModel.fromFirestore(doc)).toList(),
+      lastDocument: snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
+      hasMore: snapshot.docs.length == pageSize,
+    );
   }
 
   // 관리자: 모든 대화방 목록 실시간 스트림
@@ -114,6 +144,7 @@ class FirestoreService {
     return _db
         .collection('conversations')
         .orderBy('lastMessageAt', descending: true)
+        .limit(defaultConversationPageSize)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => ConversationModel.fromFirestore(doc))

@@ -174,10 +174,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadLatestNotice() async {
     try {
-      final notices = await _noticeService.getPublishedNotices();
-      if (mounted && notices.isNotEmpty) {
+      final result = await _noticeService.getPublishedNoticesPage(pageSize: 1);
+      if (mounted && result.items.isNotEmpty) {
         setState(() {
-          _latestNotice = notices.first;
+          _latestNotice = result.items.first;
         });
       }
     } catch (e) {

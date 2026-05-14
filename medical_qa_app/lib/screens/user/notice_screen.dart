@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../models/notice_model.dart';
 import '../../services/notice_service.dart';
 import '../../utils/app_colors.dart';
+import '../../widgets/load_more_button.dart';
 import 'package:intl/intl.dart';
 
 class NoticeScreen extends StatefulWidget {
@@ -14,9 +16,13 @@ class NoticeScreen extends StatefulWidget {
 class _NoticeScreenState extends State<NoticeScreen> {
   final NoticeService _service = NoticeService();
   static const int _itemsPerPage = 10;
+  static const int _queryPageSize = _itemsPerPage;
   int _currentPage = 0;
   List<NoticeModel> _noticeList = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = false;
+  DocumentSnapshot? _lastDocument;
 
   @override
   void initState() {
@@ -25,16 +31,48 @@ class _NoticeScreenState extends State<NoticeScreen> {
   }
 
   Future<void> _loadNotices() async {
-    final notices = await _service.getPublishedNotices();
+    final result =
+        await _service.getPublishedNoticesPage(pageSize: _queryPageSize);
     if (mounted) {
       setState(() {
-        _noticeList = notices;
+        _noticeList = result.items;
+        _lastDocument = result.lastDocument;
+        _hasMore = result.hasMore;
         _isLoading = false;
         final totalPages = (_noticeList.length / _itemsPerPage).ceil();
         if (_currentPage >= totalPages && totalPages > 0) {
           _currentPage = totalPages - 1;
         }
       });
+    }
+  }
+
+  Future<void> _loadMoreNotices() async {
+    if (_isLoadingMore || !_hasMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final result = await _service.getPublishedNoticesPage(
+        pageSize: _queryPageSize,
+        startAfter: _lastDocument,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _noticeList = [..._noticeList, ...result.items];
+        _lastDocument = result.lastDocument;
+        _hasMore = result.hasMore;
+        _isLoadingMore = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
     }
   }
 
@@ -96,6 +134,12 @@ class _NoticeScreenState extends State<NoticeScreen> {
             },
           ),
         ),
+        if (_hasMore && _currentPage >= totalPages - 1)
+          LoadMoreButton(
+            isLoading: _isLoadingMore,
+            onPressed: _loadMoreNotices,
+            accentColor: AppColors.accent,
+          ),
         // 페이지네이션 UI
         if (totalPages > 1)
           _PaginationBar(

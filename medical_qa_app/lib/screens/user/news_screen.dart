@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -5,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/news_model.dart';
 import '../../services/news_service.dart';
 import '../../utils/app_colors.dart';
+import '../../widgets/load_more_button.dart';
 import '../../widgets/protected_content.dart';
 import '../../widgets/screenshot_warning_listener.dart';
 import 'package:intl/intl.dart';
@@ -22,9 +24,13 @@ class _NewsScreenState extends State<NewsScreen> {
   final ScrollController _scrollController = ScrollController();
 
   static const int _itemsPerPage = 5;
+  static const int _queryPageSize = _itemsPerPage;
   int _currentPage = 0;
   List<NewsModel> _newsList = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = false;
+  DocumentSnapshot? _lastDocument;
 
   final List<int> _matchedIndices = [];
   int _currentMatchIndex = 0;
@@ -41,16 +47,52 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   Future<void> _loadNews() async {
-    final news = await _service.getPublishedNews();
+    final result =
+        await _service.getPublishedNewsPage(pageSize: _queryPageSize);
     if (mounted) {
       setState(() {
-        _newsList = news;
+        _newsList = result.items;
+        _lastDocument = result.lastDocument;
+        _hasMore = result.hasMore;
         _isLoading = false;
         final totalPages = (_newsList.length / _itemsPerPage).ceil();
         if (_currentPage >= totalPages && totalPages > 0) {
           _currentPage = totalPages - 1;
         }
       });
+    }
+  }
+
+  Future<void> _loadMoreNews() async {
+    if (_isLoadingMore || !_hasMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final result = await _service.getPublishedNewsPage(
+        pageSize: _queryPageSize,
+        startAfter: _lastDocument,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _newsList = [..._newsList, ...result.items];
+        _lastDocument = result.lastDocument;
+        _hasMore = result.hasMore;
+        _isLoadingMore = false;
+      });
+
+      if (_searchQuery.isNotEmpty) {
+        _performSearch(_searchController.text);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
     }
   }
 
@@ -348,6 +390,12 @@ class _NewsScreenState extends State<NewsScreen> {
             },
           ),
         ),
+        if (_hasMore && _currentPage >= totalPages - 1)
+          LoadMoreButton(
+            isLoading: _isLoadingMore,
+            onPressed: _loadMoreNews,
+            accentColor: AppColors.newsTone,
+          ),
         if (totalPages > 1)
           _PaginationBar(
             currentPage: _currentPage,

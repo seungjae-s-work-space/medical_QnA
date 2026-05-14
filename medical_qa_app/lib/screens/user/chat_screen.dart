@@ -23,6 +23,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  static const int _messagePageSize = FirestoreService.defaultMessagePageSize;
   final _messageController = TextEditingController();
   final _firestoreService = FirestoreService();
   final _storageService = StorageService();
@@ -30,12 +31,17 @@ class _ChatScreenState extends State<ChatScreen> {
   final _imagePicker = ImagePicker();
   String? _conversationId;
   bool _isSending = false;
+  bool _isLoadingOlderMessages = false;
+  bool _hasOlderMessages = true;
+  final List<MessageModel> _olderMessages = [];
+  List<MessageModel> _visibleMessages = [];
   final List<_PendingAttachment> _pendingAttachments = [];
 
   @override
   void initState() {
     super.initState();
     _initializeConversation();
+    _scrollController.addListener(_maybeLoadOlderMessages);
   }
 
   Future<void> _initializeConversation() async {
@@ -47,6 +53,65 @@ class _ChatScreenState extends State<ChatScreen> {
             authProvider.currentUser!.name,
           );
       setState(() {});
+    }
+  }
+
+  void _maybeLoadOlderMessages() {
+    if (!_scrollController.hasClients) return;
+
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 120) {
+      _loadOlderMessages();
+    }
+  }
+
+  List<MessageModel> _mergeMessages(
+    List<MessageModel> liveMessages,
+    List<MessageModel> olderMessages,
+  ) {
+    final byId = <String, MessageModel>{};
+
+    for (final message in [...liveMessages, ...olderMessages]) {
+      byId.putIfAbsent(message.messageId, () => message);
+    }
+
+    return byId.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  Future<void> _loadOlderMessages() async {
+    if (_isLoadingOlderMessages ||
+        !_hasOlderMessages ||
+        _conversationId == null ||
+        _visibleMessages.isEmpty) {
+      return;
+    }
+
+    final oldestMessage = _visibleMessages.last;
+    setState(() => _isLoadingOlderMessages = true);
+
+    try {
+      final result = await _firestoreService.getOlderMessagesPage(
+        conversationId: _conversationId!,
+        startAfter: oldestMessage.createdAt,
+        pageSize: _messagePageSize,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        final existingIds = _olderMessages.map((m) => m.messageId).toSet();
+        _olderMessages.addAll(
+          result.items
+              .where((message) => !existingIds.contains(message.messageId)),
+        );
+        _hasOlderMessages = result.hasMore;
+        _isLoadingOlderMessages = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingOlderMessages = false);
+      }
     }
   }
 
@@ -586,11 +651,26 @@ class _ChatScreenState extends State<ChatScreen> {
                   );
                 }
 
-                final messages = snapshot.data!;
+                final messages = _mergeMessages(snapshot.data!, _olderMessages);
+                _visibleMessages = messages;
                 final widgets = _buildMessagesWithDateDividers(
                   messages,
                   authProvider.currentUser!.userId,
                 );
+                if (_isLoadingOlderMessages) {
+                  widgets.add(
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      child: Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
+                  );
+                }
 
                 return ListView.builder(
                   controller: _scrollController,
@@ -711,6 +791,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_maybeLoadOlderMessages);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();

@@ -35,6 +35,8 @@ import {
   query,
   orderBy,
   where,
+  limit,
+  startAfter,
   onSnapshot,
   getDocs,
   addDoc,
@@ -47,6 +49,7 @@ import { db, auth } from '../firebase';
 import { colors } from '../theme';
 
 const ITEMS_PER_PAGE = 10;
+const QUERY_PAGE_SIZE = ITEMS_PER_PAGE;
 
 function NoticeManager({ readOnly = false }) {
   const [notices, setNotices] = useState([]);
@@ -58,23 +61,35 @@ function NoticeManager({ readOnly = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewNotice, setViewNotice] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Form state
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPublished, setIsPublished] = useState(true);
 
+  const buildNoticesQuery = (cursor = null) => {
+    const constraints = readOnly
+      ? [where('isPublished', '==', true), orderBy('createdAt', 'desc')]
+      : [orderBy('createdAt', 'desc')];
+
+    if (cursor) {
+      constraints.push(startAfter(cursor));
+    }
+    constraints.push(limit(QUERY_PAGE_SIZE));
+
+    return query(collection(db, 'notices'), ...constraints);
+  };
+
+  const updatePaginationCursor = (snapshot) => {
+    setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
+    setHasMore(snapshot.docs.length === QUERY_PAGE_SIZE);
+  };
+
   const loadNotices = async () => {
-    const q = readOnly
-      ? query(
-          collection(db, 'notices'),
-          where('isPublished', '==', true),
-          orderBy('createdAt', 'desc')
-        )
-      : query(
-          collection(db, 'notices'),
-          orderBy('createdAt', 'desc')
-        );
+    const q = buildNoticesQuery();
 
     if (readOnly) {
       const snapshot = await getDocs(q);
@@ -83,6 +98,7 @@ function NoticeManager({ readOnly = false }) {
         ...doc.data(),
       }));
       setNotices(noticeList);
+      updatePaginationCursor(snapshot);
       setLoading(false);
     } else {
       return onSnapshot(q, (snapshot) => {
@@ -91,15 +107,36 @@ function NoticeManager({ readOnly = false }) {
           ...doc.data(),
         }));
         setNotices(noticeList);
+        updatePaginationCursor(snapshot);
         setLoading(false);
       });
     }
   };
 
   useEffect(() => {
-    const unsubscribe = loadNotices();
-    return () => { if (unsubscribe && typeof unsubscribe.then === 'undefined') unsubscribe(); };
+    let unsubscribe;
+    loadNotices().then((result) => {
+      unsubscribe = result;
+    });
+    return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
   }, [readOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLoadMore = async () => {
+    if (!hasMore || loadingMore || !lastVisibleDoc) return;
+
+    setLoadingMore(true);
+    try {
+      const snapshot = await getDocs(buildNoticesQuery(lastVisibleDoc));
+      const noticeList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setNotices((prev) => [...prev, ...noticeList]);
+      updatePaginationCursor(snapshot);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const resetForm = () => {
     setTitle('');
@@ -559,6 +596,19 @@ function NoticeManager({ readOnly = false }) {
           >
             <ChevronRightRoundedIcon />
           </IconButton>
+        </Box>
+      )}
+
+      {hasMore && currentPage >= totalPages - 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Button
+            variant="outlined"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            sx={{ borderRadius: 999, px: 4 }}
+          >
+            {loadingMore ? '불러오는 중' : '더보기'}
+          </Button>
         </Box>
       )}
 

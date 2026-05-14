@@ -4,7 +4,11 @@ import {
   collection,
   query,
   orderBy,
+  limit,
+  limitToLast,
+  startAfter,
   onSnapshot,
+  getDocs,
   addDoc,
   serverTimestamp,
   doc,
@@ -44,6 +48,20 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { colors } from '../theme';
 import { isChatAttachmentExpired } from '../utils/chatAttachmentRetention';
 
+const MESSAGE_PAGE_SIZE = 20;
+
+const getTimestampMillis = (timestamp) => {
+  if (!timestamp) return 0;
+  if (typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+  if (typeof timestamp.toDate === 'function') return timestamp.toDate().getTime();
+  return new Date(timestamp).getTime();
+};
+
+const getOldestMessageTime = (messages) => {
+  const times = messages.map((message) => getTimestampMillis(message.createdAt)).filter(Boolean);
+  return times.length ? Math.min(...times) : Number.MAX_SAFE_INTEGER;
+};
+
 function UserChatWindow() {
   const { user, isLoggedIn } = useAuth();
   const navigate = useNavigate();
@@ -56,12 +74,20 @@ function UserChatWindow() {
   const [previewImage, setPreviewImage] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
+  const [hasOlderMessages, setHasOlderMessages] = useState(true);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const canLoadOlderMessagesRef = useRef(false);
   const fileInputRef = useRef(null);
   const dragCounterRef = useRef(0);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    canLoadOlderMessagesRef.current = false;
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    window.setTimeout(() => {
+      canLoadOlderMessagesRef.current = true;
+    }, 0);
   };
 
   // 사용자의 대화방 찾기 또는 생성
@@ -103,9 +129,15 @@ function UserChatWindow() {
   useEffect(() => {
     if (!conversationId) return;
 
+    setMessages([]);
+    setHasOlderMessages(true);
+    setLoadingOlderMessages(false);
+    canLoadOlderMessagesRef.current = false;
+
     const q = query(
       collection(db, 'conversations', conversationId, 'messages'),
-      orderBy('createdAt', 'asc')
+      orderBy('createdAt', 'asc'),
+      limitToLast(MESSAGE_PAGE_SIZE)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -113,7 +145,16 @@ function UserChatWindow() {
         id: doc.id,
         ...doc.data(),
       }));
-      setMessages(msgs);
+      setHasOlderMessages(snapshot.docs.length === MESSAGE_PAGE_SIZE);
+      setMessages((previousMessages) => {
+        const liveIds = new Set(msgs.map((message) => message.id));
+        const oldestLiveTime = getOldestMessageTime(msgs);
+        const olderMessages = previousMessages.filter((message) => (
+          !liveIds.has(message.id) &&
+          getTimestampMillis(message.createdAt) < oldestLiveTime
+        ));
+        return [...olderMessages, ...msgs];
+      });
       setTimeout(scrollToBottom, 100);
     });
 
@@ -124,6 +165,57 @@ function UserChatWindow() {
 
     return unsubscribe;
   }, [conversationId]);
+
+  const loadOlderMessages = async () => {
+    if (loadingOlderMessages || !hasOlderMessages || messages.length === 0 || !conversationId) {
+      return;
+    }
+
+    const oldestMessage = messages[0];
+    if (!oldestMessage?.createdAt) return;
+
+    const container = messagesContainerRef.current;
+    const previousScrollHeight = container?.scrollHeight || 0;
+
+    setLoadingOlderMessages(true);
+    try {
+      const snapshot = await getDocs(query(
+        collection(db, 'conversations', conversationId, 'messages'),
+        orderBy('createdAt', 'desc'),
+        startAfter(oldestMessage.createdAt),
+        limit(MESSAGE_PAGE_SIZE)
+      ));
+      const olderMessages = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })).reverse();
+
+      setMessages((previousMessages) => {
+        const existingIds = new Set(previousMessages.map((message) => message.id));
+        return [
+          ...olderMessages.filter((message) => !existingIds.has(message.id)),
+          ...previousMessages,
+        ];
+      });
+      setHasOlderMessages(snapshot.docs.length === MESSAGE_PAGE_SIZE);
+
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight - previousScrollHeight;
+        }
+      });
+    } catch (error) {
+      console.error('이전 메시지 로드 오류:', error);
+    } finally {
+      setLoadingOlderMessages(false);
+    }
+  };
+
+  const handleMessagesScroll = (event) => {
+    if (canLoadOlderMessagesRef.current && event.currentTarget.scrollTop <= 80) {
+      loadOlderMessages();
+    }
+  };
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -849,6 +941,8 @@ function UserChatWindow() {
 
       {/* 메시지 영역 */}
       <Box
+        ref={messagesContainerRef}
+        onScroll={handleMessagesScroll}
         sx={{
           flex: 1,
           overflowY: 'auto',
@@ -856,6 +950,11 @@ function UserChatWindow() {
           py: 2,
         }}
       >
+        {loadingOlderMessages && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+            <CircularProgress size={18} sx={{ color: colors.textSecondary }} />
+          </Box>
+        )}
         {/* 대화가 없을 때 안내 메시지 */}
         {messages.length === 0 && (
           <Box

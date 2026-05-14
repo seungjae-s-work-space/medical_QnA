@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, limit, startAfter, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
   List,
@@ -19,18 +19,25 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import { colors } from '../theme';
 
+const CONVERSATION_PAGE_SIZE = 50;
+const MESSAGE_SEARCH_PAGE_SIZE = 20;
+
 function ConversationList() {
   const [conversations, setConversations] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState('all'); // 'all', 'unread', 'new'
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState(null); // { conversationId: matchedMessage }
+  const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const q = query(
       collection(db, 'conversations'),
-      orderBy('lastMessageAt', 'desc')
+      orderBy('lastMessageAt', 'desc'),
+      limit(CONVERSATION_PAGE_SIZE)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -39,10 +46,35 @@ function ConversationList() {
         ...doc.data(),
       }));
       setConversations(convs);
+      setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
+      setHasMore(snapshot.docs.length === CONVERSATION_PAGE_SIZE);
     });
 
     return unsubscribe;
   }, []);
+
+  const handleLoadMore = async () => {
+    if (!hasMore || loadingMore || !lastVisibleDoc) return;
+
+    setLoadingMore(true);
+    try {
+      const snapshot = await getDocs(query(
+        collection(db, 'conversations'),
+        orderBy('lastMessageAt', 'desc'),
+        startAfter(lastVisibleDoc),
+        limit(CONVERSATION_PAGE_SIZE)
+      ));
+      const convs = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setConversations((prev) => [...prev, ...convs]);
+      setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : lastVisibleDoc);
+      setHasMore(snapshot.docs.length === CONVERSATION_PAGE_SIZE);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
@@ -71,8 +103,11 @@ function ConversationList() {
       // 모든 대화방의 메시지를 병렬로 검색
       await Promise.all(
         conversations.map(async (conv) => {
-          const messagesRef = collection(db, 'conversations', conv.id, 'messages');
-          const messagesSnapshot = await getDocs(messagesRef);
+          const messagesSnapshot = await getDocs(query(
+            collection(db, 'conversations', conv.id, 'messages'),
+            orderBy('createdAt', 'desc'),
+            limit(MESSAGE_SEARCH_PAGE_SIZE)
+          ));
 
           for (const msgDoc of messagesSnapshot.docs) {
             const msgData = msgDoc.data();
@@ -493,6 +528,35 @@ function ConversationList() {
               );
             })}
           </List>
+        </Box>
+      )}
+
+      {hasMore && searchResults === null && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Box
+            component="button"
+            type="button"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            sx={{
+              border: `1px solid ${colors.border}`,
+              bgcolor: colors.card,
+              color: colors.textPrimary,
+              borderRadius: 999,
+              px: 4,
+              py: 1.2,
+              fontWeight: 700,
+              cursor: loadingMore ? 'default' : 'pointer',
+              '&:disabled': {
+                color: colors.textTertiary,
+              },
+              '&:hover': {
+                bgcolor: loadingMore ? colors.card : colors.backgroundAlt,
+              },
+            }}
+          >
+            {loadingMore ? '불러오는 중' : '더보기'}
+          </Box>
         </Box>
       )}
     </Box>

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -7,6 +8,7 @@ import '../../models/encyclopedia_model.dart';
 import '../../services/encyclopedia_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/app_colors.dart';
+import '../../widgets/load_more_button.dart';
 import '../../widgets/protected_content.dart';
 import '../../widgets/screenshot_warning_listener.dart';
 import 'package:intl/intl.dart';
@@ -29,10 +31,14 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   String _searchQuery = '';
   bool _isSearching = false;
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = false;
   bool _isOpeningArticle = false;
+  DocumentSnapshot? _lastDocument;
 
   // 페이지네이션
   static const int _itemsPerPage = 5;
+  static const int _queryPageSize = _itemsPerPage;
   int _currentPage = 0;
 
   // 각 아이템의 GlobalKey를 저장
@@ -45,16 +51,52 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   }
 
   Future<void> _loadArticles() async {
-    final articles = await _service.getPublishedArticles();
+    final result =
+        await _service.getPublishedArticlesPage(pageSize: _queryPageSize);
     if (mounted) {
       setState(() {
-        _allArticles = articles;
+        _allArticles = result.items;
+        _lastDocument = result.lastDocument;
+        _hasMore = result.hasMore;
         _isLoading = false;
         final totalPages = (_allArticles.length / _itemsPerPage).ceil();
         if (_currentPage >= totalPages && totalPages > 0) {
           _currentPage = totalPages - 1;
         }
       });
+    }
+  }
+
+  Future<void> _loadMoreArticles() async {
+    if (_isLoadingMore || !_hasMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final result = await _service.getPublishedArticlesPage(
+        pageSize: _queryPageSize,
+        startAfter: _lastDocument,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _allArticles = [..._allArticles, ...result.items];
+        _lastDocument = result.lastDocument;
+        _hasMore = result.hasMore;
+        _isLoadingMore = false;
+      });
+
+      if (_searchQuery.isNotEmpty) {
+        _performSearch(_searchController.text);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
     }
   }
 
@@ -134,6 +176,12 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
             },
           ),
         ),
+        if (_hasMore && _currentPage >= totalPages - 1)
+          LoadMoreButton(
+            isLoading: _isLoadingMore,
+            onPressed: _loadMoreArticles,
+            accentColor: AppColors.encyclopediaTone,
+          ),
         if (totalPages > 1)
           _PaginationBar(
             currentPage: _currentPage,

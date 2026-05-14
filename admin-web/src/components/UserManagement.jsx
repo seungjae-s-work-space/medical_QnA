@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
@@ -19,9 +20,13 @@ import {
 } from '@mui/material';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
-import { collection, onSnapshot } from 'firebase/firestore';
+import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import { collection, getDocs, limit, orderBy, query, startAfter } from 'firebase/firestore';
 import { db } from '../firebase';
 import { colors } from '../theme';
+
+const USER_PAGE_SIZE = 20;
 
 function formatDate(value) {
   const date = value?.toDate?.() || null;
@@ -33,37 +38,125 @@ function formatDate(value) {
   });
 }
 
+async function fetchUsersPage(cursor = null) {
+  const constraints = [orderBy('createdAt', 'desc')];
+  if (cursor) {
+    constraints.push(startAfter(cursor));
+  }
+  constraints.push(limit(USER_PAGE_SIZE));
+
+  const snapshot = await getDocs(query(collection(db, 'users'), ...constraints));
+
+  return {
+    users: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    cursor: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
+    hasMore: snapshot.docs.length === USER_PAGE_SIZE,
+  };
+}
+
 function UserManagement() {
-  const [users, setUsers] = useState([]);
+  const [pages, setPages] = useState([]);
+  const [pageCursors, setPageCursors] = useState([]);
+  const [hasMoreByPage, setHasMoreByPage] = useState([]);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingPage, setLoadingPage] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, 'users'),
-      (snapshot) => {
-        const nextUsers = snapshot.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .sort((a, b) => {
-            const aDate = a.createdAt?.toDate?.()?.getTime() ?? 0;
-            const bDate = b.createdAt?.toDate?.()?.getTime() ?? 0;
-            return bDate - aDate;
-          });
+    let isMounted = true;
 
-        setUsers(nextUsers);
-        setLoading(false);
+    const loadFirstPage = async () => {
+      setLoading(true);
+      try {
+        const firstPage = await fetchUsersPage();
+        if (!isMounted) return;
+
+        setPages([firstPage.users]);
+        setPageCursors([firstPage.cursor]);
+        setHasMoreByPage([firstPage.hasMore]);
+        setCurrentPageIndex(0);
         setError('');
-      },
-      (err) => {
+      } catch (err) {
+        if (!isMounted) return;
         console.error('사용자 목록 조회 오류:', err);
         setError('사용자 목록을 불러오지 못했습니다.');
+      } finally {
+        if (!isMounted) return;
         setLoading(false);
       }
-    );
+    };
 
-    return unsubscribe;
+    loadFirstPage();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  const users = useMemo(
+    () => pages[currentPageIndex] || [],
+    [pages, currentPageIndex]
+  );
+  const canGoPrevious = currentPageIndex > 0;
+  const canGoNext = Boolean(pages[currentPageIndex + 1]) || Boolean(hasMoreByPage[currentPageIndex]);
+
+  const handlePreviousPage = () => {
+    if (!canGoPrevious || loadingPage) return;
+    setCurrentPageIndex((page) => page - 1);
+  };
+
+  const handleNextPage = async () => {
+    if (!canGoNext || loadingPage) return;
+
+    const nextPageIndex = currentPageIndex + 1;
+    if (pages[nextPageIndex]) {
+      setCurrentPageIndex(nextPageIndex);
+      return;
+    }
+
+    const cursor = pageCursors[currentPageIndex];
+    if (!cursor) return;
+
+    setLoadingPage(true);
+    try {
+      const nextPage = await fetchUsersPage(cursor);
+
+      if (nextPage.users.length === 0) {
+        setHasMoreByPage((previous) => {
+          const next = [...previous];
+          next[currentPageIndex] = false;
+          return next;
+        });
+        return;
+      }
+
+      setPages((previous) => {
+        const next = [...previous];
+        next[nextPageIndex] = nextPage.users;
+        return next;
+      });
+      setPageCursors((previous) => {
+        const next = [...previous];
+        next[nextPageIndex] = nextPage.cursor;
+        return next;
+      });
+      setHasMoreByPage((previous) => {
+        const next = [...previous];
+        next[currentPageIndex] = true;
+        next[nextPageIndex] = nextPage.hasMore;
+        return next;
+      });
+      setCurrentPageIndex(nextPageIndex);
+      setError('');
+    } catch (err) {
+      console.error('추가 사용자 조회 오류:', err);
+      setError('추가 사용자 목록을 불러오지 못했습니다.');
+    } finally {
+      setLoadingPage(false);
+    }
+  };
 
   const filteredUsers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -102,7 +195,7 @@ function UserManagement() {
         <Card>
           <CardContent>
             <Typography sx={{ fontSize: 13, color: colors.textSecondary, mb: 1 }}>
-              전체 사용자
+              현재 페이지 사용자
             </Typography>
             <Typography sx={{ fontSize: 28, fontWeight: 700, color: colors.textPrimary }}>
               {users.length}
@@ -112,7 +205,7 @@ function UserManagement() {
         <Card>
           <CardContent>
             <Typography sx={{ fontSize: 13, color: colors.textSecondary, mb: 1 }}>
-              일반 사용자
+              현재 페이지 일반 사용자
             </Typography>
             <Typography sx={{ fontSize: 28, fontWeight: 700, color: colors.textPrimary }}>
               {normalUserCount}
@@ -122,7 +215,7 @@ function UserManagement() {
         <Card>
           <CardContent>
             <Typography sx={{ fontSize: 13, color: colors.textSecondary, mb: 1 }}>
-              관리자
+              현재 페이지 관리자
             </Typography>
             <Typography sx={{ fontSize: 28, fontWeight: 700, color: colors.textPrimary }}>
               {adminCount}
@@ -144,13 +237,18 @@ function UserManagement() {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <PeopleAltRoundedIcon sx={{ color: colors.primary }} />
-            <Typography variant="h6" sx={{ color: colors.textPrimary }}>
-              사용자 목록
-            </Typography>
+            <Box>
+              <Typography variant="h6" sx={{ color: colors.textPrimary }}>
+                사용자 목록
+              </Typography>
+              <Typography sx={{ fontSize: 12, color: colors.textTertiary }}>
+                {currentPageIndex + 1}페이지 · 페이지당 최대 {USER_PAGE_SIZE}명
+              </Typography>
+            </Box>
           </Box>
           <TextField
             size="small"
-            placeholder="이름, 이메일, 권한 검색"
+            placeholder="현재 페이지에서 검색"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             InputProps={{
@@ -230,6 +328,46 @@ function UserManagement() {
               </TableBody>
             </Table>
           </TableContainer>
+        )}
+
+        {!loading && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              mt: 3,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Button
+              variant="outlined"
+              startIcon={<ChevronLeftRoundedIcon />}
+              onClick={handlePreviousPage}
+              disabled={!canGoPrevious || loadingPage}
+              sx={{ borderRadius: 999, px: 3 }}
+            >
+              이전
+            </Button>
+            <Typography sx={{ color: colors.textSecondary, fontSize: 14, fontWeight: 700 }}>
+              {currentPageIndex + 1}페이지
+            </Typography>
+            <Button
+              variant="contained"
+              endIcon={loadingPage ? null : <ChevronRightRoundedIcon />}
+              onClick={handleNextPage}
+              disabled={!canGoNext || loadingPage}
+              sx={{
+                borderRadius: 999,
+                px: 3,
+                bgcolor: colors.primary,
+                '&:hover': { bgcolor: colors.primary },
+              }}
+            >
+              {loadingPage ? '불러오는 중' : '다음'}
+            </Button>
+          </Box>
         )}
       </Paper>
     </Box>

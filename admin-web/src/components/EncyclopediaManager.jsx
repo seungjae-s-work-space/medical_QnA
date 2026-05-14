@@ -42,6 +42,8 @@ import {
   query,
   orderBy,
   where,
+  limit,
+  startAfter,
   onSnapshot,
   getDocs,
   addDoc,
@@ -120,6 +122,7 @@ const mergeConsecutiveBlockquotes = (html) => {
 };
 
 const ITEMS_PER_PAGE = 17;
+const QUERY_PAGE_SIZE = ITEMS_PER_PAGE;
 
 function EncyclopediaManager({ readOnly = false }) {
   const [articles, setArticles] = useState([]);
@@ -131,6 +134,9 @@ function EncyclopediaManager({ readOnly = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewArticle, setViewArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -310,18 +316,27 @@ function EncyclopediaManager({ readOnly = false }) {
     }
   }, [dialogOpen]);
 
+  const buildArticlesQuery = (cursor = null) => {
+    const constraints = readOnly
+      ? [where('isPublished', '==', true), orderBy('createdAt', 'desc')]
+      : [orderBy('createdAt', 'desc')];
+
+    if (cursor) {
+      constraints.push(startAfter(cursor));
+    }
+    constraints.push(limit(QUERY_PAGE_SIZE));
+
+    return query(collection(db, 'encyclopedia'), ...constraints);
+  };
+
+  const updatePaginationCursor = (snapshot) => {
+    setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
+    setHasMore(snapshot.docs.length === QUERY_PAGE_SIZE);
+  };
+
   // 데이터 로드 함수
   const loadArticles = async () => {
-    const q = readOnly
-      ? query(
-          collection(db, 'encyclopedia'),
-          where('isPublished', '==', true),
-          orderBy('createdAt', 'desc')
-        )
-      : query(
-          collection(db, 'encyclopedia'),
-          orderBy('createdAt', 'desc')
-        );
+    const q = buildArticlesQuery();
 
     if (readOnly) {
       // 일반 사용자: 일회성 조회 (read 수 절약)
@@ -331,6 +346,7 @@ function EncyclopediaManager({ readOnly = false }) {
         ...doc.data(),
       }));
       setArticles(articleList);
+      updatePaginationCursor(snapshot);
       setLoading(false);
     } else {
       // 관리자: 실시간 리스너 (CRUD 반영)
@@ -340,15 +356,36 @@ function EncyclopediaManager({ readOnly = false }) {
           ...doc.data(),
         }));
         setArticles(articleList);
+        updatePaginationCursor(snapshot);
         setLoading(false);
       });
     }
   };
 
   useEffect(() => {
-    const unsubscribe = loadArticles();
-    return () => { if (unsubscribe && typeof unsubscribe.then === 'undefined') unsubscribe(); };
+    let unsubscribe;
+    loadArticles().then((result) => {
+      unsubscribe = result;
+    });
+    return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
   }, [readOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLoadMore = async () => {
+    if (!hasMore || loadingMore || !lastVisibleDoc) return;
+
+    setLoadingMore(true);
+    try {
+      const snapshot = await getDocs(buildArticlesQuery(lastVisibleDoc));
+      const articleList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setArticles((prev) => [...prev, ...articleList]);
+      updatePaginationCursor(snapshot);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const resetForm = () => {
     setTitle('');
@@ -832,6 +869,19 @@ function EncyclopediaManager({ readOnly = false }) {
           >
             <ChevronRightRoundedIcon />
           </IconButton>
+        </Box>
+      )}
+
+      {hasMore && currentPage >= totalPages - 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Button
+            variant="outlined"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            sx={{ borderRadius: 999, px: 4 }}
+          >
+            {loadingMore ? '불러오는 중' : '더보기'}
+          </Button>
         </Box>
       )}
 

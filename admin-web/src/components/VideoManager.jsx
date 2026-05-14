@@ -38,6 +38,8 @@ import {
   query,
   orderBy,
   where,
+  limit,
+  startAfter,
   onSnapshot,
   getDocs,
   addDoc,
@@ -99,6 +101,7 @@ const fetchYoutubeMetadata = async (videoId) => {
 };
 
 const ITEMS_PER_PAGE = 17;
+const QUERY_PAGE_SIZE = ITEMS_PER_PAGE;
 
 function VideoManager({ readOnly = false }) {
   const [videos, setVideos] = useState([]);
@@ -110,6 +113,9 @@ function VideoManager({ readOnly = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewVideo, setViewVideo] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -149,17 +155,26 @@ function VideoManager({ readOnly = false }) {
     }
   }, [videoId, editingVideo, title, fetchingMetadata, handleFetchMetadata]);
 
+  const buildVideosQuery = (cursor = null) => {
+    const constraints = readOnly
+      ? [where('isPublished', '==', true), orderBy('createdAt', 'desc')]
+      : [orderBy('createdAt', 'desc')];
+
+    if (cursor) {
+      constraints.push(startAfter(cursor));
+    }
+    constraints.push(limit(QUERY_PAGE_SIZE));
+
+    return query(collection(db, 'videos'), ...constraints);
+  };
+
+  const updatePaginationCursor = (snapshot) => {
+    setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
+    setHasMore(snapshot.docs.length === QUERY_PAGE_SIZE);
+  };
+
   const loadVideos = async () => {
-    const q = readOnly
-      ? query(
-          collection(db, 'videos'),
-          where('isPublished', '==', true),
-          orderBy('createdAt', 'desc')
-        )
-      : query(
-          collection(db, 'videos'),
-          orderBy('createdAt', 'desc')
-        );
+    const q = buildVideosQuery();
 
     if (readOnly) {
       const snapshot = await getDocs(q);
@@ -168,6 +183,7 @@ function VideoManager({ readOnly = false }) {
         ...doc.data(),
       }));
       setVideos(videoList);
+      updatePaginationCursor(snapshot);
       setLoading(false);
     } else {
       return onSnapshot(q, (snapshot) => {
@@ -176,15 +192,36 @@ function VideoManager({ readOnly = false }) {
           ...doc.data(),
         }));
         setVideos(videoList);
+        updatePaginationCursor(snapshot);
         setLoading(false);
       });
     }
   };
 
   useEffect(() => {
-    const unsubscribe = loadVideos();
-    return () => { if (unsubscribe && typeof unsubscribe.then === 'undefined') unsubscribe(); };
+    let unsubscribe;
+    loadVideos().then((result) => {
+      unsubscribe = result;
+    });
+    return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
   }, [readOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLoadMore = async () => {
+    if (!hasMore || loadingMore || !lastVisibleDoc) return;
+
+    setLoadingMore(true);
+    try {
+      const snapshot = await getDocs(buildVideosQuery(lastVisibleDoc));
+      const videoList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setVideos((prev) => [...prev, ...videoList]);
+      updatePaginationCursor(snapshot);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const resetForm = () => {
     setTitle('');
@@ -681,6 +718,19 @@ function VideoManager({ readOnly = false }) {
           >
             <ChevronRightRoundedIcon />
           </IconButton>
+        </Box>
+      )}
+
+      {hasMore && currentPage >= totalPages - 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Button
+            variant="outlined"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            sx={{ borderRadius: 999, px: 4 }}
+          >
+            {loadingMore ? '불러오는 중' : '더보기'}
+          </Button>
         </Box>
       )}
 

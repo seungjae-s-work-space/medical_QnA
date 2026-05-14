@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../models/video_model.dart';
 import '../../services/video_service.dart';
 import '../../utils/app_colors.dart';
+import '../../widgets/load_more_button.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -15,9 +17,13 @@ class VideoScreen extends StatefulWidget {
 class _VideoScreenState extends State<VideoScreen> {
   final VideoService _service = VideoService();
   static const int _itemsPerPage = 10;
+  static const int _queryPageSize = _itemsPerPage;
   int _currentPage = 0;
   List<VideoModel> _videoList = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = false;
+  DocumentSnapshot? _lastDocument;
 
   @override
   void initState() {
@@ -26,16 +32,48 @@ class _VideoScreenState extends State<VideoScreen> {
   }
 
   Future<void> _loadVideos() async {
-    final videos = await _service.getPublishedVideos();
+    final result =
+        await _service.getPublishedVideosPage(pageSize: _queryPageSize);
     if (mounted) {
       setState(() {
-        _videoList = videos;
+        _videoList = result.items;
+        _lastDocument = result.lastDocument;
+        _hasMore = result.hasMore;
         _isLoading = false;
         final totalPages = (_videoList.length / _itemsPerPage).ceil();
         if (_currentPage >= totalPages && totalPages > 0) {
           _currentPage = totalPages - 1;
         }
       });
+    }
+  }
+
+  Future<void> _loadMoreVideos() async {
+    if (_isLoadingMore || !_hasMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final result = await _service.getPublishedVideosPage(
+        pageSize: _queryPageSize,
+        startAfter: _lastDocument,
+      );
+      if (!mounted) return;
+
+      setState(() {
+        _videoList = [..._videoList, ...result.items];
+        _lastDocument = result.lastDocument;
+        _hasMore = result.hasMore;
+        _isLoadingMore = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
     }
   }
 
@@ -97,6 +135,12 @@ class _VideoScreenState extends State<VideoScreen> {
             },
           ),
         ),
+        if (_hasMore && _currentPage >= totalPages - 1)
+          LoadMoreButton(
+            isLoading: _isLoadingMore,
+            onPressed: _loadMoreVideos,
+            accentColor: AppColors.accent,
+          ),
         // 페이지네이션 UI
         if (totalPages > 1)
           _PaginationBar(

@@ -41,6 +41,8 @@ import {
   query,
   orderBy,
   where,
+  limit,
+  startAfter,
   onSnapshot,
   getDocs,
   addDoc,
@@ -119,6 +121,7 @@ const mergeConsecutiveBlockquotes = (html) => {
 };
 
 const ITEMS_PER_PAGE = 17;
+const QUERY_PAGE_SIZE = ITEMS_PER_PAGE;
 
 function NewsManager({ readOnly = false }) {
   const [articles, setArticles] = useState([]);
@@ -130,6 +133,9 @@ function NewsManager({ readOnly = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewArticle, setViewArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -308,17 +314,26 @@ function NewsManager({ readOnly = false }) {
     }
   }, [dialogOpen]);
 
+  const buildArticlesQuery = (cursor = null) => {
+    const constraints = readOnly
+      ? [where('isPublished', '==', true), orderBy('createdAt', 'desc')]
+      : [orderBy('createdAt', 'desc')];
+
+    if (cursor) {
+      constraints.push(startAfter(cursor));
+    }
+    constraints.push(limit(QUERY_PAGE_SIZE));
+
+    return query(collection(db, 'news'), ...constraints);
+  };
+
+  const updatePaginationCursor = (snapshot) => {
+    setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
+    setHasMore(snapshot.docs.length === QUERY_PAGE_SIZE);
+  };
+
   const loadArticles = async () => {
-    const q = readOnly
-      ? query(
-          collection(db, 'news'),
-          where('isPublished', '==', true),
-          orderBy('createdAt', 'desc')
-        )
-      : query(
-          collection(db, 'news'),
-          orderBy('createdAt', 'desc')
-        );
+    const q = buildArticlesQuery();
 
     if (readOnly) {
       const snapshot = await getDocs(q);
@@ -327,6 +342,7 @@ function NewsManager({ readOnly = false }) {
         ...doc.data(),
       }));
       setArticles(articleList);
+      updatePaginationCursor(snapshot);
       setLoading(false);
     } else {
       return onSnapshot(q, (snapshot) => {
@@ -335,15 +351,36 @@ function NewsManager({ readOnly = false }) {
           ...doc.data(),
         }));
         setArticles(articleList);
+        updatePaginationCursor(snapshot);
         setLoading(false);
       });
     }
   };
 
   useEffect(() => {
-    const unsubscribe = loadArticles();
-    return () => { if (unsubscribe && typeof unsubscribe.then === 'undefined') unsubscribe(); };
+    let unsubscribe;
+    loadArticles().then((result) => {
+      unsubscribe = result;
+    });
+    return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
   }, [readOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLoadMore = async () => {
+    if (!hasMore || loadingMore || !lastVisibleDoc) return;
+
+    setLoadingMore(true);
+    try {
+      const snapshot = await getDocs(buildArticlesQuery(lastVisibleDoc));
+      const articleList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setArticles((prev) => [...prev, ...articleList]);
+      updatePaginationCursor(snapshot);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const resetForm = () => {
     setTitle('');
@@ -839,6 +876,19 @@ function NewsManager({ readOnly = false }) {
           >
             <ChevronRightRoundedIcon />
           </IconButton>
+        </Box>
+      )}
+
+      {hasMore && currentPage >= totalPages - 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Button
+            variant="outlined"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            sx={{ borderRadius: 999, px: 4 }}
+          >
+            {loadingMore ? '불러오는 중' : '더보기'}
+          </Button>
         </Box>
       )}
 
