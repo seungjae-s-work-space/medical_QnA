@@ -22,7 +22,15 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import { collection, getDocs, limit, orderBy, query, startAfter } from 'firebase/firestore';
+import {
+  collection,
+  getCountFromServer,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  startAfter,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import { colors } from '../theme';
 
@@ -54,6 +62,11 @@ async function fetchUsersPage(cursor = null) {
   };
 }
 
+async function fetchUsersCount() {
+  const snapshot = await getCountFromServer(query(collection(db, 'users')));
+  return snapshot.data().count;
+}
+
 function UserManagement() {
   const [pages, setPages] = useState([]);
   const [pageCursors, setPageCursors] = useState([]);
@@ -63,6 +76,7 @@ function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [loadingPage, setLoadingPage] = useState(false);
   const [error, setError] = useState('');
+  const [totalUserCount, setTotalUserCount] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -70,12 +84,16 @@ function UserManagement() {
     const loadFirstPage = async () => {
       setLoading(true);
       try {
-        const firstPage = await fetchUsersPage();
+        const [firstPage, userCount] = await Promise.all([
+          fetchUsersPage(),
+          fetchUsersCount(),
+        ]);
         if (!isMounted) return;
 
         setPages([firstPage.users]);
         setPageCursors([firstPage.cursor]);
         setHasMoreByPage([firstPage.hasMore]);
+        setTotalUserCount(userCount);
         setCurrentPageIndex(0);
         setError('');
       } catch (err) {
@@ -99,63 +117,66 @@ function UserManagement() {
     () => pages[currentPageIndex] || [],
     [pages, currentPageIndex]
   );
+  const totalPages = Math.ceil(totalUserCount / USER_PAGE_SIZE);
   const canGoPrevious = currentPageIndex > 0;
-  const canGoNext = Boolean(pages[currentPageIndex + 1]) || Boolean(hasMoreByPage[currentPageIndex]);
+  const canGoNext =
+    currentPageIndex < totalPages - 1 ||
+    Boolean(pages[currentPageIndex + 1]) ||
+    Boolean(hasMoreByPage[currentPageIndex]);
+
+  const handlePageChange = async (pageIndex) => {
+    if (pageIndex < 0 || loadingPage) return;
+    if (pageIndex >= totalPages && !hasMoreByPage[currentPageIndex]) return;
+
+    if (pages[pageIndex]) {
+      setCurrentPageIndex(pageIndex);
+      return;
+    }
+
+    setLoadingPage(true);
+    try {
+      const nextPages = [...pages];
+      const nextCursors = [...pageCursors];
+      const nextHasMoreByPage = [...hasMoreByPage];
+      let loadedPageIndex = nextPages.length - 1;
+      let cursor = nextCursors[loadedPageIndex];
+
+      while (loadedPageIndex < pageIndex && cursor) {
+        const nextPage = await fetchUsersPage(cursor);
+        if (nextPage.users.length === 0) {
+          nextHasMoreByPage[loadedPageIndex] = false;
+          break;
+        }
+
+        nextHasMoreByPage[loadedPageIndex] = true;
+        loadedPageIndex += 1;
+        nextPages[loadedPageIndex] = nextPage.users;
+        nextCursors[loadedPageIndex] = nextPage.cursor;
+        nextHasMoreByPage[loadedPageIndex] = nextPage.hasMore;
+        cursor = nextPage.cursor;
+      }
+
+      setPages(nextPages);
+      setPageCursors(nextCursors);
+      setHasMoreByPage(nextHasMoreByPage);
+      if (nextPages[pageIndex]) setCurrentPageIndex(pageIndex);
+      setError('');
+    } catch (err) {
+      console.error('사용자 페이지 조회 오류:', err);
+      setError('사용자 목록을 불러오지 못했습니다.');
+    } finally {
+      setLoadingPage(false);
+    }
+  };
 
   const handlePreviousPage = () => {
     if (!canGoPrevious || loadingPage) return;
-    setCurrentPageIndex((page) => page - 1);
+    handlePageChange(currentPageIndex - 1);
   };
 
   const handleNextPage = async () => {
     if (!canGoNext || loadingPage) return;
-
-    const nextPageIndex = currentPageIndex + 1;
-    if (pages[nextPageIndex]) {
-      setCurrentPageIndex(nextPageIndex);
-      return;
-    }
-
-    const cursor = pageCursors[currentPageIndex];
-    if (!cursor) return;
-
-    setLoadingPage(true);
-    try {
-      const nextPage = await fetchUsersPage(cursor);
-
-      if (nextPage.users.length === 0) {
-        setHasMoreByPage((previous) => {
-          const next = [...previous];
-          next[currentPageIndex] = false;
-          return next;
-        });
-        return;
-      }
-
-      setPages((previous) => {
-        const next = [...previous];
-        next[nextPageIndex] = nextPage.users;
-        return next;
-      });
-      setPageCursors((previous) => {
-        const next = [...previous];
-        next[nextPageIndex] = nextPage.cursor;
-        return next;
-      });
-      setHasMoreByPage((previous) => {
-        const next = [...previous];
-        next[currentPageIndex] = true;
-        next[nextPageIndex] = nextPage.hasMore;
-        return next;
-      });
-      setCurrentPageIndex(nextPageIndex);
-      setError('');
-    } catch (err) {
-      console.error('추가 사용자 조회 오류:', err);
-      setError('추가 사용자 목록을 불러오지 못했습니다.');
-    } finally {
-      setLoadingPage(false);
-    }
+    await handlePageChange(currentPageIndex + 1);
   };
 
   const filteredUsers = useMemo(() => {
@@ -195,10 +216,10 @@ function UserManagement() {
         <Card>
           <CardContent>
             <Typography sx={{ fontSize: 13, color: colors.textSecondary, mb: 1 }}>
-              현재 페이지 사용자
+              전체 사용자
             </Typography>
             <Typography sx={{ fontSize: 28, fontWeight: 700, color: colors.textPrimary }}>
-              {users.length}
+              {totalUserCount}
             </Typography>
           </CardContent>
         </Card>
@@ -242,7 +263,7 @@ function UserManagement() {
                 사용자 목록
               </Typography>
               <Typography sx={{ fontSize: 12, color: colors.textTertiary }}>
-                {currentPageIndex + 1}페이지 · 페이지당 최대 {USER_PAGE_SIZE}명
+                {currentPageIndex + 1} / {Math.max(totalPages, 1)}페이지 · 페이지당 최대 {USER_PAGE_SIZE}명
               </Typography>
             </Box>
           </Box>
@@ -351,8 +372,28 @@ function UserManagement() {
               이전
             </Button>
             <Typography sx={{ color: colors.textSecondary, fontSize: 14, fontWeight: 700 }}>
-              {currentPageIndex + 1}페이지
+              {currentPageIndex + 1} / {Math.max(totalPages, 1)}페이지
             </Typography>
+            {Array.from({ length: totalPages }, (_, index) => (
+              <Button
+                key={index}
+                variant={currentPageIndex === index ? 'contained' : 'outlined'}
+                onClick={() => handlePageChange(index)}
+                disabled={loadingPage}
+                sx={{
+                  minWidth: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  px: 1.5,
+                  ...(currentPageIndex !== index && {
+                    color: colors.textSecondary,
+                    borderColor: colors.border,
+                  }),
+                }}
+              >
+                {index + 1}
+              </Button>
+            ))}
             <Button
               variant="contained"
               endIcon={loadingPage ? null : <ChevronRightRoundedIcon />}

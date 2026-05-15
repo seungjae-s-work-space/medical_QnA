@@ -39,6 +39,7 @@ import {
   startAfter,
   onSnapshot,
   getDocs,
+  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -64,6 +65,7 @@ function NoticeManager({ readOnly = false }) {
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [totalItemCount, setTotalItemCount] = useState(0);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -83,29 +85,39 @@ function NoticeManager({ readOnly = false }) {
     return query(collection(db, 'notices'), ...constraints);
   };
 
+  const buildNoticesCountQuery = () => {
+    const constraints = readOnly ? [where('isPublished', '==', true)] : [];
+    return query(collection(db, 'notices'), ...constraints);
+  };
+
+  const mapNoticesSnapshot = (snapshot) => snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+
+  const loadTotalCount = async () => {
+    const snapshot = await getCountFromServer(buildNoticesCountQuery());
+    setTotalItemCount(snapshot.data().count);
+  };
+
   const updatePaginationCursor = (snapshot) => {
     setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
     setHasMore(snapshot.docs.length === QUERY_PAGE_SIZE);
   };
 
   const loadNotices = async () => {
+    await loadTotalCount();
     const q = buildNoticesQuery();
 
     if (readOnly) {
       const snapshot = await getDocs(q);
-      const noticeList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const noticeList = mapNoticesSnapshot(snapshot);
       setNotices(noticeList);
       updatePaginationCursor(snapshot);
       setLoading(false);
     } else {
       return onSnapshot(q, (snapshot) => {
-        const noticeList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const noticeList = mapNoticesSnapshot(snapshot);
         setNotices(noticeList);
         updatePaginationCursor(snapshot);
         setLoading(false);
@@ -121,18 +133,55 @@ function NoticeManager({ readOnly = false }) {
     return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
   }, [readOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleLoadMore = async () => {
-    if (!hasMore || loadingMore || !lastVisibleDoc) return;
+  const readNoticesPage = async (cursor) => {
+    const snapshot = await getDocs(buildNoticesQuery(cursor));
+    const noticeList = mapNoticesSnapshot(snapshot);
+    return {
+      noticeList,
+      lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : cursor,
+      nextHasMore: snapshot.docs.length === QUERY_PAGE_SIZE,
+    };
+  };
+
+  const handlePageChange = async (page) => {
+    if (page < 0 || loadingMore) return;
+
+    if (page >= totalPages) return;
+
+    const loadedPages = Math.ceil(filteredNotices.length / ITEMS_PER_PAGE);
+    if (page < loadedPages) {
+      setCurrentPage(page);
+      return;
+    }
+
+    if (searchQuery || !hasMore || !lastVisibleDoc) return;
 
     setLoadingMore(true);
     try {
-      const snapshot = await getDocs(buildNoticesQuery(lastVisibleDoc));
-      const noticeList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setNotices((prev) => [...prev, ...noticeList]);
-      updatePaginationCursor(snapshot);
+      let cursor = lastVisibleDoc;
+      let nextHasMore = hasMore;
+      let loadedPageCount = loadedPages;
+      const appendedNotices = [];
+
+      while (page >= loadedPageCount && nextHasMore && cursor) {
+        const result = await readNoticesPage(cursor);
+        if (result.noticeList.length === 0) {
+          nextHasMore = false;
+          break;
+        }
+
+        appendedNotices.push(...result.noticeList);
+        cursor = result.lastDoc;
+        nextHasMore = result.nextHasMore;
+        loadedPageCount += 1;
+      }
+
+      if (appendedNotices.length > 0) {
+        setNotices((prev) => [...prev, ...appendedNotices]);
+      }
+      setLastVisibleDoc(cursor);
+      setHasMore(nextHasMore);
+      if (page < loadedPageCount) setCurrentPage(page);
     } finally {
       setLoadingMore(false);
     }
@@ -194,6 +243,7 @@ function NoticeManager({ readOnly = false }) {
         setSnackbar({ open: true, message: '공지사항이 등록되었습니다', severity: 'success' });
       }
 
+      await loadTotalCount();
       handleCloseDialog();
     } catch (error) {
       console.error('Save error:', error);
@@ -214,6 +264,7 @@ function NoticeManager({ readOnly = false }) {
         message: notice.isPublished ? '비공개로 전환되었습니다' : '공개되었습니다',
         severity: 'success',
       });
+      await loadTotalCount();
     } catch (error) {
       setSnackbar({ open: true, message: '변경 실패', severity: 'error' });
     }
@@ -225,6 +276,7 @@ function NoticeManager({ readOnly = false }) {
     try {
       await deleteDoc(doc(db, 'notices', notice.id));
       setSnackbar({ open: true, message: '삭제되었습니다', severity: 'success' });
+      await loadTotalCount();
     } catch (error) {
       setSnackbar({ open: true, message: '삭제 실패', severity: 'error' });
     }
@@ -249,7 +301,9 @@ function NoticeManager({ readOnly = false }) {
   });
 
   // 페이지네이션 계산
-  const totalPages = Math.ceil(filteredNotices.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(
+    (searchQuery ? filteredNotices.length : totalItemCount) / ITEMS_PER_PAGE
+  );
   const paginatedNotices = filteredNotices.slice(
     currentPage * ITEMS_PER_PAGE,
     (currentPage + 1) * ITEMS_PER_PAGE
@@ -314,7 +368,7 @@ function NoticeManager({ readOnly = false }) {
               전체 공지
             </Typography>
             <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
-              {notices.length}
+              {totalItemCount}
             </Typography>
           </Box>
           <Box
@@ -547,7 +601,7 @@ function NoticeManager({ readOnly = false }) {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {(totalPages > 1 || hasMore) && (
         <Box
           sx={{
             display: 'flex',
@@ -558,7 +612,7 @@ function NoticeManager({ readOnly = false }) {
           }}
         >
           <IconButton
-            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 0}
             sx={{
               color: colors.textSecondary,
@@ -570,7 +624,7 @@ function NoticeManager({ readOnly = false }) {
           {Array.from({ length: totalPages }, (_, i) => (
             <Button
               key={i}
-              onClick={() => setCurrentPage(i)}
+              onClick={() => handlePageChange(i)}
               variant={currentPage === i ? 'contained' : 'text'}
               sx={{
                 minWidth: 40,
@@ -587,28 +641,15 @@ function NoticeManager({ readOnly = false }) {
             </Button>
           ))}
           <IconButton
-            onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={currentPage === totalPages - 1}
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={loadingMore || (currentPage >= totalPages - 1 && !hasMore)}
             sx={{
               color: colors.textSecondary,
               '&:disabled': { color: colors.textTertiary },
             }}
           >
-            <ChevronRightRoundedIcon />
+            {loadingMore ? <CircularProgress size={20} /> : <ChevronRightRoundedIcon />}
           </IconButton>
-        </Box>
-      )}
-
-      {hasMore && currentPage >= totalPages - 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <Button
-            variant="outlined"
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            sx={{ borderRadius: 999, px: 4 }}
-          >
-            {loadingMore ? '불러오는 중' : '더보기'}
-          </Button>
         </Box>
       )}
 

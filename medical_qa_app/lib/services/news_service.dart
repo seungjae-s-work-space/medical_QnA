@@ -35,6 +35,15 @@ class NewsService {
     );
   }
 
+  Future<int> getPublishedNewsCount() async {
+    final snapshot = await _firestore
+        .collection(_collection)
+        .where('isPublished', isEqualTo: true)
+        .count()
+        .get();
+    return snapshot.count ?? 0;
+  }
+
   // 뉴스 목록 조회 (관리자용 - 모든 글, 일회성)
   Future<List<NewsModel>> getAllNews() async {
     final snapshot = await _firestore

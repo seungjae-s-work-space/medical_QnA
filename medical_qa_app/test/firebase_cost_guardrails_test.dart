@@ -25,6 +25,11 @@ void main() {
         contains('startAfterDocument'),
         reason: '$file must support cursor pagination for loading more docs',
       );
+      expect(
+        source,
+        contains('.count()'),
+        reason: '$file should use Firestore count aggregation for total pages',
+      );
     }
   });
 
@@ -42,6 +47,28 @@ void main() {
         source,
         contains('static const int _queryPageSize = _itemsPerPage'),
         reason: '$file should fetch only the visible page size from Firestore',
+      );
+      expect(
+        source,
+        isNot(contains('LoadMoreButton')),
+        reason:
+            '$file should use page navigation instead of a separate load more button',
+      );
+      expect(
+        source,
+        contains('hasMore: _hasMore'),
+        reason: '$file should let page navigation fetch the next server page',
+      );
+      expect(
+        source,
+        contains('_totalItemCount'),
+        reason: '$file should know the server-side total count up front',
+      );
+      expect(
+        source,
+        contains('_totalPages'),
+        reason:
+            '$file should render page numbers from total count, not loaded docs',
       );
     }
 

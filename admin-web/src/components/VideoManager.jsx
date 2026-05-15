@@ -42,6 +42,7 @@ import {
   startAfter,
   onSnapshot,
   getDocs,
+  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -116,6 +117,7 @@ function VideoManager({ readOnly = false }) {
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [totalItemCount, setTotalItemCount] = useState(0);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -168,29 +170,39 @@ function VideoManager({ readOnly = false }) {
     return query(collection(db, 'videos'), ...constraints);
   };
 
+  const buildVideosCountQuery = () => {
+    const constraints = readOnly ? [where('isPublished', '==', true)] : [];
+    return query(collection(db, 'videos'), ...constraints);
+  };
+
+  const mapVideosSnapshot = (snapshot) => snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+
+  const loadTotalCount = async () => {
+    const snapshot = await getCountFromServer(buildVideosCountQuery());
+    setTotalItemCount(snapshot.data().count);
+  };
+
   const updatePaginationCursor = (snapshot) => {
     setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
     setHasMore(snapshot.docs.length === QUERY_PAGE_SIZE);
   };
 
   const loadVideos = async () => {
+    await loadTotalCount();
     const q = buildVideosQuery();
 
     if (readOnly) {
       const snapshot = await getDocs(q);
-      const videoList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const videoList = mapVideosSnapshot(snapshot);
       setVideos(videoList);
       updatePaginationCursor(snapshot);
       setLoading(false);
     } else {
       return onSnapshot(q, (snapshot) => {
-        const videoList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const videoList = mapVideosSnapshot(snapshot);
         setVideos(videoList);
         updatePaginationCursor(snapshot);
         setLoading(false);
@@ -206,18 +218,55 @@ function VideoManager({ readOnly = false }) {
     return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
   }, [readOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleLoadMore = async () => {
-    if (!hasMore || loadingMore || !lastVisibleDoc) return;
+  const readVideosPage = async (cursor) => {
+    const snapshot = await getDocs(buildVideosQuery(cursor));
+    const videoList = mapVideosSnapshot(snapshot);
+    return {
+      videoList,
+      lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : cursor,
+      nextHasMore: snapshot.docs.length === QUERY_PAGE_SIZE,
+    };
+  };
+
+  const handlePageChange = async (page) => {
+    if (page < 0 || loadingMore) return;
+
+    if (page >= totalPages) return;
+
+    const loadedPages = Math.ceil(filteredVideos.length / ITEMS_PER_PAGE);
+    if (page < loadedPages) {
+      setCurrentPage(page);
+      return;
+    }
+
+    if (searchQuery || !hasMore || !lastVisibleDoc) return;
 
     setLoadingMore(true);
     try {
-      const snapshot = await getDocs(buildVideosQuery(lastVisibleDoc));
-      const videoList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setVideos((prev) => [...prev, ...videoList]);
-      updatePaginationCursor(snapshot);
+      let cursor = lastVisibleDoc;
+      let nextHasMore = hasMore;
+      let loadedPageCount = loadedPages;
+      const appendedVideos = [];
+
+      while (page >= loadedPageCount && nextHasMore && cursor) {
+        const result = await readVideosPage(cursor);
+        if (result.videoList.length === 0) {
+          nextHasMore = false;
+          break;
+        }
+
+        appendedVideos.push(...result.videoList);
+        cursor = result.lastDoc;
+        nextHasMore = result.nextHasMore;
+        loadedPageCount += 1;
+      }
+
+      if (appendedVideos.length > 0) {
+        setVideos((prev) => [...prev, ...appendedVideos]);
+      }
+      setLastVisibleDoc(cursor);
+      setHasMore(nextHasMore);
+      if (page < loadedPageCount) setCurrentPage(page);
     } finally {
       setLoadingMore(false);
     }
@@ -293,6 +342,7 @@ function VideoManager({ readOnly = false }) {
         setSnackbar({ open: true, message: '영상이 등록되었습니다', severity: 'success' });
       }
 
+      await loadTotalCount();
       handleCloseDialog();
     } catch (error) {
       console.error('Save error:', error);
@@ -313,6 +363,7 @@ function VideoManager({ readOnly = false }) {
         message: video.isPublished ? '비공개로 전환되었습니다' : '공개되었습니다',
         severity: 'success',
       });
+      await loadTotalCount();
     } catch (error) {
       setSnackbar({ open: true, message: '변경 실패', severity: 'error' });
     }
@@ -324,6 +375,7 @@ function VideoManager({ readOnly = false }) {
     try {
       await deleteDoc(doc(db, 'videos', video.id));
       setSnackbar({ open: true, message: '삭제되었습니다', severity: 'success' });
+      await loadTotalCount();
     } catch (error) {
       setSnackbar({ open: true, message: '삭제 실패', severity: 'error' });
     }
@@ -348,7 +400,9 @@ function VideoManager({ readOnly = false }) {
   });
 
   // 페이지네이션 계산
-  const totalPages = Math.ceil(filteredVideos.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(
+    (searchQuery ? filteredVideos.length : totalItemCount) / ITEMS_PER_PAGE
+  );
   const paginatedVideos = filteredVideos.slice(
     currentPage * ITEMS_PER_PAGE,
     (currentPage + 1) * ITEMS_PER_PAGE
@@ -413,7 +467,7 @@ function VideoManager({ readOnly = false }) {
               전체 영상
             </Typography>
             <Typography variant="h4" sx={{ color: colors.textPrimary, fontWeight: 700 }}>
-              {videos.length}
+              {totalItemCount}
             </Typography>
           </Box>
           <Box
@@ -669,7 +723,7 @@ function VideoManager({ readOnly = false }) {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {(totalPages > 1 || hasMore) && (
         <Box
           sx={{
             display: 'flex',
@@ -680,7 +734,7 @@ function VideoManager({ readOnly = false }) {
           }}
         >
           <IconButton
-            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 0}
             sx={{
               color: colors.textSecondary,
@@ -692,7 +746,7 @@ function VideoManager({ readOnly = false }) {
           {Array.from({ length: totalPages }, (_, i) => (
             <Button
               key={i}
-              onClick={() => setCurrentPage(i)}
+              onClick={() => handlePageChange(i)}
               variant={currentPage === i ? 'contained' : 'text'}
               sx={{
                 minWidth: 40,
@@ -709,28 +763,15 @@ function VideoManager({ readOnly = false }) {
             </Button>
           ))}
           <IconButton
-            onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={currentPage === totalPages - 1}
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={loadingMore || (currentPage >= totalPages - 1 && !hasMore)}
             sx={{
               color: colors.textSecondary,
               '&:disabled': { color: colors.textTertiary },
             }}
           >
-            <ChevronRightRoundedIcon />
+            {loadingMore ? <CircularProgress size={20} /> : <ChevronRightRoundedIcon />}
           </IconButton>
-        </Box>
-      )}
-
-      {hasMore && currentPage >= totalPages - 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <Button
-            variant="outlined"
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            sx={{ borderRadius: 999, px: 4 }}
-          >
-            {loadingMore ? '불러오는 중' : '더보기'}
-          </Button>
         </Box>
       )}
 

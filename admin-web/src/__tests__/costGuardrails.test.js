@@ -21,6 +21,12 @@ describe('firebase cost guardrails', () => {
       expect(source).toMatch(/limit\(/);
       expect(source).toMatch(/startAfter/);
       expect(source).toMatch(/const QUERY_PAGE_SIZE = ITEMS_PER_PAGE;/);
+      expect(source).toMatch(/getCountFromServer/);
+      expect(source).toMatch(/totalItemCount/);
+      expect(source).toMatch(/totalPages/);
+      expect(source).not.toMatch(/더보기/);
+      expect(source).not.toMatch(/handleLoadMore/);
+      expect(source).toMatch(/handlePageChange/);
     }
   });
 
@@ -30,9 +36,14 @@ describe('firebase cost guardrails', () => {
 
     expect(conversationList).toMatch(/limit\(/);
     expect(conversationList).toMatch(/startAfter/);
+    expect(conversationList).not.toMatch(/더보기/);
+    expect(conversationList).not.toMatch(/handleLoadMore/);
+    expect(conversationList).toMatch(/handleNextPage/);
     expect(userManagement).toMatch(/limit\(/);
     expect(userManagement).toMatch(/startAfter/);
+    expect(userManagement).toMatch(/getCountFromServer/);
     expect(userManagement).toMatch(/USER_PAGE_SIZE = 20/);
+    expect(userManagement).toMatch(/totalPages/);
     expect(userManagement).toMatch(/currentPageIndex/);
     expect(userManagement).toMatch(/handlePreviousPage/);
     expect(userManagement).toMatch(/handleNextPage/);

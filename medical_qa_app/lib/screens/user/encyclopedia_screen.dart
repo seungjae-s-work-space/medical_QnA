@@ -8,7 +8,6 @@ import '../../models/encyclopedia_model.dart';
 import '../../services/encyclopedia_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/app_colors.dart';
-import '../../widgets/load_more_button.dart';
 import '../../widgets/protected_content.dart';
 import '../../widgets/screenshot_warning_listener.dart';
 import 'package:intl/intl.dart';
@@ -34,6 +33,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = false;
   bool _isOpeningArticle = false;
+  int _totalItemCount = 0;
   DocumentSnapshot? _lastDocument;
 
   // 페이지네이션
@@ -44,6 +44,13 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   // 각 아이템의 GlobalKey를 저장
   final Map<int, GlobalKey> _itemKeys = {};
 
+  int get _loadedPages => (_allArticles.length / _itemsPerPage).ceil();
+
+  int get _totalPages {
+    final count = _totalItemCount > 0 ? _totalItemCount : _allArticles.length;
+    return (count / _itemsPerPage).ceil();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -51,24 +58,27 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   }
 
   Future<void> _loadArticles() async {
-    final result =
-        await _service.getPublishedArticlesPage(pageSize: _queryPageSize);
+    final pageFuture =
+        _service.getPublishedArticlesPage(pageSize: _queryPageSize);
+    final countFuture = _service.getPublishedArticlesCount();
+    final result = await pageFuture;
+    final totalItemCount = await countFuture;
     if (mounted) {
       setState(() {
         _allArticles = result.items;
         _lastDocument = result.lastDocument;
         _hasMore = result.hasMore;
+        _totalItemCount = totalItemCount;
         _isLoading = false;
-        final totalPages = (_allArticles.length / _itemsPerPage).ceil();
-        if (_currentPage >= totalPages && totalPages > 0) {
-          _currentPage = totalPages - 1;
+        if (_currentPage >= _totalPages && _totalPages > 0) {
+          _currentPage = _totalPages - 1;
         }
       });
     }
   }
 
-  Future<void> _loadMoreArticles() async {
-    if (_isLoadingMore || !_hasMore) return;
+  Future<bool> _loadMoreArticles() async {
+    if (_isLoadingMore || !_hasMore) return false;
 
     setState(() {
       _isLoadingMore = true;
@@ -79,24 +89,30 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
         pageSize: _queryPageSize,
         startAfter: _lastDocument,
       );
-      if (!mounted) return;
+      if (!mounted) return false;
 
       setState(() {
-        _allArticles = [..._allArticles, ...result.items];
+        final updatedList = [..._allArticles, ...result.items];
+        _allArticles = updatedList;
         _lastDocument = result.lastDocument;
         _hasMore = result.hasMore;
+        if (_totalItemCount < updatedList.length) {
+          _totalItemCount = updatedList.length;
+        }
         _isLoadingMore = false;
       });
 
       if (_searchQuery.isNotEmpty) {
         _performSearch(_searchController.text);
       }
+      return result.items.isNotEmpty;
     } catch (_) {
       if (mounted) {
         setState(() {
           _isLoadingMore = false;
         });
       }
+      return false;
     }
   }
 
@@ -108,9 +124,32 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   }
 
   void _changePage(int page) {
-    setState(() {
-      _currentPage = page;
+    if (page < 0 || _isLoadingMore) return;
+
+    if (page >= _totalPages && !_hasMore) return;
+
+    if (page < _loadedPages) {
+      setState(() {
+        _currentPage = page;
+      });
+      return;
+    }
+
+    _ensurePageLoaded(page).then((loaded) {
+      if (loaded && mounted) {
+        setState(() {
+          _currentPage = page;
+        });
+      }
     });
+  }
+
+  Future<bool> _ensurePageLoaded(int page) async {
+    while (mounted && _loadedPages <= page && _hasMore) {
+      final loaded = await _loadMoreArticles();
+      if (!loaded) break;
+    }
+    return mounted && _loadedPages > page;
   }
 
   Widget _buildArticleList() {
@@ -142,7 +181,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
     }
 
     // 페이지네이션 계산
-    final totalPages = (_allArticles.length / _itemsPerPage).ceil();
+    final totalPages = _totalPages;
     final startIndex = _currentPage * _itemsPerPage;
     final endIndex = (startIndex + _itemsPerPage).clamp(0, _allArticles.length);
     final pageItems = _allArticles.sublist(startIndex, endIndex);
@@ -176,16 +215,12 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
             },
           ),
         ),
-        if (_hasMore && _currentPage >= totalPages - 1)
-          LoadMoreButton(
-            isLoading: _isLoadingMore,
-            onPressed: _loadMoreArticles,
-            accentColor: AppColors.encyclopediaTone,
-          ),
-        if (totalPages > 1)
+        if (totalPages > 1 || _hasMore)
           _PaginationBar(
             currentPage: _currentPage,
             totalPages: totalPages,
+            hasMore: _hasMore,
+            isLoadingNextPage: _isLoadingMore,
             onPageChanged: _changePage,
           ),
       ],
@@ -636,11 +671,15 @@ class _ArticleCard extends StatelessWidget {
 class _PaginationBar extends StatelessWidget {
   final int currentPage;
   final int totalPages;
+  final bool hasMore;
+  final bool isLoadingNextPage;
   final ValueChanged<int> onPageChanged;
 
   const _PaginationBar({
     required this.currentPage,
     required this.totalPages,
+    required this.hasMore,
+    required this.isLoadingNextPage,
     required this.onPageChanged,
   });
 
@@ -666,11 +705,23 @@ class _PaginationBar extends StatelessWidget {
           const SizedBox(width: 8),
           // 페이지 번호들
           ..._buildPageNumbers(),
+          if (totalPages > 5) ...[
+            const SizedBox(width: 8),
+            Text(
+              '${currentPage + 1} / $totalPages',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
           const SizedBox(width: 8),
           // 다음 버튼
           _PageButton(
             icon: Icons.chevron_right,
-            onTap: currentPage < totalPages - 1
+            isLoading: isLoadingNextPage,
+            onTap: currentPage < totalPages - 1 || hasMore
                 ? () => onPageChanged(currentPage + 1)
                 : null,
           ),
@@ -727,10 +778,12 @@ class _PaginationBar extends StatelessWidget {
 class _PageButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
+  final bool isLoading;
 
   const _PageButton({
     required this.icon,
     this.onTap,
+    this.isLoading = false,
   });
 
   @override
@@ -745,11 +798,19 @@ class _PageButton extends StatelessWidget {
           color: isEnabled ? AppColors.inputBackground : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: isEnabled ? AppColors.textPrimary : AppColors.divider,
-        ),
+        child: isLoading
+            ? const Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            : Icon(
+                icon,
+                size: 20,
+                color: isEnabled ? AppColors.textPrimary : AppColors.divider,
+              ),
       ),
     );
   }

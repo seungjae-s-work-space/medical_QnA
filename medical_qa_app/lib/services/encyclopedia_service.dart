@@ -37,6 +37,15 @@ class EncyclopediaService {
     );
   }
 
+  Future<int> getPublishedArticlesCount() async {
+    final snapshot = await _firestore
+        .collection(_collection)
+        .where('isPublished', isEqualTo: true)
+        .count()
+        .get();
+    return snapshot.count ?? 0;
+  }
+
   // 게시글 목록 조회 (관리자용 - 모든 글, 일회성)
   Future<List<EncyclopediaModel>> getAllArticles() async {
     final snapshot = await _firestore

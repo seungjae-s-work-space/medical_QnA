@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../models/notice_model.dart';
 import '../../services/notice_service.dart';
 import '../../utils/app_colors.dart';
-import '../../widgets/load_more_button.dart';
 import 'package:intl/intl.dart';
 
 class NoticeScreen extends StatefulWidget {
@@ -22,7 +21,15 @@ class _NoticeScreenState extends State<NoticeScreen> {
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = false;
+  int _totalItemCount = 0;
   DocumentSnapshot? _lastDocument;
+
+  int get _loadedPages => (_noticeList.length / _itemsPerPage).ceil();
+
+  int get _totalPages {
+    final count = _totalItemCount > 0 ? _totalItemCount : _noticeList.length;
+    return (count / _itemsPerPage).ceil();
+  }
 
   @override
   void initState() {
@@ -31,24 +38,27 @@ class _NoticeScreenState extends State<NoticeScreen> {
   }
 
   Future<void> _loadNotices() async {
-    final result =
-        await _service.getPublishedNoticesPage(pageSize: _queryPageSize);
+    final pageFuture =
+        _service.getPublishedNoticesPage(pageSize: _queryPageSize);
+    final countFuture = _service.getPublishedNoticesCount();
+    final result = await pageFuture;
+    final totalItemCount = await countFuture;
     if (mounted) {
       setState(() {
         _noticeList = result.items;
         _lastDocument = result.lastDocument;
         _hasMore = result.hasMore;
+        _totalItemCount = totalItemCount;
         _isLoading = false;
-        final totalPages = (_noticeList.length / _itemsPerPage).ceil();
-        if (_currentPage >= totalPages && totalPages > 0) {
-          _currentPage = totalPages - 1;
+        if (_currentPage >= _totalPages && _totalPages > 0) {
+          _currentPage = _totalPages - 1;
         }
       });
     }
   }
 
-  Future<void> _loadMoreNotices() async {
-    if (_isLoadingMore || !_hasMore) return;
+  Future<bool> _loadMoreNotices() async {
+    if (_isLoadingMore || !_hasMore) return false;
 
     setState(() {
       _isLoadingMore = true;
@@ -59,27 +69,56 @@ class _NoticeScreenState extends State<NoticeScreen> {
         pageSize: _queryPageSize,
         startAfter: _lastDocument,
       );
-      if (!mounted) return;
+      if (!mounted) return false;
 
       setState(() {
-        _noticeList = [..._noticeList, ...result.items];
+        final updatedList = [..._noticeList, ...result.items];
+        _noticeList = updatedList;
         _lastDocument = result.lastDocument;
         _hasMore = result.hasMore;
+        if (_totalItemCount < updatedList.length) {
+          _totalItemCount = updatedList.length;
+        }
         _isLoadingMore = false;
       });
+      return result.items.isNotEmpty;
     } catch (_) {
       if (mounted) {
         setState(() {
           _isLoadingMore = false;
         });
       }
+      return false;
     }
   }
 
   void _changePage(int page) {
-    setState(() {
-      _currentPage = page;
+    if (page < 0 || _isLoadingMore) return;
+
+    if (page >= _totalPages && !_hasMore) return;
+
+    if (page < _loadedPages) {
+      setState(() {
+        _currentPage = page;
+      });
+      return;
+    }
+
+    _ensurePageLoaded(page).then((loaded) {
+      if (loaded && mounted) {
+        setState(() {
+          _currentPage = page;
+        });
+      }
     });
+  }
+
+  Future<bool> _ensurePageLoaded(int page) async {
+    while (mounted && _loadedPages <= page && _hasMore) {
+      final loaded = await _loadMoreNotices();
+      if (!loaded) break;
+    }
+    return mounted && _loadedPages > page;
   }
 
   @override
@@ -112,7 +151,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
     }
 
     // 페이지네이션 계산
-    final totalPages = (_noticeList.length / _itemsPerPage).ceil();
+    final totalPages = _totalPages;
     final startIndex = _currentPage * _itemsPerPage;
     final endIndex = (startIndex + _itemsPerPage).clamp(0, _noticeList.length);
     final pageItems = _noticeList.sublist(startIndex, endIndex);
@@ -134,17 +173,13 @@ class _NoticeScreenState extends State<NoticeScreen> {
             },
           ),
         ),
-        if (_hasMore && _currentPage >= totalPages - 1)
-          LoadMoreButton(
-            isLoading: _isLoadingMore,
-            onPressed: _loadMoreNotices,
-            accentColor: AppColors.accent,
-          ),
         // 페이지네이션 UI
-        if (totalPages > 1)
+        if (totalPages > 1 || _hasMore)
           _PaginationBar(
             currentPage: _currentPage,
             totalPages: totalPages,
+            hasMore: _hasMore,
+            isLoadingNextPage: _isLoadingMore,
             onPageChanged: _changePage,
           ),
       ],
@@ -241,11 +276,15 @@ class _NoticeCard extends StatelessWidget {
 class _PaginationBar extends StatelessWidget {
   final int currentPage;
   final int totalPages;
+  final bool hasMore;
+  final bool isLoadingNextPage;
   final ValueChanged<int> onPageChanged;
 
   const _PaginationBar({
     required this.currentPage,
     required this.totalPages,
+    required this.hasMore,
+    required this.isLoadingNextPage,
     required this.onPageChanged,
   });
 
@@ -271,11 +310,23 @@ class _PaginationBar extends StatelessWidget {
           const SizedBox(width: 8),
           // 페이지 번호들
           ..._buildPageNumbers(),
+          if (totalPages > 5) ...[
+            const SizedBox(width: 8),
+            Text(
+              '${currentPage + 1} / $totalPages',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
           const SizedBox(width: 8),
           // 다음 버튼
           _PageButton(
             icon: Icons.chevron_right,
-            onTap: currentPage < totalPages - 1
+            isLoading: isLoadingNextPage,
+            onTap: currentPage < totalPages - 1 || hasMore
                 ? () => onPageChanged(currentPage + 1)
                 : null,
           ),
@@ -332,10 +383,12 @@ class _PaginationBar extends StatelessWidget {
 class _PageButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
+  final bool isLoading;
 
   const _PageButton({
     required this.icon,
     this.onTap,
+    this.isLoading = false,
   });
 
   @override
@@ -350,11 +403,19 @@ class _PageButton extends StatelessWidget {
           color: isEnabled ? AppColors.inputBackground : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: isEnabled ? AppColors.textPrimary : AppColors.divider,
-        ),
+        child: isLoading
+            ? const Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            : Icon(
+                icon,
+                size: 20,
+                color: isEnabled ? AppColors.textPrimary : AppColors.divider,
+              ),
       ),
     );
   }

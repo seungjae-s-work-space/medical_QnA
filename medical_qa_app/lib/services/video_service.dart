@@ -35,6 +35,15 @@ class VideoService {
     );
   }
 
+  Future<int> getPublishedVideosCount() async {
+    final snapshot = await _firestore
+        .collection(_collection)
+        .where('isPublished', isEqualTo: true)
+        .count()
+        .get();
+    return snapshot.count ?? 0;
+  }
+
   // 단일 영상 가져오기
   Future<VideoModel?> getVideo(String id) async {
     final doc = await _firestore.collection(_collection).doc(id).get();

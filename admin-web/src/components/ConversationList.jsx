@@ -17,20 +17,23 @@ import {
 } from '@mui/material';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import { colors } from '../theme';
 
 const CONVERSATION_PAGE_SIZE = 50;
 const MESSAGE_SEARCH_PAGE_SIZE = 20;
 
 function ConversationList() {
-  const [conversations, setConversations] = useState([]);
+  const [conversationPages, setConversationPages] = useState([]);
+  const [pageCursors, setPageCursors] = useState([]);
+  const [hasMoreByPage, setHasMoreByPage] = useState([]);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState('all'); // 'all', 'unread', 'new'
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState(null); // { conversationId: matchedMessage }
-  const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingPage, setLoadingPage] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,34 +48,90 @@ function ConversationList() {
         id: doc.id,
         ...doc.data(),
       }));
-      setConversations(convs);
-      setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
-      setHasMore(snapshot.docs.length === CONVERSATION_PAGE_SIZE);
+      setConversationPages((previous) => {
+        const next = [...previous];
+        next[0] = convs;
+        return next;
+      });
+      setPageCursors((previous) => {
+        const next = [...previous];
+        next[0] = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+        return next;
+      });
+      setHasMoreByPage((previous) => {
+        const next = [...previous];
+        next[0] = snapshot.docs.length === CONVERSATION_PAGE_SIZE;
+        return next;
+      });
     });
 
     return unsubscribe;
   }, []);
 
-  const handleLoadMore = async () => {
-    if (!hasMore || loadingMore || !lastVisibleDoc) return;
+  const conversations = conversationPages[currentPageIndex] || [];
+  const canGoPrevious = currentPageIndex > 0;
+  const canGoNext = Boolean(conversationPages[currentPageIndex + 1]) ||
+    Boolean(hasMoreByPage[currentPageIndex]);
 
-    setLoadingMore(true);
+  const handlePreviousPage = () => {
+    if (!canGoPrevious || loadingPage) return;
+    setCurrentPageIndex((page) => page - 1);
+  };
+
+  const handleNextPage = async () => {
+    if (!canGoNext || loadingPage) return;
+
+    const nextPageIndex = currentPageIndex + 1;
+    if (conversationPages[nextPageIndex]) {
+      setCurrentPageIndex(nextPageIndex);
+      return;
+    }
+
+    const cursor = pageCursors[currentPageIndex];
+    if (!cursor) return;
+
+    setLoadingPage(true);
     try {
       const snapshot = await getDocs(query(
         collection(db, 'conversations'),
         orderBy('lastMessageAt', 'desc'),
-        startAfter(lastVisibleDoc),
+        startAfter(cursor),
         limit(CONVERSATION_PAGE_SIZE)
       ));
       const convs = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setConversations((prev) => [...prev, ...convs]);
-      setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : lastVisibleDoc);
-      setHasMore(snapshot.docs.length === CONVERSATION_PAGE_SIZE);
+      if (convs.length === 0) {
+        setHasMoreByPage((previous) => {
+          const next = [...previous];
+          next[currentPageIndex] = false;
+          return next;
+        });
+        return;
+      }
+
+      setConversationPages((previous) => {
+        const next = [...previous];
+        next[nextPageIndex] = convs;
+        return next;
+      });
+      setPageCursors((previous) => {
+        const next = [...previous];
+        next[nextPageIndex] = snapshot.docs.length > 0
+          ? snapshot.docs[snapshot.docs.length - 1]
+          : null;
+        return next;
+      });
+      setHasMoreByPage((previous) => {
+        const next = [...previous];
+        next[currentPageIndex] = true;
+        next[nextPageIndex] = snapshot.docs.length === CONVERSATION_PAGE_SIZE;
+        return next;
+      });
+      setCurrentPageIndex(nextPageIndex);
     } finally {
-      setLoadingMore(false);
+      setLoadingPage(false);
     }
   };
 
@@ -531,32 +590,31 @@ function ConversationList() {
         </Box>
       )}
 
-      {hasMore && searchResults === null && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <Box
-            component="button"
-            type="button"
-            onClick={handleLoadMore}
-            disabled={loadingMore}
+      {searchResults === null && (canGoPrevious || canGoNext) && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1.5, mt: 3 }}>
+          <IconButton
+            onClick={handlePreviousPage}
+            disabled={!canGoPrevious || loadingPage}
             sx={{
-              border: `1px solid ${colors.border}`,
-              bgcolor: colors.card,
-              color: colors.textPrimary,
-              borderRadius: 999,
-              px: 4,
-              py: 1.2,
-              fontWeight: 700,
-              cursor: loadingMore ? 'default' : 'pointer',
-              '&:disabled': {
-                color: colors.textTertiary,
-              },
-              '&:hover': {
-                bgcolor: loadingMore ? colors.card : colors.backgroundAlt,
-              },
+              color: colors.textSecondary,
+              '&:disabled': { color: colors.textTertiary },
             }}
           >
-            {loadingMore ? '불러오는 중' : '더보기'}
-          </Box>
+            <ChevronLeftRoundedIcon />
+          </IconButton>
+          <Typography sx={{ color: colors.textSecondary, fontSize: 14, fontWeight: 700 }}>
+            {currentPageIndex + 1}페이지
+          </Typography>
+          <IconButton
+            onClick={handleNextPage}
+            disabled={!canGoNext || loadingPage}
+            sx={{
+              color: colors.textSecondary,
+              '&:disabled': { color: colors.textTertiary },
+            }}
+          >
+            {loadingPage ? <CircularProgress size={20} /> : <ChevronRightRoundedIcon />}
+          </IconButton>
         </Box>
       )}
     </Box>
