@@ -1,40 +1,42 @@
 import { createTheme } from '@mui/material/styles';
 
-// 모던 클린 디자인 - 화이트/블루 톤
+// Botanical wellness design - sage/mint/ivory tone from home-dashboard.png
 const colors = {
-  // 배경
-  background: '#F8FAFC',
-  backgroundAlt: '#F1F5F9',
-  sidebar: '#FFFFFF',
+  background: '#F6FBF7',
+  backgroundAlt: '#EAF6EF',
+  backgroundWarm: '#FFF9EA',
+  sidebar: '#FBFEFA',
   card: '#FFFFFF',
+  cardTint: '#F8FCF9',
 
-  // 텍스트
-  textPrimary: '#1E293B',
-  textSecondary: '#64748B',
-  textTertiary: '#94A3B8',
+  textPrimary: '#1F332B',
+  textSecondary: '#5E756B',
+  textTertiary: '#91A69B',
 
-  // 포인트 컬러
-  primary: '#6366F1',
-  primaryLight: '#EEF2FF',
-  primaryDark: '#4F46E5',
+  primary: '#70B789',
+  primaryLight: '#E5F5EA',
+  primaryDark: '#0B6B47',
+  primarySoft: '#F0FAF3',
 
-  // 상태 컬러
-  success: '#10B981',
-  successLight: '#D1FAE5',
-  warning: '#F59E0B',
-  warningLight: '#FEF3C7',
-  error: '#EF4444',
-  errorLight: '#FEE2E2',
+  secondary: '#D4A853',
+  secondaryLight: '#FFF1BD',
+  aqua: '#DDF4F2',
+  aquaDark: '#5B9A96',
 
-  // 기타
-  divider: '#E2E8F0',
-  border: '#E2E8F0',
-  inputBorder: '#CBD5E1',
-  inputBackground: '#FFFFFF',
+  success: '#6FA87B',
+  successLight: '#E4F4E8',
+  warning: '#D4A853',
+  warningLight: '#FFF4CF',
+  error: '#D97171',
+  errorLight: '#FBE7E7',
 
-  // 메시지 (채팅용)
-  userMessage: '#F1F5F9',
-  adminMessage: '#EEF2FF',
+  divider: '#DDEBE2',
+  border: '#D7E8DF',
+  inputBorder: '#C9E0D4',
+  inputBackground: '#FCFFFD',
+
+  userMessage: '#E6F4EB',
+  adminMessage: '#FFF7E1',
 };
 
 const theme = createTheme({
@@ -51,7 +53,8 @@ const theme = createTheme({
       contrastText: '#FFFFFF',
     },
     secondary: {
-      main: colors.textSecondary,
+      main: colors.secondary,
+      light: colors.secondaryLight,
     },
     success: {
       main: colors.success,
@@ -108,6 +111,7 @@ const theme = createTheme({
       styleOverrides: {
         body: {
           backgroundColor: colors.background,
+          backgroundImage: `linear-gradient(135deg, ${colors.background} 0%, ${colors.aqua} 45%, ${colors.backgroundWarm} 100%)`,
         },
       },
     },
@@ -120,14 +124,17 @@ const theme = createTheme({
           padding: '10px 20px',
         },
         contained: {
-          boxShadow: 'none',
+          boxShadow: '0 10px 22px rgba(112, 183, 137, 0.22)',
+          background: `linear-gradient(135deg, ${colors.primary}, ${colors.primaryDark})`,
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+            background: colors.primaryDark,
+            boxShadow: '0 12px 26px rgba(112, 183, 137, 0.3)',
           },
         },
         outlined: {
           borderColor: colors.border,
-          color: colors.textPrimary,
+          color: colors.primaryDark,
+          backgroundColor: 'rgba(255,255,255,0.62)',
           '&:hover': {
             borderColor: colors.primary,
             backgroundColor: colors.primaryLight,
@@ -158,7 +165,7 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)',
+          boxShadow: '0 16px 40px rgba(31, 51, 43, 0.07)',
           border: `1px solid ${colors.border}`,
           borderRadius: 16,
         },
@@ -167,7 +174,7 @@ const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 16px 40px rgba(31, 51, 43, 0.07)',
           border: `1px solid ${colors.border}`,
         },
       },
