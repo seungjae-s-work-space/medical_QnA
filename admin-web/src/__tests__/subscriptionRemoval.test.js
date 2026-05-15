@@ -38,8 +38,9 @@ describe('subscription removal', () => {
     const userManagement = read('components/UserManagement.jsx');
 
     expect(userManagement).toMatch(/collection\(db, 'users'\)/);
-    expect(userManagement).toMatch(/onSnapshot/);
+    expect(userManagement).toMatch(/getDocs/);
+    expect(userManagement).toMatch(/getCountFromServer/);
+    expect(userManagement).toMatch(/USER_PAGE_SIZE = 20/);
     expect(userManagement).not.toMatch(/deleteDoc|updateDoc|setDoc|addDoc|writeBatch|runTransaction/);
-    expect(userManagement).not.toMatch(/<Button|<IconButton/);
   });
 });

@@ -774,7 +774,7 @@ function ChatWindow() {
         }}
       >
         <IconButton
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/chat')}
           sx={{ color: colors.textSecondary, mr: 1 }}
         >
           <ArrowBackIosNewIcon sx={{ fontSize: 20 }} />

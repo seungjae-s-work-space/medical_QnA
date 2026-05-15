@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import Layout from './components/Layout';
+import HomeDashboard from './components/HomeDashboard';
 import ConversationList from './components/ConversationList';
 import ChatWindow from './components/ChatWindow';
 import UserChatWindow from './components/UserChatWindow';
@@ -60,23 +61,22 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
   }
 
   const routeMetadata = {
-    '/': isAdmin
+    '/': {
+      title: DEFAULT_TITLE,
+      description: DEFAULT_DESCRIPTION,
+      shouldIndex: true,
+    },
+    '/chat': isAdmin
       ? {
           title: `관리자 상담 채팅 | ${SITE_NAME}`,
           description: '관리자가 사용자 상담 채팅을 확인하고 관리하는 대시보드입니다.',
           shouldIndex: false,
         }
-      : isLoggedIn
-        ? {
-            title: `상담하기 | ${SITE_NAME}`,
-            description: '난임 관련 상담을 확인하고 전문가와 소통할 수 있는 화면입니다.',
-            shouldIndex: false,
-          }
-        : {
-            title: DEFAULT_TITLE,
-            description: DEFAULT_DESCRIPTION,
-            shouldIndex: true,
-          },
+      : {
+          title: `상담하기 | ${SITE_NAME}`,
+          description: '난임 관련 상담을 확인하고 전문가와 소통할 수 있는 화면입니다.',
+          shouldIndex: false,
+        },
     '/login': {
       title: `로그인 | ${SITE_NAME}`,
       description: '난임상담톡톡 로그인 및 회원가입 화면입니다.',
@@ -168,9 +168,19 @@ function AppRoutes() {
           element={isLoggedIn ? <Navigate to="/" /> : <Login />}
         />
 
-        {/* 홈: 역할에 따라 다른 화면 */}
+        {/* 홈 대시보드 */}
         <Route
           path="/"
+          element={
+            <Layout>
+              <HomeDashboard />
+            </Layout>
+          }
+        />
+
+        {/* 상담 채팅 */}
+        <Route
+          path="/chat"
           element={
             isAdmin ? (
               <Layout>

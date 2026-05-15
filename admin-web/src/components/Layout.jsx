@@ -17,6 +17,7 @@ import {
   Divider,
   Badge,
 } from '@mui/material';
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
@@ -70,6 +71,14 @@ function Layout({ children }) {
     const allMenuItems = [
       {
         path: '/',
+        label: '홈',
+        icon: <HomeRoundedIcon />,
+        description: '서비스 소개',
+        badge: 0,
+        visible: true,
+      },
+      {
+        path: '/chat',
         label: isAdmin ? '상담 채팅' : '상담하기',
         icon: <ChatBubbleOutlineRoundedIcon />,
         description: isAdmin ? '사용자 문의 관리' : '전문가 상담',
@@ -240,7 +249,10 @@ function Layout({ children }) {
         </Box>
         <List sx={{ px: 2, flex: 1 }}>
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive =
+              location.pathname === item.path ||
+              (item.path !== '/' &&
+                location.pathname.startsWith(`${item.path}/`));
             return (
               <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
