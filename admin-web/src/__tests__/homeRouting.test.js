@@ -23,5 +23,6 @@ describe('home routing', () => {
     expect(layout).toMatch(/location\.pathname\.startsWith\(`\$\{item\.path\}\/`\)/);
     expect(chatWindow).toMatch(/navigate\('\/chat'\)/);
     expect(homeDashboard).toMatch(/home-dashboard\.png/);
+    expect(fs.existsSync(path.join(srcDir, '..', 'public', 'home-dashboard.png'))).toBe(true);
   });
 });
