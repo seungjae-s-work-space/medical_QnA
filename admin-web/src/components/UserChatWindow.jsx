@@ -900,8 +900,8 @@ function UserChatWindow() {
           alignItems: 'center',
           px: 3,
           py: 2,
-          borderBottom: `1px solid ${colors.divider}`,
-          bgcolor: colors.inputBackground,
+          borderBottom: `1px solid ${colors.border}`,
+          bgcolor: 'rgba(255,255,255,0.82)',
         }}
       >
         <Box
@@ -1064,7 +1064,7 @@ function UserChatWindow() {
                       maxWidth: '70%',
                       px: 2,
                       py: 1.5,
-                      bgcolor: isUser ? colors.userMessage : colors.inputBackground,
+                      bgcolor: isUser ? colors.userMessage : colors.adminMessage,
                       borderRadius: isUser
                         ? '18px 18px 4px 18px'
                         : '18px 18px 18px 4px',
@@ -1147,8 +1147,8 @@ function UserChatWindow() {
           sx={{
             px: 2,
             py: 1,
-            borderTop: `1px solid ${colors.divider}`,
-            bgcolor: colors.backgroundAlt,
+            borderTop: `1px solid ${colors.border}`,
+            bgcolor: colors.cardTint,
           }}
         >
           <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', mb: 0.5 }}>
@@ -1250,8 +1250,8 @@ function UserChatWindow() {
           gap: 1,
           px: 2,
           py: 1.5,
-          borderTop: `1px solid ${colors.divider}`,
-          bgcolor: colors.inputBackground,
+          borderTop: `1px solid ${colors.border}`,
+          bgcolor: colors.cardTint,
         }}
       >
         <input

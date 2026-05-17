@@ -20,6 +20,13 @@ import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineR
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import { colors } from '../theme';
+import {
+  emptyStateSx,
+  pageHeaderSx,
+  pageShellSx,
+  searchFieldSx,
+  statCardSx,
+} from '../utils/webDesignStyles';
 
 const CONVERSATION_PAGE_SIZE = 50;
 const MESSAGE_SEARCH_PAGE_SIZE = 20;
@@ -247,9 +254,9 @@ function ConversationList() {
   const totalCount = activeConversations.length;
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1000, mx: 'auto' }}>
+    <Box sx={pageShellSx}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={pageHeaderSx}>
         <Typography variant="h4" sx={{ color: colors.textPrimary, mb: 1 }}>
           상담 채팅
         </Typography>
@@ -263,16 +270,12 @@ function ConversationList() {
         <Box
           onClick={() => setFilterMode('all')}
           sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: filterMode === 'all' ? colors.primary : colors.card,
-            borderRadius: 3,
-            border: `1px solid ${filterMode === 'all' ? colors.primary : colors.border}`,
+            ...statCardSx(colors, filterMode === 'all'),
             cursor: 'pointer',
-            transition: 'all 0.2s',
+            transition: 'transform 0.18s ease, box-shadow 0.18s ease',
             '&:hover': {
               transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              boxShadow: '0 18px 44px rgba(31, 51, 43, 0.12)',
             },
           }}
         >
@@ -286,16 +289,12 @@ function ConversationList() {
         <Box
           onClick={() => unreadCount > 0 && setFilterMode(filterMode === 'unread' ? 'all' : 'unread')}
           sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: filterMode === 'unread' ? colors.primary : (unreadCount > 0 ? colors.errorLight : colors.card),
-            borderRadius: 3,
-            border: `1px solid ${filterMode === 'unread' ? colors.primary : (unreadCount > 0 ? colors.error : colors.border)}`,
+            ...statCardSx(colors, filterMode === 'unread', 'error'),
             cursor: unreadCount > 0 ? 'pointer' : 'default',
-            transition: 'all 0.2s',
+            transition: 'transform 0.18s ease, box-shadow 0.18s ease',
             '&:hover': unreadCount > 0 ? {
               transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              boxShadow: '0 18px 44px rgba(31, 51, 43, 0.12)',
             } : {},
           }}
         >
@@ -315,16 +314,12 @@ function ConversationList() {
         <Box
           onClick={() => newUserCount > 0 && setFilterMode(filterMode === 'new' ? 'all' : 'new')}
           sx={{
-            flex: 1,
-            p: 3,
-            bgcolor: filterMode === 'new' ? colors.primary : (newUserCount > 0 ? colors.warningLight : colors.card),
-            borderRadius: 3,
-            border: `1px solid ${filterMode === 'new' ? colors.primary : (newUserCount > 0 ? colors.warning : colors.border)}`,
+            ...statCardSx(colors, filterMode === 'new', 'warning'),
             cursor: newUserCount > 0 ? 'pointer' : 'default',
-            transition: 'all 0.2s',
+            transition: 'transform 0.18s ease, box-shadow 0.18s ease',
             '&:hover': newUserCount > 0 ? {
               transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              boxShadow: '0 18px 44px rgba(31, 51, 43, 0.12)',
             } : {},
           }}
         >
@@ -374,6 +369,7 @@ function ConversationList() {
               </InputAdornment>
             ),
           }}
+          sx={{ ...searchFieldSx(), flex: 1 }}
         />
         <IconButton
           onClick={handleDeepSearch}
@@ -426,16 +422,7 @@ function ConversationList() {
       {/* Conversation List */}
       {filteredConversations.length === 0 ? (
         <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 10,
-            bgcolor: colors.card,
-            borderRadius: 3,
-            border: `1px solid ${colors.border}`,
-          }}
+          sx={emptyStateSx(colors)}
         >
           <Box
             sx={{
@@ -597,6 +584,7 @@ function ConversationList() {
             disabled={!canGoPrevious || loadingPage}
             sx={{
               color: colors.textSecondary,
+              '&:hover': { bgcolor: colors.primaryLight },
               '&:disabled': { color: colors.textTertiary },
             }}
           >
@@ -610,6 +598,7 @@ function ConversationList() {
             disabled={!canGoNext || loadingPage}
             sx={{
               color: colors.textSecondary,
+              '&:hover': { bgcolor: colors.primaryLight },
               '&:disabled': { color: colors.textTertiary },
             }}
           >

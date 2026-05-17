@@ -33,6 +33,12 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { colors } from '../theme';
+import {
+  pageHeaderSx,
+  pageShellSx,
+  paginationButtonSx,
+  statCardSx,
+} from '../utils/webDesignStyles';
 
 const USER_PAGE_SIZE = 20;
 
@@ -195,8 +201,8 @@ function UserManagement() {
   const normalUserCount = users.length - adminCount;
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
-      <Box sx={{ mb: 4 }}>
+    <Box sx={pageShellSx}>
+      <Box sx={pageHeaderSx}>
         <Typography variant="h4" sx={{ color: colors.textPrimary, mb: 1 }}>
           사용자 관리
         </Typography>
@@ -213,7 +219,7 @@ function UserManagement() {
           mb: 3,
         }}
       >
-        <Card>
+        <Card sx={statCardSx(colors)}>
           <CardContent>
             <Typography sx={{ fontSize: 13, color: colors.textSecondary, mb: 1 }}>
               전체 사용자
@@ -223,7 +229,7 @@ function UserManagement() {
             </Typography>
           </CardContent>
         </Card>
-        <Card>
+        <Card sx={statCardSx(colors)}>
           <CardContent>
             <Typography sx={{ fontSize: 13, color: colors.textSecondary, mb: 1 }}>
               현재 페이지 일반 사용자
@@ -233,7 +239,7 @@ function UserManagement() {
             </Typography>
           </CardContent>
         </Card>
-        <Card>
+        <Card sx={statCardSx(colors)}>
           <CardContent>
             <Typography sx={{ fontSize: 13, color: colors.textSecondary, mb: 1 }}>
               현재 페이지 관리자
@@ -245,7 +251,7 @@ function UserManagement() {
         </Card>
       </Box>
 
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.82)' }}>
         <Box
           sx={{
             display: 'flex',
@@ -380,16 +386,7 @@ function UserManagement() {
                 variant={currentPageIndex === index ? 'contained' : 'outlined'}
                 onClick={() => handlePageChange(index)}
                 disabled={loadingPage}
-                sx={{
-                  minWidth: 40,
-                  height: 40,
-                  borderRadius: 2,
-                  px: 1.5,
-                  ...(currentPageIndex !== index && {
-                    color: colors.textSecondary,
-                    borderColor: colors.border,
-                  }),
-                }}
+                sx={paginationButtonSx(colors, currentPageIndex === index)}
               >
                 {index + 1}
               </Button>

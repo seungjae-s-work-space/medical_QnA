@@ -769,8 +769,8 @@ function ChatWindow() {
           alignItems: 'center',
           px: 1,
           py: 1.5,
-          borderBottom: `1px solid ${colors.divider}`,
-          bgcolor: colors.inputBackground,
+          borderBottom: `1px solid ${colors.border}`,
+          bgcolor: 'rgba(255,255,255,0.82)',
         }}
       >
         <IconButton
@@ -866,7 +866,7 @@ function ChatWindow() {
                       maxWidth: '70%',
                       px: 2,
                       py: 1.5,
-                      bgcolor: isAdmin ? colors.userMessage : colors.inputBackground,
+                      bgcolor: isAdmin ? colors.adminMessage : colors.userMessage,
                       borderRadius: isAdmin
                         ? '18px 18px 4px 18px'
                         : '18px 18px 18px 4px',
@@ -951,8 +951,8 @@ function ChatWindow() {
           sx={{
             px: 2,
             py: 1,
-            borderTop: `1px solid ${colors.divider}`,
-            bgcolor: colors.backgroundAlt,
+            borderTop: `1px solid ${colors.border}`,
+            bgcolor: colors.cardTint,
           }}
         >
           <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', mb: 0.5 }}>
@@ -1055,8 +1055,8 @@ function ChatWindow() {
           gap: 1,
           px: 2,
           py: 1.5,
-          borderTop: `1px solid ${colors.divider}`,
-          bgcolor: colors.inputBackground,
+          borderTop: `1px solid ${colors.border}`,
+          bgcolor: colors.cardTint,
         }}
       >
         {/* 파일 첨부 버튼 */}
