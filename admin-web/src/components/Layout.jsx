@@ -32,6 +32,27 @@ import { shouldShowMembershipPrompt } from '../utils/membershipAccess';
 
 const DRAWER_WIDTH = 280;
 
+const brandMarkSx = {
+  width: 46,
+  height: 46,
+  bgcolor: colors.primaryDark,
+  color: 'white',
+  fontSize: 18,
+  fontWeight: 800,
+  boxShadow: '0 12px 26px rgba(11, 107, 71, 0.24)',
+};
+
+const navItemSx = (isActive) => ({
+  borderRadius: 3,
+  py: 1.45,
+  px: 2,
+  bgcolor: isActive ? colors.primaryLight : 'transparent',
+  border: `1px solid ${isActive ? colors.border : 'transparent'}`,
+  '&:hover': {
+    bgcolor: isActive ? colors.primaryLight : 'rgba(229, 245, 234, 0.72)',
+  },
+});
+
 function Layout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -168,7 +189,15 @@ function Layout({ children }) {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: colors.background }}>
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        bgcolor: colors.background,
+        background:
+          `linear-gradient(135deg, ${colors.background} 0%, ${colors.aqua} 46%, ${colors.backgroundWarm} 100%)`,
+      }}
+    >
       {/* Sidebar */}
       <Drawer
         variant="permanent"
@@ -179,8 +208,10 @@ function Layout({ children }) {
             width: DRAWER_WIDTH,
             boxSizing: 'border-box',
             bgcolor: colors.sidebar,
-            borderRight: 'none',
-            boxShadow: '1px 0 10px rgba(0,0,0,0.03)',
+            borderRight: `1px solid ${colors.border}`,
+            boxShadow: '12px 0 36px rgba(31, 51, 43, 0.06)',
+            background:
+              'linear-gradient(180deg, rgba(251,254,250,0.98) 0%, rgba(239,249,243,0.92) 100%)',
           },
         }}
       >
@@ -193,16 +224,7 @@ function Layout({ children }) {
             gap: 2,
           }}
         >
-          <Avatar
-            sx={{
-              width: 44,
-              height: 44,
-              bgcolor: colors.primary,
-              fontSize: 18,
-              fontWeight: 700,
-              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.3)',
-            }}
-          >
+          <Avatar sx={brandMarkSx}>
             Q
           </Avatar>
           <Box>
@@ -257,15 +279,7 @@ function Layout({ children }) {
               <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   onClick={() => handleMenuNavigation(item.path)}
-                  sx={{
-                    borderRadius: 2.5,
-                    py: 1.5,
-                    px: 2,
-                    bgcolor: isActive ? colors.primaryLight : 'transparent',
-                    '&:hover': {
-                      bgcolor: isActive ? colors.primaryLight : colors.backgroundAlt,
-                    },
-                  }}
+                  sx={navItemSx(isActive)}
                 >
                   <ListItemIcon
                     sx={{
