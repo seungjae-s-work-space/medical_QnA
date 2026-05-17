@@ -51,6 +51,17 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { colors } from '../theme';
+import { protectedContentSx } from '../utils/contentProtection';
+import {
+  contentCardSx,
+  dialogPaperSx,
+  emptyStateSx,
+  pageHeaderSx,
+  pageShellSx,
+  paginationButtonSx,
+  searchFieldSx,
+  statCardSx,
+} from '../utils/webDesignStyles';
 
 // 유튜브 URL에서 비디오 ID 추출
 const extractYoutubeId = (url) => {
@@ -426,9 +437,9 @@ function VideoManager({ readOnly = false }) {
   }
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={pageShellSx}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={pageHeaderSx}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box>
             <Typography variant="h4" sx={{ color: colors.textPrimary, mb: 1 }}>
@@ -455,13 +466,7 @@ function VideoManager({ readOnly = false }) {
       {!readOnly && (
         <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
           <Box
-            sx={{
-              flex: 1,
-              p: 3,
-              bgcolor: colors.card,
-              borderRadius: 3,
-              border: `1px solid ${colors.border}`,
-            }}
+            sx={statCardSx(colors)}
           >
             <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 0.5 }}>
               전체 영상
@@ -471,13 +476,7 @@ function VideoManager({ readOnly = false }) {
             </Typography>
           </Box>
           <Box
-            sx={{
-              flex: 1,
-              p: 3,
-              bgcolor: colors.successLight,
-              borderRadius: 3,
-              border: `1px solid ${colors.success}`,
-            }}
+            sx={statCardSx(colors)}
           >
             <Typography variant="body2" sx={{ color: colors.success, mb: 0.5 }}>
               공개
@@ -487,13 +486,7 @@ function VideoManager({ readOnly = false }) {
             </Typography>
           </Box>
           <Box
-            sx={{
-              flex: 1,
-              p: 3,
-              bgcolor: colors.warningLight,
-              borderRadius: 3,
-              border: `1px solid ${colors.warning}`,
-            }}
+            sx={statCardSx(colors, false, 'warning')}
           >
             <Typography variant="body2" sx={{ color: colors.warning, mb: 0.5 }}>
               비공개
@@ -518,22 +511,13 @@ function VideoManager({ readOnly = false }) {
             </InputAdornment>
           ),
         }}
-        sx={{ mb: 3 }}
+        sx={searchFieldSx()}
       />
 
       {/* Video Grid */}
       {filteredVideos.length === 0 ? (
         <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 10,
-            bgcolor: colors.card,
-            borderRadius: 3,
-            border: `1px solid ${colors.border}`,
-          }}
+          sx={emptyStateSx(colors)}
         >
           <Box
             sx={{
@@ -560,20 +544,8 @@ function VideoManager({ readOnly = false }) {
               <Card
                 onClick={() => setViewVideo(video)}
                 sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  border: `1px solid ${colors.border}`,
-                  bgcolor: colors.card,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'none',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 24px rgba(0,0,0,0.1)',
-                    borderColor: colors.primary,
-                  },
+                  ...protectedContentSx,
+                  ...contentCardSx(colors),
                 }}
               >
                 {/* 썸네일에 재생 아이콘 오버레이 */}
@@ -748,16 +720,7 @@ function VideoManager({ readOnly = false }) {
               key={i}
               onClick={() => handlePageChange(i)}
               variant={currentPage === i ? 'contained' : 'text'}
-              sx={{
-                minWidth: 40,
-                height: 40,
-                borderRadius: 2,
-                fontWeight: 600,
-                ...(currentPage !== i && {
-                  color: colors.textSecondary,
-                  '&:hover': { bgcolor: colors.backgroundAlt },
-                }),
-              }}
+              sx={paginationButtonSx(colors, currentPage === i)}
             >
               {i + 1}
             </Button>
@@ -781,6 +744,7 @@ function VideoManager({ readOnly = false }) {
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
+        PaperProps={{ sx: dialogPaperSx(colors) }}
       >
         <DialogTitle
           sx={{
@@ -935,6 +899,7 @@ function VideoManager({ readOnly = false }) {
         onClose={() => setViewVideo(null)}
         maxWidth="md"
         fullWidth
+        PaperProps={{ sx: dialogPaperSx(colors) }}
       >
         {viewVideo && (
           <>
