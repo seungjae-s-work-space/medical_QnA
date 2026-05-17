@@ -50,7 +50,7 @@ const theme = createTheme({
       main: colors.primary,
       light: colors.primaryLight,
       dark: colors.primaryDark,
-      contrastText: '#FFFFFF',
+      contrastText: colors.textPrimary,
     },
     secondary: {
       main: colors.secondary,
@@ -124,11 +124,12 @@ const theme = createTheme({
           padding: '10px 20px',
         },
         contained: {
-          boxShadow: '0 10px 22px rgba(112, 183, 137, 0.22)',
-          background: `linear-gradient(135deg, ${colors.primary}, ${colors.primaryDark})`,
+          color: '#FFFFFF',
+          boxShadow: '0 10px 22px rgba(11, 107, 71, 0.22)',
+          background: `linear-gradient(135deg, ${colors.primaryDark}, #2F7D55)`,
           '&:hover': {
-            background: colors.primaryDark,
-            boxShadow: '0 12px 26px rgba(112, 183, 137, 0.3)',
+            background: '#095A3B',
+            boxShadow: '0 12px 26px rgba(11, 107, 71, 0.3)',
           },
         },
         outlined: {

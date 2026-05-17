@@ -20,31 +20,37 @@ export const pageHeaderSx = {
 };
 
 export function statCardSx(colors, active = false, tone = 'primary') {
-  const toneColor =
-    tone === 'warning'
-      ? colors.warning
-      : tone === 'error'
-        ? colors.error
-        : colors.primary;
   const softColor =
     tone === 'warning'
       ? colors.warningLight
       : tone === 'error'
         ? colors.errorLight
         : colors.primaryLight;
+  const activeToneStart =
+    tone === 'warning'
+      ? '#8A5B08'
+      : tone === 'error'
+        ? '#A64040'
+        : colors.primaryDark;
+  const activeToneEnd =
+    tone === 'warning'
+      ? '#9C6818'
+      : tone === 'error'
+        ? '#C05050'
+        : '#2F7D55';
 
   return {
     flex: 1,
     p: 3,
-    bgcolor: active ? toneColor : colors.card,
+    bgcolor: active ? activeToneStart : colors.card,
     color: active ? 'white' : colors.textPrimary,
     borderRadius: 3,
-    border: `1px solid ${active ? toneColor : colors.border}`,
+    border: `1px solid ${active ? activeToneStart : colors.border}`,
     boxShadow: active
       ? '0 16px 34px rgba(31, 51, 43, 0.16)'
       : '0 12px 30px rgba(31, 51, 43, 0.06)',
     background: active
-      ? `linear-gradient(135deg, ${toneColor}, ${colors.primaryDark})`
+      ? `linear-gradient(135deg, ${activeToneStart}, ${activeToneEnd})`
       : `linear-gradient(180deg, ${colors.card}, ${softColor})`,
   };
 }
@@ -100,10 +106,10 @@ export function paginationButtonSx(colors, active = false) {
     ...(active
       ? {
           color: 'white',
-          bgcolor: colors.primary,
-          borderColor: colors.primary,
-          boxShadow: '0 10px 22px rgba(112, 183, 137, 0.22)',
-          '&:hover': { bgcolor: colors.primaryDark, borderColor: colors.primaryDark },
+          bgcolor: colors.primaryDark,
+          borderColor: colors.primaryDark,
+          boxShadow: '0 10px 22px rgba(11, 107, 71, 0.22)',
+          '&:hover': { bgcolor: '#095A3B', borderColor: '#095A3B' },
         }
       : {
           color: colors.textSecondary,
