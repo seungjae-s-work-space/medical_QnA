@@ -23,6 +23,16 @@ describe('home routing', () => {
     expect(layout).toMatch(/location\.pathname\.startsWith\(`\$\{item\.path\}\/`\)/);
     expect(chatWindow).toMatch(/navigate\('\/chat'\)/);
     expect(homeDashboard).toMatch(/home-dashboard\.png/);
+    expect(homeDashboard).toMatch(/useNavigate/);
+    expect(homeDashboard).toMatch(/상담하기/);
+    expect(homeDashboard).toMatch(/난임백과/);
+    expect(homeDashboard).toMatch(/뉴스/);
+    expect(homeDashboard).toMatch(/공지사항/);
+    expect(homeDashboard).toMatch(/아기성공TV/);
+    expect(homeDashboard).toMatch(/회원제\(무료\)/);
+    expect(homeDashboard).toMatch(/navigate\('\/chat'\)/);
+    expect(homeDashboard).toMatch(/navigate\('\/encyclopedia'\)/);
+    expect(homeDashboard).toMatch(/navigate\('\/news'\)/);
     expect(fs.existsSync(path.join(srcDir, '..', 'public', 'home-dashboard.png'))).toBe(true);
   });
 });
