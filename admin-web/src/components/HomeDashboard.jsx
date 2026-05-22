@@ -1,4 +1,12 @@
-import { Box, Button, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
@@ -6,6 +14,7 @@ import CampaignRoundedIcon from '@mui/icons-material/CampaignRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../theme';
 
@@ -43,7 +52,7 @@ const quickLinks = [
   {
     label: '회원제(무료)',
     description: '무료로 운영합니다',
-    path: '/login',
+    action: 'membership',
     icon: <FavoriteBorderRoundedIcon />,
   },
 ];
@@ -63,6 +72,16 @@ const updatePrompts = [
 
 function HomeDashboard() {
   const navigate = useNavigate();
+  const [membershipInfoOpen, setMembershipInfoOpen] = useState(false);
+
+  const handleQuickLinkClick = (item) => {
+    if (item.action === 'membership') {
+      setMembershipInfoOpen(true);
+      return;
+    }
+
+    navigate(item.path);
+  };
 
   return (
     <Box
@@ -210,7 +229,7 @@ function HomeDashboard() {
               key={item.label}
               component="button"
               type="button"
-              onClick={() => navigate(item.path)}
+              onClick={() => handleQuickLinkClick(item)}
               sx={{
                 width: '100%',
                 minHeight: 112,
@@ -309,6 +328,52 @@ function HomeDashboard() {
             </Box>
           ))}
         </Box>
+
+        <Dialog
+          open={membershipInfoOpen}
+          onClose={() => setMembershipInfoOpen(false)}
+          aria-labelledby="home-membership-info-title"
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle
+            id="home-membership-info-title"
+            sx={{
+              color: colors.textPrimary,
+              fontSize: 20,
+              fontWeight: 800,
+              pb: 1,
+            }}
+          >
+            회원제(무료) 안내
+          </DialogTitle>
+          <DialogContent>
+            <Typography
+              sx={{
+                color: colors.textSecondary,
+                fontSize: 15,
+                lineHeight: 1.7,
+              }}
+            >
+              본 서비스는 회원제(무료)로 운영됩니다. 로그인하면 채팅 상담을
+              이용하고 관심 콘텐츠를 더 편하게 이어볼 수 있습니다.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button onClick={() => setMembershipInfoOpen(false)} sx={{ color: colors.textSecondary }}>
+              닫기
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setMembershipInfoOpen(false);
+                navigate('/login');
+              }}
+            >
+              로그인하러 가기
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );

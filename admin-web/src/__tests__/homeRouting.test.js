@@ -30,9 +30,14 @@ describe('home routing', () => {
     expect(homeDashboard).toMatch(/공지사항/);
     expect(homeDashboard).toMatch(/아기성공TV/);
     expect(homeDashboard).toMatch(/회원제\(무료\)/);
+    expect(homeDashboard).toMatch(/membershipInfoOpen/);
+    expect(homeDashboard).toMatch(/회원제\(무료\) 안내/);
+    expect(homeDashboard).toMatch(/로그인하러 가기/);
+    expect(homeDashboard).toMatch(/setMembershipInfoOpen\(true\)/);
     expect(homeDashboard).toMatch(/navigate\('\/chat'\)/);
     expect(homeDashboard).toMatch(/navigate\('\/encyclopedia'\)/);
     expect(homeDashboard).toMatch(/navigate\('\/news'\)/);
+    expect(homeDashboard).toMatch(/navigate\('\/login'\)/);
     expect(fs.existsSync(path.join(srcDir, '..', 'public', 'home-dashboard.png'))).toBe(true);
   });
 });
