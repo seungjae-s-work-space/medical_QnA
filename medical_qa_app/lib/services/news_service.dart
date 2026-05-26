@@ -83,4 +83,11 @@ class NewsService {
   Future<void> deleteNews(String newsId) async {
     await _firestore.collection(_collection).doc(newsId).delete();
   }
+
+  // 조회수 증가
+  Future<void> incrementViewCount(String newsId) async {
+    await _firestore.collection(_collection).doc(newsId).update({
+      'viewCount': FieldValue.increment(1),
+    });
+  }
 }

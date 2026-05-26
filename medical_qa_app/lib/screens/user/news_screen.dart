@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 import '../../models/news_model.dart';
 import '../../services/news_service.dart';
+import '../../providers/auth_provider.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/protected_content.dart';
 import '../../widgets/screenshot_warning_listener.dart';
@@ -441,14 +443,28 @@ class _NewsScreenState extends State<NewsScreen> {
   Future<void> _openNewsDetail(NewsModel news) async {
     if (_isOpeningNews) return;
 
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    var displayNews = news;
+
     setState(() {
       _isOpeningNews = true;
+      if (!authProvider.isGuest) {
+        displayNews = news.copyWith(viewCount: news.viewCount + 1);
+        _newsList = _newsList.map((item) {
+          return item.id == news.id ? displayNews : item;
+        }).toList();
+      }
     });
+
+    // 게스트 모드가 아닐 때만 조회수 증가
+    if (!authProvider.isGuest) {
+      _service.incrementViewCount(news.id);
+    }
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => NewsDetailScreen(news: news),
+        builder: (context) => NewsDetailScreen(news: displayNews),
       ),
     );
 
@@ -552,13 +568,31 @@ class _NewsCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // 날짜
-                  Text(
-                    DateFormat('yyyy.MM.dd').format(news.createdAt),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
+                  // 날짜 및 조회수
+                  Row(
+                    children: [
+                      Text(
+                        DateFormat('yyyy.MM.dd').format(news.createdAt),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.visibility_outlined,
+                        size: 14,
+                        color: AppColors.textSecondary.withValues(alpha: 0.7),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${news.viewCount}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

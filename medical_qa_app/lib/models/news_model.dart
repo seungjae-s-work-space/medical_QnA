@@ -11,6 +11,7 @@ class NewsModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isPublished;
+  final int viewCount;
 
   NewsModel({
     required this.id,
@@ -23,6 +24,7 @@ class NewsModel {
     required this.createdAt,
     required this.updatedAt,
     required this.isPublished,
+    this.viewCount = 0,
   });
 
   factory NewsModel.fromFirestore(DocumentSnapshot doc) {
@@ -38,6 +40,7 @@ class NewsModel {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isPublished: data['isPublished'] ?? true,
+      viewCount: data['viewCount'] ?? 0,
     );
   }
 
@@ -52,6 +55,7 @@ class NewsModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isPublished': isPublished,
+      'viewCount': viewCount,
     };
   }
 
@@ -66,6 +70,7 @@ class NewsModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isPublished,
+    int? viewCount,
   }) {
     return NewsModel(
       id: id ?? this.id,
@@ -78,6 +83,7 @@ class NewsModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isPublished: isPublished ?? this.isPublished,
+      viewCount: viewCount ?? this.viewCount,
     );
   }
 }

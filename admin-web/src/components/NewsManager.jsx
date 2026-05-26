@@ -28,6 +28,7 @@ import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import RemoveRedEyeRoundedIcon from '@mui/icons-material/RemoveRedEyeRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
@@ -51,6 +52,7 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
+  increment,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
@@ -230,8 +232,31 @@ function NewsManager({ readOnly = false }) {
     }
   };
 
+  const incrementArticleViewCount = async (article) => {
+    if (!readOnly || !auth.currentUser) return;
+
+    try {
+      await updateDoc(doc(db, 'news', article.id), {
+        viewCount: increment(1),
+      });
+      setArticles((prev) => prev.map((item) => (
+        item.id === article.id
+          ? { ...item, viewCount: (item.viewCount || 0) + 1 }
+          : item
+      )));
+      setViewArticle((current) => (
+        current?.id === article.id
+          ? { ...current, viewCount: (current.viewCount || 0) + 1 }
+          : current
+      ));
+    } catch (error) {
+      console.error('View count update error:', error);
+    }
+  };
+
   const handleArticleOpen = async (article) => {
     setViewArticle(article);
+    incrementArticleViewCount(article);
   };
 
   // 이미지 업로드 핸들러 (Quill 에디터용)
@@ -523,6 +548,7 @@ function NewsManager({ readOnly = false }) {
           sourceUrl: sourceUrl.trim(),
           authorId: user?.uid || '',
           authorName: '이승주',
+          viewCount: 0,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -793,56 +819,61 @@ function NewsManager({ readOnly = false }) {
                   >
                     {stripHtml(article.content)}
                   </Typography>
-                  {/* 관리자 액션 버튼 */}
-                  {!readOnly && (
-                    <Box
-                      onClick={(e) => e.stopPropagation()}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'flex-end',
-                        gap: 0.5,
-                        borderTop: `1px solid ${colors.divider}`,
-                        pt: 1.5,
-                        mt: 'auto',
-                      }}
-                    >
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDialog(article)}
-                        sx={{
-                          color: colors.textSecondary,
-                          '&:hover': { color: colors.primary, bgcolor: colors.primaryLight },
-                        }}
-                      >
-                        <EditRoundedIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleTogglePublish(article)}
-                        sx={{
-                          color: colors.textSecondary,
-                          '&:hover': { color: colors.warning, bgcolor: colors.warningLight },
-                        }}
-                      >
-                        {article.isPublished ? (
-                          <VisibilityOffRoundedIcon fontSize="small" />
-                        ) : (
-                          <VisibilityRoundedIcon fontSize="small" />
-                        )}
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(article)}
-                        sx={{
-                          color: colors.textSecondary,
-                          '&:hover': { color: colors.error, bgcolor: colors.errorLight },
-                        }}
-                      >
-                        <DeleteRoundedIcon fontSize="small" />
-                      </IconButton>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderTop: `1px solid ${colors.divider}`,
+                      pt: 1.5,
+                      mt: 'auto',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <RemoveRedEyeRoundedIcon sx={{ fontSize: 16, color: colors.textTertiary }} />
+                      <Typography variant="caption" sx={{ color: colors.textTertiary }}>
+                        {article.viewCount || 0}
+                      </Typography>
                     </Box>
-                  )}
+                    {!readOnly && (
+                      <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDialog(article)}
+                          sx={{
+                            color: colors.textSecondary,
+                            '&:hover': { color: colors.primary, bgcolor: colors.primaryLight },
+                          }}
+                        >
+                          <EditRoundedIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleTogglePublish(article)}
+                          sx={{
+                            color: colors.textSecondary,
+                            '&:hover': { color: colors.warning, bgcolor: colors.warningLight },
+                          }}
+                        >
+                          {article.isPublished ? (
+                            <VisibilityOffRoundedIcon fontSize="small" />
+                          ) : (
+                            <VisibilityRoundedIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(article)}
+                          sx={{
+                            color: colors.textSecondary,
+                            '&:hover': { color: colors.error, bgcolor: colors.errorLight },
+                          }}
+                        >
+                          <DeleteRoundedIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -1259,7 +1290,7 @@ function NewsManager({ readOnly = false }) {
                     />
                   )}
                   <Typography variant="caption" sx={{ color: colors.textTertiary, fontWeight: 500 }}>
-                    {formatDate(viewArticle.createdAt)}
+                    {formatDate(viewArticle.createdAt)} · 조회 {viewArticle.viewCount || 0}
                   </Typography>
                 </Box>
                 <IconButton

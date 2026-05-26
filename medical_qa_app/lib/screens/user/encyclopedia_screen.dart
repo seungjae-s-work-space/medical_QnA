@@ -461,9 +461,16 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
     if (_isOpeningArticle) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    var displayArticle = article;
 
     setState(() {
       _isOpeningArticle = true;
+      if (!authProvider.isGuest) {
+        displayArticle = article.copyWith(viewCount: article.viewCount + 1);
+        _allArticles = _allArticles.map((item) {
+          return item.id == article.id ? displayArticle : item;
+        }).toList();
+      }
     });
 
     // 게스트 모드가 아닐 때만 조회수 증가
@@ -474,7 +481,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EncyclopediaDetailScreen(article: article),
+        builder: (context) => EncyclopediaDetailScreen(article: displayArticle),
       ),
     );
 

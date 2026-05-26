@@ -52,6 +52,7 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
+  increment,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
@@ -232,8 +233,31 @@ function EncyclopediaManager({ readOnly = false }) {
     }
   };
 
+  const incrementArticleViewCount = async (article) => {
+    if (!readOnly || !auth.currentUser) return;
+
+    try {
+      await updateDoc(doc(db, 'encyclopedia', article.id), {
+        viewCount: increment(1),
+      });
+      setArticles((prev) => prev.map((item) => (
+        item.id === article.id
+          ? { ...item, viewCount: (item.viewCount || 0) + 1 }
+          : item
+      )));
+      setViewArticle((current) => (
+        current?.id === article.id
+          ? { ...current, viewCount: (current.viewCount || 0) + 1 }
+          : current
+      ));
+    } catch (error) {
+      console.error('View count update error:', error);
+    }
+  };
+
   const handleArticleOpen = async (article) => {
     setViewArticle(article);
+    incrementArticleViewCount(article);
   };
 
   // 이미지 업로드 핸들러 (Quill 에디터용)
