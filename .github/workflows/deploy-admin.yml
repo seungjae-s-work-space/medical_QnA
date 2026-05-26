@@ -3,9 +3,6 @@ name: Deploy Admin Web to GitHub Pages
 on:
   push:
     branches: [main]
-    paths:
-      - 'admin-web/**'
-      - '.github/workflows/deploy-admin.yml'
 
   # 수동 실행 허용
   workflow_dispatch:
