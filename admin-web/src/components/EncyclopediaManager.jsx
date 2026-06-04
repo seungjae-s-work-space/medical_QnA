@@ -60,7 +60,12 @@ import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
 import { getArticleContentSx } from '../utils/articleContentStyles';
-import { installQuillDialogScrollGuard, runWithPreservedScroll } from '../utils/quillScrollGuard';
+import {
+  handleQuillPasteWithPreservedScroll,
+  installQuillDialogScrollGuard,
+  isQuillDialogScrollGuardActive,
+  runWithPreservedScroll,
+} from '../utils/quillScrollGuard';
 import {
   contentCardSx,
   dialogPaperSx,
@@ -167,6 +172,26 @@ function EncyclopediaManager({ readOnly = false }) {
 
   // 본문 내 이미지 목록
   const contentImages = useMemo(() => extractImagesFromContent(content), [content]);
+
+  const handleEditorChange = (value) => {
+    if (isQuillDialogScrollGuardActive(dialogContentRef.current)) {
+      runWithPreservedScroll(dialogContentRef.current, () => setContent(value));
+      return;
+    }
+
+    setContent(value);
+  };
+
+  const getCurrentEditorContent = () => (
+    quillRef.current?.getEditor?.()?.root?.innerHTML || content
+  );
+
+  const handleDialogPasteCapture = (event) => {
+    const quill = quillRef.current?.getEditor?.();
+    if (!quill || !dialogContentRef.current) return;
+
+    handleQuillPasteWithPreservedScroll(quill, dialogContentRef.current, event);
+  };
 
   // base64 이미지를 Storage에 업로드하고 URL 반환
   const uploadBase64Image = async (base64String) => {
@@ -506,13 +531,20 @@ function EncyclopediaManager({ readOnly = false }) {
     setDialogOpen(true);
   };
 
+  const handleEditFromView = (article) => {
+    setViewArticle(null);
+    window.setTimeout(() => handleOpenDialog(article), 0);
+  };
+
   const handleCloseDialog = () => {
     setDialogOpen(false);
     resetForm();
   };
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim()) {
+    const currentContent = getCurrentEditorContent();
+
+    if (!title.trim() || !currentContent.trim()) {
       setSnackbar({ open: true, message: '제목과 내용을 입력해주세요', severity: 'error' });
       return;
     }
@@ -521,7 +553,7 @@ function EncyclopediaManager({ readOnly = false }) {
 
     try {
       // base64 이미지를 Storage URL로 변환
-      let convertedContent = await convertBase64ImagesToUrls(content.trim());
+      let convertedContent = await convertBase64ImagesToUrls(currentContent.trim());
       // 연속된 blockquote 병합
       convertedContent = mergeConsecutiveBlockquotes(convertedContent);
 
@@ -923,6 +955,10 @@ function EncyclopediaManager({ readOnly = false }) {
         maxWidth="md"
         fullWidth
         disableEscapeKeyDown
+        disableAutoFocus
+        disableEnforceFocus
+        disableRestoreFocus
+        disableScrollLock
         PaperProps={{
           sx: {
             ...dialogPaperSx(colors),
@@ -935,7 +971,11 @@ function EncyclopediaManager({ readOnly = false }) {
         <DialogTitle sx={{ fontWeight: 700, fontSize: 20 }}>
           {editingArticle ? '글 수정' : '새 글 작성'}
         </DialogTitle>
-        <DialogContent ref={dialogContentRef} sx={{ flex: 1, overflow: 'auto' }}>
+        <DialogContent
+          ref={dialogContentRef}
+          onPasteCapture={handleDialogPasteCapture}
+          sx={{ flex: 1, overflow: 'auto' }}
+        >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
             <TextField
               label="제목"
@@ -969,6 +1009,11 @@ function EncyclopediaManager({ readOnly = false }) {
                   },
                   '& .ql-editor': {
                     minHeight: 500,
+                  },
+                  '& .ql-clipboard': {
+                    left: 0,
+                    top: 0,
+                    position: 'fixed',
                   },
                   '& .ql-editor.ql-blank::before': {
                     color: colors.textTertiary,
@@ -1033,10 +1078,11 @@ function EncyclopediaManager({ readOnly = false }) {
                 }}
               >
                 <ReactQuill
+                  key={editingArticle?.id || 'new-encyclopedia'}
                   ref={quillRef}
                   theme="snow"
-                  value={content}
-                  onChange={setContent}
+                  defaultValue={content}
+                  onChange={handleEditorChange}
                   modules={quillModules}
                   formats={quillFormats}
                   placeholder="내용을 입력하세요 (툴바의 이미지 버튼으로 사진 추가)"
@@ -1303,10 +1349,7 @@ function EncyclopediaManager({ readOnly = false }) {
             <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
               {!readOnly && (
                 <Button
-                  onClick={() => {
-                    setViewArticle(null);
-                    handleOpenDialog(viewArticle);
-                  }}
+                  onClick={() => handleEditFromView(viewArticle)}
                   startIcon={<EditRoundedIcon />}
                   variant="outlined"
                 >
