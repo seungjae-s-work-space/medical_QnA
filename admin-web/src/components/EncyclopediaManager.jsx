@@ -60,6 +60,7 @@ import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
 import { getArticleContentSx } from '../utils/articleContentStyles';
+import { installQuillDialogScrollGuard, runWithPreservedScroll } from '../utils/quillScrollGuard';
 import {
   contentCardSx,
   dialogPaperSx,
@@ -161,6 +162,7 @@ function EncyclopediaManager({ readOnly = false }) {
   const [references, setReferences] = useState(''); // 의학적 참고자료
   const [sourceUrl, setSourceUrl] = useState(''); // 기사 원문 링크
   const quillRef = useRef(null);
+  const dialogContentRef = useRef(null);
   const thumbnailInputRef = useRef(null);
 
   // 본문 내 이미지 목록
@@ -284,9 +286,11 @@ function EncyclopediaManager({ readOnly = false }) {
 
         const quill = quillRef.current?.getEditor();
         if (quill) {
-          const range = quill.getSelection(true);
-          quill.insertEmbed(range.index, 'image', url);
-          quill.setSelection(range.index + 1);
+          runWithPreservedScroll(dialogContentRef.current, () => {
+            const range = quill.getSelection(true);
+            quill.insertEmbed(range.index, 'image', url);
+            quill.setSelection(range.index + 1);
+          });
         }
       } catch (error) {
         console.error('Image upload error:', error);
@@ -342,14 +346,12 @@ function EncyclopediaManager({ readOnly = false }) {
     },
   }), []);
 
-  // Quill 에디터 마운트 후 scrollSelectionIntoView 비활성화
+  // Quill 붙여넣기/삽입이 DialogContent 스크롤을 튕기지 않도록 보호
   useEffect(() => {
-    if (dialogOpen && quillRef.current) {
-      const quill = quillRef.current.getEditor();
-      if (quill) {
-        quill.scrollSelectionIntoView = () => {};
-      }
-    }
+    if (!dialogOpen || !quillRef.current || !dialogContentRef.current) return undefined;
+
+    const quill = quillRef.current.getEditor();
+    return installQuillDialogScrollGuard(quill, dialogContentRef.current);
   }, [dialogOpen]);
 
   const buildArticlesQuery = (cursor = null) => {
@@ -933,7 +935,7 @@ function EncyclopediaManager({ readOnly = false }) {
         <DialogTitle sx={{ fontWeight: 700, fontSize: 20 }}>
           {editingArticle ? '글 수정' : '새 글 작성'}
         </DialogTitle>
-        <DialogContent sx={{ flex: 1, overflow: 'auto' }}>
+        <DialogContent ref={dialogContentRef} sx={{ flex: 1, overflow: 'auto' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
             <TextField
               label="제목"
