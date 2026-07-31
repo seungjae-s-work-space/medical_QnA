@@ -27,8 +27,9 @@ class PromotionModel {
     required this.updatedAt,
   });
 
-  bool get hasExternalLink =>
-      externalLinkUrl != null && externalLinkUrl!.trim().isNotEmpty;
+  Uri? get externalLinkUri => _normalizeExternalLinkUri(externalLinkUrl);
+
+  bool get hasExternalLink => externalLinkUri != null;
 
   factory PromotionModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
@@ -86,6 +87,17 @@ class PromotionModel {
 
     final trimmedValue = value.trim();
     return trimmedValue.isEmpty ? null : trimmedValue;
+  }
+
+  static Uri? _normalizeExternalLinkUri(String? value) {
+    final trimmedValue = value?.trim() ?? '';
+    if (trimmedValue.isEmpty) return null;
+
+    final uri = Uri.tryParse(trimmedValue);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) return null;
+    if (!(uri.scheme == 'http' || uri.scheme == 'https')) return null;
+
+    return uri;
   }
 
   static int _readInt(Map<String, dynamic> data, String key) {

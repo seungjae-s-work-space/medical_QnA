@@ -179,6 +179,13 @@ describe('promotion banners', () => {
     expect(service).toMatch(/bannerImageUrl: validatePromotionBannerImageUrl\(\(form\.bannerImageUrl \|\| ''\)\.trim\(\)\)/);
   });
 
+  test('admin promotion save normalizes optional external links', () => {
+    const service = read('services/promotionService.js');
+
+    expect(service).toMatch(/externalLinkUrl: normalizePromotionExternalUrl\(\(form\.externalLinkUrl \|\| ''\)\.trim\(\)\)/);
+    expect(service).not.toMatch(/externalLinkUrl: \(form\.externalLinkUrl \|\| ''\)\.trim\(\)/);
+  });
+
   test('promotion search keyword generation caps huge tokens before prefixing', () => {
     const service = read('services/promotionService.js');
 

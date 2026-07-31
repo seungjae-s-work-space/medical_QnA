@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:medical_qa_app/models/promotion_model.dart';
+import 'package:medical_qa_app/screens/user/promotion_detail_screen.dart';
 import 'package:medical_qa_app/widgets/promotion_carousel.dart';
 
 String _readSource(String path) {
@@ -14,6 +15,8 @@ String _readSource(String path) {
 PromotionModel _promotion({
   required String id,
   String title = '프로모션',
+  String? externalLinkUrl,
+  String externalLinkLabel = '자세히 보기',
 }) {
   return PromotionModel(
     id: id,
@@ -21,7 +24,8 @@ PromotionModel _promotion({
     summary: '따뜻한 안내',
     bannerImageUrl: 'https://example.com/$id.png',
     contentHtml: '<p>프로모션 본문</p>',
-    externalLinkLabel: '자세히 보기',
+    externalLinkUrl: externalLinkUrl,
+    externalLinkLabel: externalLinkLabel,
     sortOrder: 0,
     isPublished: true,
     createdAt: DateTime(2026, 7, 31),
@@ -127,6 +131,20 @@ void main() {
     expect(source, contains('launchUrl(\n        uri,'));
   });
 
+  test('promotion model treats invalid external CTA URLs as unavailable', () {
+    final validPromotion = _promotion(
+      id: 'valid-link',
+      externalLinkUrl: 'https://book.example.com/path',
+    );
+    final invalidPromotion = _promotion(
+      id: 'invalid-link',
+      externalLinkUrl: 'javascript:alert(1)',
+    );
+
+    expect(validPromotion.hasExternalLink, isTrue);
+    expect(invalidPromotion.hasExternalLink, isFalse);
+  });
+
   test('promotion detail source hardens rendered HTML tags and links', () {
     final source = _readSource('lib/screens/user/promotion_detail_screen.dart');
 
@@ -202,6 +220,22 @@ void main() {
     await tester.tap(find.byType(CachedNetworkImage));
 
     expect(tappedPromotion, same(promotion));
+  });
+
+  testWidgets('promotion detail hides invalid external CTA', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PromotionDetailScreen(
+          promotion: _promotion(
+            id: 'invalid-cta',
+            externalLinkUrl: 'ftp://book.example.com',
+            externalLinkLabel: '도서 구매하기',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('도서 구매하기'), findsNothing);
   });
 
   testWidgets('promotion carousel renders dots for multiple promotions',

@@ -247,7 +247,7 @@ export async function savePromotion(form, editingPromotion = null) {
     summary: (form.summary || '').trim(),
     bannerImageUrl: validatePromotionBannerImageUrl((form.bannerImageUrl || '').trim()),
     contentHtml: (form.contentHtml || '').trim(),
-    externalLinkUrl: (form.externalLinkUrl || '').trim(),
+    externalLinkUrl: normalizePromotionExternalUrl((form.externalLinkUrl || '').trim()),
     externalLinkLabel: (form.externalLinkLabel || '').trim(),
     sortOrder: Number.isFinite(normalizedSortOrder) ? normalizedSortOrder : 0,
     isPublished: form.isPublished === true,
