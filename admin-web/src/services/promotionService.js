@@ -39,5 +39,11 @@ export async function getPromotion(promotionId) {
     return null;
   }
 
-  return mapPromotionDoc(snapshot);
+  const promotion = mapPromotionDoc(snapshot);
+
+  if (promotion.isPublished !== true) {
+    return null;
+  }
+
+  return promotion;
 }

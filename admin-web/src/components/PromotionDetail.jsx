@@ -6,6 +6,128 @@ import { colors } from '../theme';
 import { getPromotion } from '../services/promotionService';
 import { getArticleContentSx } from '../utils/articleContentStyles';
 
+const BLOCKED_PROMOTION_SELECTOR = 'script, style, iframe, object, embed';
+
+const ALLOWED_PROMOTION_TAGS = new Set([
+  'A',
+  'B',
+  'BLOCKQUOTE',
+  'BR',
+  'DIV',
+  'EM',
+  'FIGCAPTION',
+  'FIGURE',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'I',
+  'IMG',
+  'LI',
+  'OL',
+  'P',
+  'S',
+  'SPAN',
+  'STRONG',
+  'TABLE',
+  'TBODY',
+  'TD',
+  'TH',
+  'THEAD',
+  'TR',
+  'U',
+  'UL',
+]);
+
+const GLOBAL_PROMOTION_ATTRIBUTES = new Set(['style', 'title']);
+const PROMOTION_ATTRIBUTE_ALLOWLIST = {
+  A: new Set(['href', 'rel', 'target']),
+  IMG: new Set(['alt', 'height', 'src', 'width']),
+};
+
+const URI_PROMOTION_ATTRIBUTES = new Set(['href', 'src']);
+const SCRIPT_URL_PROTOCOL = ['java', 'script:'].join('');
+const STYLE_SCRIPT_URL_PATTERN = new RegExp(
+  `(?:expression\\s*\\(|url\\s*\\(\\s*['"]?\\s*${SCRIPT_URL_PROTOCOL})`,
+  'i'
+);
+
+function unwrapNode(node, documentRef) {
+  const fragment = documentRef.createDocumentFragment();
+
+  while (node.firstChild) {
+    fragment.appendChild(node.firstChild);
+  }
+
+  node.replaceWith(fragment);
+}
+
+function normalizeUriValue(value) {
+  return value
+    .trim()
+    .split('')
+    .filter((character) => {
+      const characterCode = character.charCodeAt(0);
+      return characterCode > 31 && characterCode !== 127 && !/\s/.test(character);
+    })
+    .join('')
+    .toLowerCase();
+}
+
+function isAllowedPromotionAttribute(element, name) {
+  return (
+    GLOBAL_PROMOTION_ATTRIBUTES.has(name) ||
+    PROMOTION_ATTRIBUTE_ALLOWLIST[element.tagName]?.has(name)
+  );
+}
+
+export function sanitizePromotionHtml(html) {
+  if (!html || typeof DOMParser === 'undefined') {
+    return '';
+  }
+
+  const parser = new DOMParser();
+  const parsedDocument = parser.parseFromString(html, 'text/html');
+
+  parsedDocument.body.querySelectorAll(BLOCKED_PROMOTION_SELECTOR).forEach((node) => {
+    node.remove();
+  });
+
+  Array.from(parsedDocument.body.querySelectorAll('*')).forEach((element) => {
+    if (!ALLOWED_PROMOTION_TAGS.has(element.tagName)) {
+      unwrapNode(element, parsedDocument);
+      return;
+    }
+
+    Array.from(element.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      const normalizedValue = normalizeUriValue(attribute.value);
+      // Strip javascript: URLs, including obfuscated whitespace/control-character forms.
+      const isUnsafeUri =
+        URI_PROMOTION_ATTRIBUTES.has(name) && normalizedValue.startsWith(SCRIPT_URL_PROTOCOL);
+      const isUnsafeStyle = name === 'style' && STYLE_SCRIPT_URL_PATTERN.test(attribute.value);
+
+      if (
+        name.startsWith('on') ||
+        !isAllowedPromotionAttribute(element, name) ||
+        isUnsafeUri ||
+        isUnsafeStyle
+      ) {
+        element.removeAttribute(attribute.name);
+      }
+    });
+
+    if (element.tagName === 'A' && element.getAttribute('href')) {
+      element.setAttribute('target', '_blank');
+      element.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+
+  return parsedDocument.body.innerHTML;
+}
+
 function PromotionDetail() {
   const { promotionId } = useParams();
   const [loading, setLoading] = useState(true);
@@ -85,6 +207,8 @@ function PromotionDetail() {
     );
   }
 
+  const sanitizedContentHtml = sanitizePromotionHtml(promotion.contentHtml || '');
+
   return (
     <Box
       sx={{
@@ -161,20 +285,20 @@ function PromotionDetail() {
               mt: { xs: 3, md: 4 },
               ...getArticleContentSx(colors),
             }}
-            dangerouslySetInnerHTML={{ __html: promotion.contentHtml || '' }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContentHtml }}
           />
 
-          {promotion.externalUrl && (
+          {promotion.externalLinkUrl && (
             <Button
               component="a"
-              href={promotion.externalUrl}
+              href={promotion.externalLinkUrl}
               target="_blank"
               rel="noopener noreferrer"
               variant="contained"
               endIcon={<OpenInNewRoundedIcon />}
               sx={{ mt: { xs: 3, md: 4 }, borderRadius: 999, px: 3 }}
             >
-              {promotion.externalLinkText || '자세히 보기'}
+              {promotion.externalLinkLabel || '자세히 보기'}
             </Button>
           )}
         </Box>
