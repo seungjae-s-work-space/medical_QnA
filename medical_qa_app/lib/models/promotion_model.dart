@@ -36,27 +36,72 @@ class PromotionModel {
   }
 
   factory PromotionModel.fromMap(String id, Map<String, dynamic> data) {
-    final rawExternalLink = (data['externalLinkUrl'] as String?)?.trim();
-    final rawLabel = (data['externalLinkLabel'] as String?)?.trim();
-    final sortOrderValue = data['sortOrder'];
+    final externalLinkUrl = _readOptionalTrimmedString(
+      data,
+      'externalLinkUrl',
+    );
 
     return PromotionModel(
       id: id,
-      title: data['title'] ?? '',
-      summary: data['summary'] ?? '',
-      bannerImageUrl: data['bannerImageUrl'] ?? '',
-      contentHtml: data['contentHtml'] ?? '',
-      externalLinkUrl: rawExternalLink == null || rawExternalLink.isEmpty
-          ? null
-          : rawExternalLink,
-      externalLinkLabel:
-          rawLabel == null || rawLabel.isEmpty ? '자세히 보기' : rawLabel,
-      sortOrder: sortOrderValue is num ? sortOrderValue.toInt() : 0,
-      isPublished: data['isPublished'] ?? false,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ??
-          DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ??
-          DateTime.fromMillisecondsSinceEpoch(0),
+      title: _readString(data, 'title'),
+      summary: _readString(data, 'summary'),
+      bannerImageUrl: _readString(data, 'bannerImageUrl'),
+      contentHtml: _readString(data, 'contentHtml'),
+      externalLinkUrl: externalLinkUrl,
+      externalLinkLabel: _readTrimmedString(
+        data,
+        'externalLinkLabel',
+        fallback: '자세히 보기',
+      ),
+      sortOrder: _readInt(data, 'sortOrder'),
+      isPublished: _readBool(data, 'isPublished'),
+      createdAt: _readTimestamp(data, 'createdAt'),
+      updatedAt: _readTimestamp(data, 'updatedAt'),
     );
+  }
+
+  static String _readString(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    return value is String ? value : '';
+  }
+
+  static String _readTrimmedString(
+    Map<String, dynamic> data,
+    String key, {
+    required String fallback,
+  }) {
+    final value = data[key];
+    if (value is! String) return fallback;
+
+    final trimmedValue = value.trim();
+    return trimmedValue.isEmpty ? fallback : trimmedValue;
+  }
+
+  static String? _readOptionalTrimmedString(
+    Map<String, dynamic> data,
+    String key,
+  ) {
+    final value = data[key];
+    if (value is! String) return null;
+
+    final trimmedValue = value.trim();
+    return trimmedValue.isEmpty ? null : trimmedValue;
+  }
+
+  static int _readInt(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    return value is num ? value.toInt() : 0;
+  }
+
+  static bool _readBool(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    return value is bool ? value : false;
+  }
+
+  static DateTime _readTimestamp(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    return value is Timestamp
+        ? value.toDate()
+        : DateTime.fromMillisecondsSinceEpoch(0);
   }
 }

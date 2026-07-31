@@ -49,4 +49,39 @@ void main() {
     expect(promotion.isPublished, isFalse);
     expect(promotion.hasExternalLink, isFalse);
   });
+
+  test('promotion model defaults malformed field types safely', () {
+    final fallbackDate = DateTime.fromMillisecondsSinceEpoch(0);
+    late final PromotionModel promotion;
+
+    expect(
+      () {
+        promotion = PromotionModel.fromMap('promo_bad', {
+          'title': 42,
+          'summary': true,
+          'bannerImageUrl': ['https://example.com/banner.png'],
+          'contentHtml': {'html': '<p>도서 소개</p>'},
+          'externalLinkUrl': 123,
+          'externalLinkLabel': false,
+          'sortOrder': '3',
+          'isPublished': 'true',
+          'createdAt': DateTime(2026, 7, 31, 9),
+          'updatedAt': '2026-07-31T10:00:00Z',
+        });
+      },
+      returnsNormally,
+    );
+
+    expect(promotion.title, '');
+    expect(promotion.summary, '');
+    expect(promotion.bannerImageUrl, '');
+    expect(promotion.contentHtml, '');
+    expect(promotion.externalLinkUrl, isNull);
+    expect(promotion.externalLinkLabel, '자세히 보기');
+    expect(promotion.sortOrder, 0);
+    expect(promotion.isPublished, isFalse);
+    expect(promotion.createdAt, fallbackDate);
+    expect(promotion.updatedAt, fallbackDate);
+    expect(promotion.hasExternalLink, isFalse);
+  });
 }

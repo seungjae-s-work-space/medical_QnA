@@ -14,7 +14,11 @@ void main() {
     expect(source, contains(".where('isPublished', isEqualTo: true)"));
     expect(source, contains(".orderBy('sortOrder')"));
     expect(source, contains(".orderBy('createdAt', descending: true)"));
-    expect(source, contains(".limit(limit)"));
+    expect(
+      source,
+      contains("final cappedLimit = limit.clamp(1, defaultLimit).toInt();"),
+    );
+    expect(source, contains(".limit(cappedLimit)"));
     expect(source,
         contains("Future<List<PromotionModel>> getPublishedPromotions"));
     expect(source, contains("Future<PromotionModel?> getPromotion"));

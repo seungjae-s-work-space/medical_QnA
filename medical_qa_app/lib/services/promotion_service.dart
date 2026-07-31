@@ -10,12 +10,13 @@ class PromotionService {
   Future<List<PromotionModel>> getPublishedPromotions({
     int limit = defaultLimit,
   }) async {
+    final cappedLimit = limit.clamp(1, defaultLimit).toInt();
     final snapshot = await _firestore
         .collection(_collection)
         .where('isPublished', isEqualTo: true)
         .orderBy('sortOrder')
         .orderBy('createdAt', descending: true)
-        .limit(limit)
+        .limit(cappedLimit)
         .get();
 
     return snapshot.docs
