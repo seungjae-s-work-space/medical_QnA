@@ -17,6 +17,7 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../theme';
+import PromotionCarousel from './PromotionCarousel';
 
 const quickLinks = [
   {
@@ -212,6 +213,8 @@ function HomeDashboard() {
             />
           </Box>
         </Box>
+
+        <PromotionCarousel />
 
         <Box
           sx={{

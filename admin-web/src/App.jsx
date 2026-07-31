@@ -12,6 +12,7 @@ import NewsManager from './components/NewsManager';
 import NoticeManager from './components/NoticeManager';
 import VideoManager from './components/VideoManager';
 import UserManagement from './components/UserManagement';
+import PromotionDetail from './components/PromotionDetail';
 import { CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colors } from './theme';
@@ -57,6 +58,14 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
       title: `상담 채팅 관리 | ${SITE_NAME}`,
       description: '관리자가 사용자 문의를 확인하고 답변하는 상담 채팅 관리 화면입니다.',
       shouldIndex: false,
+    };
+  }
+
+  if (pathname.startsWith('/promotions/')) {
+    return {
+      title: `프로모션 | ${SITE_NAME}`,
+      description: '난임상담톡톡에서 진행 중인 프로모션과 안내를 확인할 수 있습니다.',
+      shouldIndex: true,
     };
   }
 
@@ -238,6 +247,14 @@ function AppRoutes() {
           element={
             <Layout>
               <VideoManager readOnly={!isAdmin} />
+            </Layout>
+          }
+        />
+        <Route
+          path="/promotions/:promotionId"
+          element={
+            <Layout>
+              <PromotionDetail />
             </Layout>
           }
         />
