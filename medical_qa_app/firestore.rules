@@ -112,6 +112,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // promotions 컬렉션 (홈 광고/도서 배너)
+    match /promotions/{promotionId} {
+      // 읽기: 공개된 광고는 모두(비로그인 포함), 비공개 광고는 관리자만
+      allow read: if resource.data.isPublished == true || isAdmin();
+      // 생성/수정/삭제: 관리자만
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // screenshot_events 컬렉션 (콘텐츠 캡처 감지 기록)
     match /screenshot_events/{eventId} {
       allow create: if isAuthenticated() &&

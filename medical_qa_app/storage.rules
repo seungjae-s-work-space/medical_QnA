@@ -71,5 +71,19 @@ service firebase.storage {
       allow write: if isAdmin()
                    && isImageUnder(10 * 1024 * 1024);  // 10MB 제한
     }
+
+    // 홈 광고 배너 이미지 (비로그인 홈에도 노출되므로 공개 읽기)
+    match /promotion_banners/{imageId} {
+      allow read: if true;
+      allow write: if isAdmin()
+                   && isImageUnder(10 * 1024 * 1024);
+    }
+
+    // 홈 광고 상세 이미지 (비로그인 상세에도 노출되므로 공개 읽기)
+    match /promotion_images/{imageId} {
+      allow read: if true;
+      allow write: if isAdmin()
+                   && isImageUnder(10 * 1024 * 1024);
+    }
   }
 }
