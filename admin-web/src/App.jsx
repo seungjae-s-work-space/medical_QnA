@@ -12,6 +12,7 @@ import NewsManager from './components/NewsManager';
 import NoticeManager from './components/NoticeManager';
 import VideoManager from './components/VideoManager';
 import UserManagement from './components/UserManagement';
+import PromotionManager from './components/PromotionManager';
 import PromotionDetail from './components/PromotionDetail';
 import { CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
@@ -111,6 +112,17 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
       description: '난임과 임신 준비에 도움이 되는 영상 콘텐츠를 볼 수 있습니다.',
       shouldIndex: true,
     },
+    '/promotions': isAdmin
+      ? {
+          title: `광고 관리 | ${SITE_NAME}`,
+          description: '관리자가 프로모션 배너와 상세 페이지를 관리하는 화면입니다.',
+          shouldIndex: false,
+        }
+      : {
+          title: DEFAULT_TITLE,
+          description: DEFAULT_DESCRIPTION,
+          shouldIndex: false,
+        },
     '/users': {
       title: `사용자 관리 | ${SITE_NAME}`,
       description: '관리자가 가입 사용자 목록을 조회하는 화면입니다.',
@@ -256,6 +268,20 @@ function AppRoutes() {
             <Layout>
               <PromotionDetail />
             </Layout>
+          }
+        />
+
+        {/* 광고 관리 (관리자 전용) */}
+        <Route
+          path="/promotions"
+          element={
+            isAdmin ? (
+              <Layout>
+                <PromotionManager />
+              </Layout>
+            ) : (
+              <Navigate to="/" />
+            )
           }
         />
 

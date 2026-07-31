@@ -24,6 +24,7 @@ import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
 import CampaignRoundedIcon from '@mui/icons-material/CampaignRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
+import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
 import { colors } from '../theme';
@@ -137,6 +138,14 @@ function Layout({ children }) {
         description: isAdmin ? '유튜브 영상 관리' : '영상 보기',
         badge: 0,
         visible: true, // 모든 사용자
+      },
+      {
+        path: '/promotions',
+        label: '광고 관리',
+        icon: <LocalOfferRoundedIcon />,
+        description: '홈 배너 관리',
+        badge: 0,
+        visible: isAdmin,
       },
       {
         path: '/users',

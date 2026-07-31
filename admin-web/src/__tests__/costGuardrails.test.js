@@ -14,6 +14,7 @@ describe('firebase cost guardrails', () => {
       'components/EncyclopediaManager.jsx',
       'components/NoticeManager.jsx',
       'components/VideoManager.jsx',
+      'components/PromotionManager.jsx',
     ];
 
     for (const file of files) {

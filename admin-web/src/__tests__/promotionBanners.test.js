@@ -52,6 +52,8 @@ describe('promotion banners', () => {
     expect(detail).toMatch(/target="_blank"/);
     expect(detail).toMatch(/rel="noopener noreferrer"/);
     expect(service).toMatch(/PROMOTION_HOME_LIMIT = 10/);
+    expect(service).toMatch(/export function normalizePromotionExternalUrl/);
+    expect(service).toMatch(/export function sanitizePromotionHtml/);
     expect(service).toMatch(/collection\(db, 'promotions'\)/);
     expect(service).toMatch(/where\('isPublished', '==', true\)/);
     expect(service).toMatch(/orderBy\('sortOrder'\)/);
@@ -66,6 +68,35 @@ describe('promotion banners', () => {
       { fieldPath: 'sortOrder', order: 'ASCENDING' },
       { fieldPath: 'createdAt', order: 'DESCENDING' },
     ]);
+  });
+
+  test('admin web exposes promotion management only to admins', () => {
+    const app = read('App.jsx');
+    const layout = read('components/Layout.jsx');
+    const manager = read('components/PromotionManager.jsx');
+    const service = read('services/promotionService.js');
+
+    expect(app).toMatch(/import PromotionManager/);
+    expect(app).toMatch(/path="\/promotions"/);
+    expect(app).toMatch(/<PromotionManager \/>/);
+    expect(app).toMatch(/isAdmin \?/);
+    expect(app).toMatch(/title: `광고 관리 \| \$\{SITE_NAME\}`/);
+    expect(layout).toMatch(/label: '광고 관리'/);
+    expect(layout).toMatch(/path: '\/promotions'/);
+    expect(layout).toMatch(/visible: isAdmin/);
+    expect(manager).toMatch(/PROMOTION_ADMIN_PAGE_SIZE/);
+    expect(manager).toMatch(/ReactQuill/);
+    expect(manager).toMatch(/uploadPromotionBanner/);
+    expect(manager).toMatch(/savePromotion/);
+    expect(manager).toMatch(/deletePromotion/);
+    expect(manager).toMatch(/sortOrder/);
+    expect(manager).toMatch(/isPublished/);
+    expect(manager).toMatch(/getCountFromServer/);
+    expect(manager).toMatch(/startAfter/);
+    expect(manager).toMatch(/limit\(QUERY_PAGE_SIZE\)/);
+    expect(service).toMatch(/ref\(storage, `promotion_banners\/\$\{fileName\}`\)/);
+    expect(service).toMatch(/createdBy/);
+    expect(service).toMatch(/updatedBy/);
   });
 
   test('sanitizes public promotion body HTML with a positive URL allowlist', () => {
