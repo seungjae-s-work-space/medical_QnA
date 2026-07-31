@@ -1,10 +1,49 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:medical_qa_app/models/promotion_model.dart';
+import 'package:medical_qa_app/widgets/promotion_carousel.dart';
 
 String _readSource(String path) {
   final file = File(path);
   return file.existsSync() ? file.readAsStringSync() : '';
+}
+
+PromotionModel _promotion({
+  required String id,
+  String title = '프로모션',
+}) {
+  return PromotionModel(
+    id: id,
+    title: title,
+    summary: '따뜻한 안내',
+    bannerImageUrl: 'https://example.com/$id.png',
+    contentHtml: '<p>프로모션 본문</p>',
+    externalLinkLabel: '자세히 보기',
+    sortOrder: 0,
+    isPublished: true,
+    createdAt: DateTime(2026, 7, 31),
+    updatedAt: DateTime(2026, 7, 31),
+  );
+}
+
+Future<void> _pumpCarousel(
+  WidgetTester tester, {
+  required List<PromotionModel> promotions,
+  required ValueChanged<PromotionModel> onPromotionTap,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: PromotionCarousel(
+          promotions: promotions,
+          onPromotionTap: onPromotionTap,
+        ),
+      ),
+    ),
+  );
 }
 
 void main() {
@@ -37,6 +76,15 @@ void main() {
     expect(source, isNot(contains('_buildLogoSection(),')));
     expect(source, contains('height: 133'));
     expect(source, contains('fit: BoxFit.cover'));
+    expect(
+      source,
+      contains('const SizedBox.shrink(), // placeholder (채팅은 Navigator로 이동)'),
+    );
+    expect(
+      source,
+      isNot(
+          contains('_buildHomeContent(), // placeholder (채팅은 Navigator로 이동)')),
+    );
   });
 
   test('promotion carousel source contains auto-scrolling image carousel', () {
@@ -59,5 +107,65 @@ void main() {
     expect(source, contains('LaunchMode.externalApplication'));
     expect(source, contains('promotion.externalLinkLabel'));
     expect(source, contains('promotion.hasExternalLink'));
+  });
+
+  testWidgets('promotion carousel renders no banner image when empty',
+      (tester) async {
+    await _pumpCarousel(
+      tester,
+      promotions: const [],
+      onPromotionTap: (_) {},
+    );
+
+    expect(find.byType(CachedNetworkImage), findsNothing);
+
+    final shrink = tester.widget<SizedBox>(find.byType(SizedBox).first);
+    expect(shrink.width, 0);
+    expect(shrink.height, 0);
+  });
+
+  testWidgets('promotion carousel renders one tappable banner', (tester) async {
+    final promotion = _promotion(id: 'single', title: '싱글 프로모션');
+    PromotionModel? tappedPromotion;
+
+    await _pumpCarousel(
+      tester,
+      promotions: [promotion],
+      onPromotionTap: (value) {
+        tappedPromotion = value;
+      },
+    );
+
+    expect(find.byType(CachedNetworkImage), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(PromotionCarousel),
+        matching: find.byType(GestureDetector),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byType(CachedNetworkImage));
+
+    expect(tappedPromotion, same(promotion));
+  });
+
+  testWidgets('promotion carousel renders dots for multiple promotions',
+      (tester) async {
+    await _pumpCarousel(
+      tester,
+      promotions: [
+        _promotion(id: 'first', title: '첫 번째 프로모션'),
+        _promotion(id: 'second', title: '두 번째 프로모션'),
+        _promotion(id: 'third', title: '세 번째 프로모션'),
+      ],
+      onPromotionTap: (_) {},
+    );
+
+    expect(find.byType(CachedNetworkImage), findsOneWidget);
+    expect(find.byType(AnimatedContainer), findsNWidgets(3));
+
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

@@ -1026,7 +1026,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildHomeContent(),
               _buildEncyclopediaContent(),
-              _buildHomeContent(), // placeholder (채팅은 Navigator로 이동)
+              const SizedBox.shrink(), // placeholder (채팅은 Navigator로 이동)
               _buildMyPageContent(),
             ],
           ),
