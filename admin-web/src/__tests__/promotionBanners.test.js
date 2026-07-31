@@ -164,6 +164,10 @@ describe('promotion banners', () => {
     expect(service).toMatch(/function validatePromotionBannerImageUrl/);
     expect(service).toMatch(/normalizePromotionExternalUrl\(bannerImageUrl\)/);
     expect(service).toMatch(/function hasManagedPromotionImagePath/);
+    expect(service).toMatch(/const expectedBucket = storage\.app\.options\.storageBucket/);
+    expect(service).toMatch(/const bucketPathMatch = parsedUrl\.pathname\.match/);
+    expect(service).toMatch(/parsedUrl\.hostname === expectedBucket/);
+    expect(service).toMatch(/bucketPathMatch\?\.\[1\] === expectedBucket/);
     expect(service).toMatch(/decodeURIComponent\(parsedUrl\.pathname\)/);
     expect(service).toMatch(/parsedUrl\.hostname\.endsWith\('\.firebasestorage\.app'\)/);
     expect(service).toMatch(/parsedUrl\.hostname === 'firebasestorage\.googleapis\.com'/);

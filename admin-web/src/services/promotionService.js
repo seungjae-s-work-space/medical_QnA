@@ -199,10 +199,19 @@ function hasManagedPromotionImagePath(normalizedUrl) {
     return false;
   }
 
-  const isFirebaseStorageHost =
-    parsedUrl.hostname === 'firebasestorage.googleapis.com' ||
-    parsedUrl.hostname.endsWith('.firebasestorage.app');
-  if (!isFirebaseStorageHost) return false;
+  const expectedBucket = storage.app.options.storageBucket;
+  const bucketPathMatch = parsedUrl.pathname.match(/\/b\/([^/]+)\/o\//);
+  const isExpectedStorageHost =
+    parsedUrl.hostname === expectedBucket ||
+    (
+      parsedUrl.hostname === 'firebasestorage.googleapis.com' &&
+      bucketPathMatch?.[1] === expectedBucket
+    ) ||
+    (
+      parsedUrl.hostname.endsWith('.firebasestorage.app') &&
+      parsedUrl.hostname === expectedBucket
+    );
+  if (!isExpectedStorageHost) return false;
 
   let decodedPath = parsedUrl.pathname;
   try {
