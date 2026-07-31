@@ -99,6 +99,58 @@ describe('promotion banners', () => {
     expect(service).toMatch(/updatedBy/);
   });
 
+  test('admin promotion search is bounded on the server and indexed', () => {
+    const manager = read('components/PromotionManager.jsx');
+    const service = read('services/promotionService.js');
+    const indexes = JSON.parse(fs.readFileSync(
+      path.join(srcDir, '..', '..', 'medical_qa_app', 'firestore.indexes.json'),
+      'utf8'
+    ));
+
+    const promotionIndexes = indexes.indexes.filter(
+      (index) => index.collectionGroup === 'promotions'
+    );
+
+    expect(manager).toMatch(/normalizePromotionSearchQuery/);
+    expect(manager).toMatch(/where\('searchKeywords', 'array-contains', normalizedSearchQuery\)/);
+    expect(manager).toMatch(/getCountFromServer\(buildPromotionsCountQuery\(normalizedSearchQuery\)\)/);
+    expect(manager).toMatch(/getDocs\(buildPromotionsQuery\(cursor, normalizedSearchQuery\)\)/);
+    expect(manager).toMatch(/onSnapshot\(\s*buildPromotionsQuery\(null, normalizedSearchQuery\)/);
+    expect(manager).not.toMatch(/if \(searchQuery \|\| !hasMore \|\| !lastVisibleDoc\) return/);
+    expect(service).toMatch(/export function normalizePromotionSearchQuery/);
+    expect(service).toMatch(/export function buildPromotionSearchKeywords/);
+    expect(service).toMatch(/searchKeywords: buildPromotionSearchKeywords\(promotionPayload\)/);
+    expect(service).toMatch(/summary/);
+    expect(service).toMatch(/contentHtml/);
+    expect(service).toMatch(/externalLinkLabel/);
+    expect(service).toMatch(/externalLinkUrl/);
+
+    expect(promotionIndexes).toContainEqual({
+      collectionGroup: 'promotions',
+      queryScope: 'COLLECTION',
+      fields: [
+        { fieldPath: 'sortOrder', order: 'ASCENDING' },
+        { fieldPath: 'createdAt', order: 'DESCENDING' },
+      ],
+    });
+    expect(promotionIndexes).toContainEqual({
+      collectionGroup: 'promotions',
+      queryScope: 'COLLECTION',
+      fields: [
+        { fieldPath: 'searchKeywords', arrayConfig: 'CONTAINS' },
+        { fieldPath: 'sortOrder', order: 'ASCENDING' },
+        { fieldPath: 'createdAt', order: 'DESCENDING' },
+      ],
+    });
+  });
+
+  test('admin promotion publish toggle records the current admin', () => {
+    const manager = read('components/PromotionManager.jsx');
+
+    expect(manager).toMatch(/import \{ auth, db \} from '\.\.\/firebase'/);
+    expect(manager).toMatch(/updatedBy: auth\.currentUser\?\.uid \|\| ''/);
+  });
+
   test('sanitizes public promotion body HTML with a positive URL allowlist', () => {
     const sanitized = sanitizePromotionHtml(`
       <p onclick="alert('bad')">

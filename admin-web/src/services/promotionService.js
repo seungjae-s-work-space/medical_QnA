@@ -64,6 +64,7 @@ const STYLE_SCRIPT_URL_PATTERN = new RegExp(
   'i'
 );
 const ALLOWED_EXTERNAL_PROTOCOLS = new Set(['http:', 'https:']);
+const SEARCH_KEYWORD_MIN_LENGTH = 2;
 
 export function mapPromotionDoc(docSnapshot) {
   return {
@@ -110,6 +111,57 @@ export async function uploadPromotionBanner(file) {
   return getDownloadURL(storageRef);
 }
 
+function stripPromotionHtmlText(html) {
+  if (!html) return '';
+
+  if (typeof DOMParser !== 'undefined') {
+    const parser = new DOMParser();
+    const parsedDocument = parser.parseFromString(html, 'text/html');
+    return parsedDocument.body.textContent || '';
+  }
+
+  return String(html).replace(/<[^>]*>/g, ' ');
+}
+
+export function normalizePromotionSearchQuery(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFKC')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function addSearchToken(keywords, value) {
+  const normalizedValue = normalizePromotionSearchQuery(value);
+  if (!normalizedValue) return;
+
+  if (normalizedValue.length >= SEARCH_KEYWORD_MIN_LENGTH) {
+    keywords.add(normalizedValue);
+  }
+
+  normalizedValue.split(' ').forEach((token) => {
+    if (token.length < SEARCH_KEYWORD_MIN_LENGTH) return;
+    keywords.add(token);
+
+    for (let index = SEARCH_KEYWORD_MIN_LENGTH; index <= token.length; index += 1) {
+      keywords.add(token.slice(0, index));
+    }
+  });
+}
+
+export function buildPromotionSearchKeywords(promotion) {
+  const keywords = new Set();
+
+  addSearchToken(keywords, promotion.title);
+  addSearchToken(keywords, promotion.summary);
+  addSearchToken(keywords, stripPromotionHtmlText(promotion.contentHtml));
+  addSearchToken(keywords, promotion.externalLinkLabel);
+  addSearchToken(keywords, promotion.externalLinkUrl);
+
+  return Array.from(keywords).slice(0, 500);
+}
+
 export async function savePromotion(form, editingPromotion = null) {
   const userId = auth.currentUser?.uid || '';
   const normalizedSortOrder = Number(form.sortOrder);
@@ -125,14 +177,18 @@ export async function savePromotion(form, editingPromotion = null) {
     updatedAt: serverTimestamp(),
     updatedBy: userId,
   };
+  const searchablePromotionPayload = {
+    ...promotionPayload,
+    searchKeywords: buildPromotionSearchKeywords(promotionPayload),
+  };
 
   if (editingPromotion) {
-    await updateDoc(doc(db, 'promotions', editingPromotion.id), promotionPayload);
+    await updateDoc(doc(db, 'promotions', editingPromotion.id), searchablePromotionPayload);
     return editingPromotion.id;
   }
 
   const createdPromotion = await addDoc(collection(db, 'promotions'), {
-    ...promotionPayload,
+    ...searchablePromotionPayload,
     createdAt: serverTimestamp(),
     createdBy: userId,
   });

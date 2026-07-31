@@ -47,8 +47,9 @@ import {
   serverTimestamp,
   startAfter,
   updateDoc,
+  where,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { auth, db } from '../firebase';
 import { colors } from '../theme';
 import {
   dialogPaperSx,
@@ -62,6 +63,7 @@ import {
 import {
   PROMOTION_ADMIN_PAGE_SIZE,
   deletePromotion,
+  normalizePromotionSearchQuery,
   savePromotion,
   uploadPromotionBanner,
 } from '../services/promotionService';
@@ -133,11 +135,14 @@ function PromotionManager() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalItemCount, setTotalItemCount] = useState(0);
 
-  const buildPromotionsQuery = (cursor = null) => {
-    const constraints = [
-      orderBy('sortOrder'),
-      orderBy('createdAt', 'desc'),
-    ];
+  const buildPromotionsQuery = (cursor = null, normalizedSearchQuery = '') => {
+    const constraints = [];
+
+    if (normalizedSearchQuery) {
+      constraints.push(where('searchKeywords', 'array-contains', normalizedSearchQuery));
+    }
+
+    constraints.push(orderBy('sortOrder'), orderBy('createdAt', 'desc'));
 
     if (cursor) {
       constraints.push(startAfter(cursor));
@@ -147,8 +152,18 @@ function PromotionManager() {
     return query(collection(db, 'promotions'), ...constraints);
   };
 
-  const loadTotalCount = async () => {
-    const snapshot = await getCountFromServer(query(collection(db, 'promotions')));
+  const buildPromotionsCountQuery = (normalizedSearchQuery = '') => {
+    const constraints = [];
+
+    if (normalizedSearchQuery) {
+      constraints.push(where('searchKeywords', 'array-contains', normalizedSearchQuery));
+    }
+
+    return query(collection(db, 'promotions'), ...constraints);
+  };
+
+  const loadTotalCount = async (normalizedSearchQuery = '') => {
+    const snapshot = await getCountFromServer(buildPromotionsCountQuery(normalizedSearchQuery));
     setTotalItemCount(snapshot.data().count);
   };
 
@@ -162,13 +177,16 @@ function PromotionManager() {
     let isMounted = true;
 
     const loadPromotions = async () => {
+      const normalizedSearchQuery = normalizePromotionSearchQuery(searchQuery);
+
       try {
-        await loadTotalCount();
+        setCurrentPage(0);
+        await loadTotalCount(normalizedSearchQuery);
 
         if (!isMounted) return;
 
         unsubscribe = onSnapshot(
-          buildPromotionsQuery(),
+          buildPromotionsQuery(null, normalizedSearchQuery),
           (snapshot) => {
             setPromotions(mapPromotionsSnapshot(snapshot));
             updatePaginationCursor(snapshot);
@@ -193,10 +211,10 @@ function PromotionManager() {
       isMounted = false;
       if (typeof unsubscribe === 'function') unsubscribe();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const readPromotionsPage = async (cursor) => {
-    const snapshot = await getDocs(buildPromotionsQuery(cursor));
+  const readPromotionsPage = async (cursor, normalizedSearchQuery) => {
+    const snapshot = await getDocs(buildPromotionsQuery(cursor, normalizedSearchQuery));
     const promotionList = mapPromotionsSnapshot(snapshot);
 
     return {
@@ -207,21 +225,9 @@ function PromotionManager() {
   };
 
   const displayPromotions = promotions;
-  const filteredPromotions = displayPromotions.filter((promotion) => {
-    if (!searchQuery) return true;
-    const normalizedQuery = searchQuery.toLowerCase();
-    return (
-      (promotion.title || '').toLowerCase().includes(normalizedQuery) ||
-      (promotion.summary || '').toLowerCase().includes(normalizedQuery) ||
-      stripHtml(promotion.contentHtml || '').toLowerCase().includes(normalizedQuery) ||
-      (promotion.externalLinkLabel || '').toLowerCase().includes(normalizedQuery) ||
-      (promotion.externalLinkUrl || '').toLowerCase().includes(normalizedQuery)
-    );
-  });
+  const filteredPromotions = displayPromotions;
 
-  const totalPages = Math.ceil(
-    (searchQuery ? filteredPromotions.length : totalItemCount) / ITEMS_PER_PAGE
-  );
+  const totalPages = Math.ceil(totalItemCount / ITEMS_PER_PAGE);
   const paginatedPromotions = filteredPromotions.slice(
     currentPage * ITEMS_PER_PAGE,
     (currentPage + 1) * ITEMS_PER_PAGE
@@ -237,17 +243,18 @@ function PromotionManager() {
       return;
     }
 
-    if (searchQuery || !hasMore || !lastVisibleDoc) return;
+    if (!hasMore || !lastVisibleDoc) return;
 
     setLoadingMore(true);
     try {
+      const normalizedSearchQuery = normalizePromotionSearchQuery(searchQuery);
       let cursor = lastVisibleDoc;
       let nextHasMore = hasMore;
       let loadedPageCount = loadedPages;
       const appendedPromotions = [];
 
       while (page >= loadedPageCount && nextHasMore && cursor) {
-        const result = await readPromotionsPage(cursor);
+        const result = await readPromotionsPage(cursor, normalizedSearchQuery);
         if (result.promotionList.length === 0) {
           nextHasMore = false;
           break;
@@ -357,7 +364,7 @@ function PromotionManager() {
         )));
       }
 
-      await loadTotalCount();
+      await loadTotalCount(normalizePromotionSearchQuery(searchQuery));
       setSnackbar({
         open: true,
         message: editingPromotion ? '광고가 수정되었습니다' : '광고가 등록되었습니다',
@@ -377,6 +384,7 @@ function PromotionManager() {
       await updateDoc(doc(db, 'promotions', promotion.id), {
         isPublished: !promotion.isPublished,
         updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.uid || '',
       });
       setPromotions((prev) => prev.map((item) => (
         item.id === promotion.id
@@ -400,7 +408,7 @@ function PromotionManager() {
     try {
       await deletePromotion(promotion.id);
       setPromotions((prev) => prev.filter((item) => item.id !== promotion.id));
-      await loadTotalCount();
+      await loadTotalCount(normalizePromotionSearchQuery(searchQuery));
       setSnackbar({ open: true, message: '광고가 삭제되었습니다', severity: 'success' });
     } catch (error) {
       console.error('Promotion delete error:', error);
