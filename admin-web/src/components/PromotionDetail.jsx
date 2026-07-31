@@ -53,6 +53,7 @@ const STYLE_SCRIPT_URL_PATTERN = new RegExp(
   `(?:expression\\s*\\(|url\\s*\\(\\s*['"]?\\s*${SCRIPT_URL_PROTOCOL})`,
   'i'
 );
+const ALLOWED_EXTERNAL_PROTOCOLS = new Set(['http:', 'https:']);
 
 function unwrapNode(node, documentRef) {
   const fragment = documentRef.createDocumentFragment();
@@ -64,23 +65,24 @@ function unwrapNode(node, documentRef) {
   node.replaceWith(fragment);
 }
 
-function normalizeUriValue(value) {
-  return value
-    .trim()
-    .split('')
-    .filter((character) => {
-      const characterCode = character.charCodeAt(0);
-      return characterCode > 31 && characterCode !== 127 && !/\s/.test(character);
-    })
-    .join('')
-    .toLowerCase();
-}
-
 function isAllowedPromotionAttribute(element, name) {
   return (
     GLOBAL_PROMOTION_ATTRIBUTES.has(name) ||
     PROMOTION_ATTRIBUTE_ALLOWLIST[element.tagName]?.has(name)
   );
+}
+
+export function normalizePromotionExternalUrl(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  try {
+    const url = new URL(value.trim());
+    return ALLOWED_EXTERNAL_PROTOCOLS.has(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
 }
 
 export function sanitizePromotionHtml(html) {
@@ -103,19 +105,21 @@ export function sanitizePromotionHtml(html) {
 
     Array.from(element.attributes).forEach((attribute) => {
       const name = attribute.name.toLowerCase();
-      const normalizedValue = normalizeUriValue(attribute.value);
-      // Strip javascript: URLs, including obfuscated whitespace/control-character forms.
-      const isUnsafeUri =
-        URI_PROMOTION_ATTRIBUTES.has(name) && normalizedValue.startsWith(SCRIPT_URL_PROTOCOL);
+      const normalizedUri = URI_PROMOTION_ATTRIBUTES.has(name)
+        ? normalizePromotionExternalUrl(attribute.value)
+        : null;
+      // javascript: and data: are rejected by the absolute http/https allowlist above.
       const isUnsafeStyle = name === 'style' && STYLE_SCRIPT_URL_PATTERN.test(attribute.value);
 
       if (
         name.startsWith('on') ||
         !isAllowedPromotionAttribute(element, name) ||
-        isUnsafeUri ||
+        (URI_PROMOTION_ATTRIBUTES.has(name) && !normalizedUri) ||
         isUnsafeStyle
       ) {
         element.removeAttribute(attribute.name);
+      } else if (normalizedUri) {
+        element.setAttribute(attribute.name, normalizedUri);
       }
     });
 
@@ -208,6 +212,7 @@ function PromotionDetail() {
   }
 
   const sanitizedContentHtml = sanitizePromotionHtml(promotion.contentHtml || '');
+  const normalizedExternalLinkUrl = normalizePromotionExternalUrl(promotion.externalLinkUrl);
 
   return (
     <Box
@@ -288,10 +293,10 @@ function PromotionDetail() {
             dangerouslySetInnerHTML={{ __html: sanitizedContentHtml }}
           />
 
-          {promotion.externalLinkUrl && (
+          {normalizedExternalLinkUrl && (
             <Button
               component="a"
-              href={promotion.externalLinkUrl}
+              href={normalizedExternalLinkUrl}
               target="_blank"
               rel="noopener noreferrer"
               variant="contained"

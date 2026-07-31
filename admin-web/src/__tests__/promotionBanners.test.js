@@ -1,6 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
+jest.mock('../services/promotionService', () => ({
+  getPromotion: jest.fn(),
+}));
+
+const {
+  normalizePromotionExternalUrl,
+  sanitizePromotionHtml,
+} = require('../components/PromotionDetail');
+
 const srcDir = path.join(__dirname, '..');
 
 function read(relativePath) {
@@ -32,6 +41,7 @@ describe('promotion banners', () => {
     expect(detail).toMatch(/getPromotion/);
     expect(detail).toMatch(/dangerouslySetInnerHTML/);
     expect(detail).toMatch(/sanitizePromotionHtml/);
+    expect(detail).toMatch(/normalizePromotionExternalUrl/);
     expect(detail).toMatch(/script,\s*style,\s*iframe,\s*object,\s*embed/);
     expect(detail).toMatch(/startsWith\('on'\)/);
     expect(detail).toMatch(/javascript:/);
@@ -56,5 +66,49 @@ describe('promotion banners', () => {
       { fieldPath: 'sortOrder', order: 'ASCENDING' },
       { fieldPath: 'createdAt', order: 'DESCENDING' },
     ]);
+  });
+
+  test('sanitizes public promotion body HTML with a positive URL allowlist', () => {
+    const sanitized = sanitizePromotionHtml(`
+      <p onclick="alert('bad')">
+        일반 <strong>강조</strong>
+        <script>alert('bad')</script>
+        <a href="https://example.com/path">정상 링크</a>
+        <a href="javascript:alert('bad')">스크립트 링크</a>
+        <a href="data:text/html,bad">데이터 링크</a>
+        <img src="https://example.com/image.jpg" alt="정상 이미지" />
+        <img src="data:image/svg+xml,bad" alt="데이터 이미지" />
+        <img src="/relative-image.jpg" alt="상대 이미지" />
+      </p>
+    `);
+
+    expect(sanitized).toContain('<p>');
+    expect(sanitized).toContain('<strong>강조</strong>');
+    expect(sanitized).toContain('href="https://example.com/path"');
+    expect(sanitized).toContain('src="https://example.com/image.jpg"');
+    expect(sanitized).not.toContain('<script>');
+    expect(sanitized).not.toContain('onclick');
+    expect(sanitized).not.toContain('javascript:');
+    expect(sanitized).not.toContain('data:text');
+    expect(sanitized).not.toContain('data:image');
+    expect(sanitized).not.toContain('src="/relative-image.jpg"');
+  });
+
+  test('normalizes promotion CTA URLs with a positive protocol allowlist', () => {
+    expect(typeof normalizePromotionExternalUrl).toBe('function');
+
+    if (typeof normalizePromotionExternalUrl !== 'function') {
+      return;
+    }
+
+    expect(normalizePromotionExternalUrl('https://example.com/path')).toBe('https://example.com/path');
+    expect(normalizePromotionExternalUrl('http://example.com/path')).toBe('http://example.com/path');
+    expect(normalizePromotionExternalUrl('  https://example.com/path  ')).toBe(
+      'https://example.com/path'
+    );
+    expect(normalizePromotionExternalUrl('javascript:alert(1)')).toBe('');
+    expect(normalizePromotionExternalUrl('data:text/html,bad')).toBe('');
+    expect(normalizePromotionExternalUrl('/relative-path')).toBe('');
+    expect(normalizePromotionExternalUrl('not a url')).toBe('');
   });
 });
