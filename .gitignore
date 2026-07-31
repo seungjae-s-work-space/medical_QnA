@@ -64,3 +64,6 @@ medical_qa_app/android/keystore.properties
 
 # Local visual brainstorming artifacts
 .superpowers/
+
+# Local git worktrees
+.worktrees/
