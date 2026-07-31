@@ -70,8 +70,8 @@ const ALLOWED_EXTERNAL_PROTOCOLS = new Set(['http:', 'https:']);
 const PROMOTION_BANNER_PATH_MARKERS = [
   '/promotion_banners/',
   '/promotion_images/',
-  '%2Fpromotion_banners%2F',
-  '%2Fpromotion_images%2F',
+  'promotion_banners%2F',
+  'promotion_images%2F',
 ];
 
 export function mapPromotionDoc(docSnapshot) {
@@ -190,11 +190,38 @@ export function buildPromotionSearchKeywords(promotion) {
   return Array.from(keywords);
 }
 
+function hasManagedPromotionImagePath(normalizedUrl) {
+  let parsedUrl;
+
+  try {
+    parsedUrl = new URL(normalizedUrl);
+  } catch {
+    return false;
+  }
+
+  const isFirebaseStorageHost =
+    parsedUrl.hostname === 'firebasestorage.googleapis.com' ||
+    parsedUrl.hostname.endsWith('.firebasestorage.app');
+  if (!isFirebaseStorageHost) return false;
+
+  let decodedPath = parsedUrl.pathname;
+  try {
+    decodedPath = decodeURIComponent(parsedUrl.pathname);
+  } catch {
+    decodedPath = parsedUrl.pathname;
+  }
+
+  const searchablePath = `${parsedUrl.pathname} ${decodedPath}`;
+  return PROMOTION_BANNER_PATH_MARKERS.some((marker) => (
+    searchablePath.includes(marker)
+  ));
+}
+
 function validatePromotionBannerImageUrl(bannerImageUrl) {
   const normalizedUrl = normalizePromotionExternalUrl(bannerImageUrl);
-  const hasManagedPath = PROMOTION_BANNER_PATH_MARKERS.some((marker) => (
-    normalizedUrl.includes(marker)
-  ));
+  const hasManagedPath = normalizedUrl
+    ? hasManagedPromotionImagePath(normalizedUrl)
+    : false;
 
   if (!normalizedUrl || !hasManagedPath) {
     throw new Error('배너 이미지는 프로모션 이미지 업로드 경로의 http/https URL이어야 합니다.');

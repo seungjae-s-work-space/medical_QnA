@@ -163,10 +163,14 @@ describe('promotion banners', () => {
 
     expect(service).toMatch(/function validatePromotionBannerImageUrl/);
     expect(service).toMatch(/normalizePromotionExternalUrl\(bannerImageUrl\)/);
+    expect(service).toMatch(/function hasManagedPromotionImagePath/);
+    expect(service).toMatch(/decodeURIComponent\(parsedUrl\.pathname\)/);
+    expect(service).toMatch(/parsedUrl\.hostname\.endsWith\('\.firebasestorage\.app'\)/);
+    expect(service).toMatch(/parsedUrl\.hostname === 'firebasestorage\.googleapis\.com'/);
+    expect(service).toMatch(/promotion_banners%2F/);
+    expect(service).toMatch(/promotion_images%2F/);
     expect(service).toMatch(/promotion_banners/);
     expect(service).toMatch(/promotion_images/);
-    expect(service).toMatch(/%2Fpromotion_banners%2F/);
-    expect(service).toMatch(/%2Fpromotion_images%2F/);
     expect(service).toMatch(/throw new Error\('배너 이미지는 프로모션 이미지 업로드 경로의 http\/https URL이어야 합니다\.'\)/);
     expect(service).toMatch(/bannerImageUrl: validatePromotionBannerImageUrl\(\(form\.bannerImageUrl \|\| ''\)\.trim\(\)\)/);
   });
