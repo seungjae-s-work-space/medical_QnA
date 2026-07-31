@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../design/app_radii.dart';
 import '../../design/app_spacing.dart';
+import '../../models/promotion_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
 import '../../services/notice_service.dart';
 import '../../models/notice_model.dart';
+import '../../services/promotion_service.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/membership_required_dialog.dart';
+import '../../widgets/promotion_carousel.dart';
 import 'chat_screen.dart';
 import 'encyclopedia_screen.dart';
 import 'news_screen.dart';
 import 'notice_screen.dart';
 import 'video_screen.dart';
 import 'notification_settings_screen.dart';
+import 'promotion_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,10 +29,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final NotificationService _notificationService = NotificationService();
   final NoticeService _noticeService = NoticeService();
+  final PromotionService _promotionService = PromotionService();
   bool _notificationsEnabled = true;
   int _currentIndex = 0;
   DateTime? _lastBackPressTime;
   NoticeModel? _latestNotice;
+  List<PromotionModel> _promotions = [];
 
   /// 게스트 모드에서 로그인 필요 기능 접근 시 로그인 유도 다이얼로그
   void _showLoginRequiredDialog(String feature) {
@@ -165,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadNotificationSetting();
     _loadLatestNotice();
+    _loadPromotions();
   }
 
   @override
@@ -182,6 +189,19 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       debugPrint('Notice load error: $e');
+    }
+  }
+
+  Future<void> _loadPromotions() async {
+    try {
+      final promotions = await _promotionService.getPublishedPromotions();
+      if (mounted) {
+        setState(() {
+          _promotions = promotions;
+        });
+      }
+    } catch (e) {
+      debugPrint('Promotion load error: $e');
     }
   }
 
@@ -562,9 +582,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // 로고 영역
-          _buildLogoSection(),
-          const SizedBox(height: 24),
+          PromotionCarousel(
+            promotions: _promotions,
+            onPromotionTap: _openPromotion,
+          ),
+          if (_promotions.isNotEmpty) const SizedBox(height: 14),
 
           // 공지사항 배너
           _buildNoticeBanner(),
@@ -572,14 +594,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildFeatureMosaic(),
         ],
       ),
-    );
-  }
-
-  Widget _buildLogoSection() {
-    return Image.asset(
-      'assets/images/loggo_section4x.png',
-      width: double.infinity,
-      fit: BoxFit.contain,
     );
   }
 
@@ -931,6 +945,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openPromotion(PromotionModel promotion) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PromotionDetailScreen(promotion: promotion),
+      ),
+    );
+  }
+
   String _getAppBarTitle() {
     switch (_currentIndex) {
       case 0:
@@ -1060,7 +1083,8 @@ class _ChatBanner extends StatelessWidget {
         child: Image.asset(
           'assets/images/chatting4xgreen.png',
           width: double.infinity,
-          fit: BoxFit.contain,
+          height: 133,
+          fit: BoxFit.cover,
         ),
       ),
     );
