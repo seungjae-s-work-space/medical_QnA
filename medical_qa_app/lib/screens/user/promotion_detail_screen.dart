@@ -8,6 +8,53 @@ import '../../design/app_spacing.dart';
 import '../../models/promotion_model.dart';
 import '../../utils/app_colors.dart';
 
+const _allowedPromotionHtmlTags = <String>{
+  'html',
+  'body',
+  'a',
+  'b',
+  'blockquote',
+  'br',
+  'div',
+  'em',
+  'figcaption',
+  'figure',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'i',
+  'img',
+  'li',
+  'ol',
+  'p',
+  's',
+  'span',
+  'strong',
+  'table',
+  'tbody',
+  'td',
+  'th',
+  'thead',
+  'tr',
+  'u',
+  'ul',
+};
+
+const _blockedPromotionHtmlTags = <String>{
+  'script',
+  'style',
+  'iframe',
+  'object',
+  'embed',
+};
+
+Uri? _normalizePromotionMediaOrLinkUrl(String? url) {
+  return _normalizePromotionExternalUrl(url);
+}
+
 Uri? _normalizePromotionExternalUrl(String? url) {
   final trimmedUrl = url?.trim() ?? '';
   if (trimmedUrl.isEmpty) return null;
@@ -22,6 +69,26 @@ Uri? _normalizePromotionExternalUrl(String? url) {
   }
 
   return uri;
+}
+
+Future<void> _openPromotionHtmlLink(
+  BuildContext context,
+  String? url,
+) async {
+  final uri = _normalizePromotionMediaOrLinkUrl(url);
+  if (uri == null) return;
+
+  try {
+    await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('외부 페이지를 열 수 없습니다.')),
+    );
+  }
 }
 
 class PromotionDetailScreen extends StatelessWidget {
@@ -151,12 +218,18 @@ class PromotionDetailScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.lg),
                   Html(
                     data: promotion.contentHtml,
+                    onlyRenderTheseTags: _allowedPromotionHtmlTags,
+                    doNotRenderTheseTags: _blockedPromotionHtmlTags,
+                    onLinkTap: (url, attributes, element) {
+                      _openPromotionHtmlLink(context, url);
+                    },
                     extensions: [
                       TagExtension(
                         tagsToExtend: {"img"},
                         builder: (extensionContext) {
                           final src = extensionContext.attributes['src'];
-                          if (src == null || src.isEmpty) {
+                          final normalizedSrc = _normalizePromotionMediaOrLinkUrl(src);
+                          if (normalizedSrc == null) {
                             return const SizedBox.shrink();
                           }
                           return Padding(
@@ -166,7 +239,7 @@ class PromotionDetailScreen extends StatelessWidget {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(AppRadii.sm),
                               child: CachedNetworkImage(
-                                imageUrl: src,
+                                imageUrl: normalizedSrc.toString(),
                                 width: double.infinity,
                                 fit: BoxFit.contain,
                                 placeholder: (context, url) => Container(

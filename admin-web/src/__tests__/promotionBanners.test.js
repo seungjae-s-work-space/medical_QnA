@@ -117,8 +117,15 @@ describe('promotion banners', () => {
     expect(manager).toMatch(/getDocs\(buildPromotionsQuery\(cursor, normalizedSearchQuery\)\)/);
     expect(manager).toMatch(/onSnapshot\(\s*buildPromotionsQuery\(null, normalizedSearchQuery\)/);
     expect(manager).not.toMatch(/if \(searchQuery \|\| !hasMore \|\| !lastVisibleDoc\) return/);
+    expect(manager).toMatch(/const \[searchInput, setSearchInput\] = useState\(''\)/);
+    expect(manager).toMatch(/setTimeout\(\(\) => \{/);
+    expect(manager).toMatch(/PROMOTION_SEARCH_DEBOUNCE_MS/);
+    expect(manager).toMatch(/normalizedSearchQuery\.length < PROMOTION_SEARCH_KEYWORD_MIN_LENGTH/);
+    expect(manager).toMatch(/setSearchQuery\(nextSearchQuery\)/);
     expect(service).toMatch(/export function normalizePromotionSearchQuery/);
     expect(service).toMatch(/export function buildPromotionSearchKeywords/);
+    expect(service).toMatch(/export const PROMOTION_SEARCH_KEYWORD_LIMIT = 500/);
+    expect(service).toMatch(/export const PROMOTION_SEARCH_MAX_TOKEN_LENGTH/);
     expect(service).toMatch(/searchKeywords: buildPromotionSearchKeywords\(promotionPayload\)/);
     expect(service).toMatch(/summary/);
     expect(service).toMatch(/contentHtml/);
@@ -149,6 +156,30 @@ describe('promotion banners', () => {
 
     expect(manager).toMatch(/import \{ auth, db \} from '\.\.\/firebase'/);
     expect(manager).toMatch(/updatedBy: auth\.currentUser\?\.uid \|\| ''/);
+  });
+
+  test('admin promotion save validates managed banner image URLs', () => {
+    const service = read('services/promotionService.js');
+
+    expect(service).toMatch(/function validatePromotionBannerImageUrl/);
+    expect(service).toMatch(/normalizePromotionExternalUrl\(bannerImageUrl\)/);
+    expect(service).toMatch(/promotion_banners/);
+    expect(service).toMatch(/promotion_images/);
+    expect(service).toMatch(/%2Fpromotion_banners%2F/);
+    expect(service).toMatch(/%2Fpromotion_images%2F/);
+    expect(service).toMatch(/throw new Error\('배너 이미지는 프로모션 이미지 업로드 경로의 http\/https URL이어야 합니다\.'\)/);
+    expect(service).toMatch(/bannerImageUrl: validatePromotionBannerImageUrl\(\(form\.bannerImageUrl \|\| ''\)\.trim\(\)\)/);
+  });
+
+  test('promotion search keyword generation caps huge tokens before prefixing', () => {
+    const service = read('services/promotionService.js');
+
+    expect(service).toMatch(/export const PROMOTION_SEARCH_KEYWORD_LIMIT = 500/);
+    expect(service).toMatch(/export const PROMOTION_SEARCH_MAX_TOKEN_LENGTH = 64/);
+    expect(service).toMatch(/token\.slice\(0, PROMOTION_SEARCH_MAX_TOKEN_LENGTH\)/);
+    expect(service).toMatch(/keywords\.size >= PROMOTION_SEARCH_KEYWORD_LIMIT/);
+    expect(service).toMatch(/return Array\.from\(keywords\)/);
+    expect(service).not.toMatch(/return Array\.from\(keywords\)\.slice\(0, 500\)/);
   });
 
   test('sanitizes public promotion body HTML with a positive URL allowlist', () => {

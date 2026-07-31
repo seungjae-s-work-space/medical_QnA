@@ -127,6 +127,42 @@ void main() {
     expect(source, contains('launchUrl(\n        uri,'));
   });
 
+  test('promotion detail source hardens rendered HTML tags and links', () {
+    final source = _readSource('lib/screens/user/promotion_detail_screen.dart');
+
+    expect(source, contains('const _allowedPromotionHtmlTags = <String>{'));
+    expect(source, contains('const _blockedPromotionHtmlTags = <String>{'));
+    for (final tag in ['script', 'style', 'iframe', 'object', 'embed']) {
+      expect(source, contains("'$tag'"));
+    }
+    expect(source, contains('onlyRenderTheseTags: _allowedPromotionHtmlTags'));
+    expect(source, contains('doNotRenderTheseTags: _blockedPromotionHtmlTags'));
+    expect(source, contains('onLinkTap: (url, attributes, element)'));
+    expect(source, contains('_openPromotionHtmlLink(context, url);'));
+  });
+
+  test('promotion detail validates HTML media URLs before rendering images', () {
+    final source = _readSource('lib/screens/user/promotion_detail_screen.dart');
+
+    expect(source, contains('_normalizePromotionMediaOrLinkUrl'));
+    expect(source, contains('final normalizedSrc = _normalizePromotionMediaOrLinkUrl(src);'));
+    expect(source, contains('if (normalizedSrc == null)'));
+    expect(source, contains('return const SizedBox.shrink();'));
+    expect(source, contains('imageUrl: normalizedSrc.toString()'));
+    expect(source, contains('!uri.hasScheme'));
+    expect(source, contains('uri.host.isEmpty'));
+    expect(source, contains("uri.scheme == 'https' || uri.scheme == 'http'"));
+  });
+
+  test('promotion detail rejects unsafe HTML link taps', () {
+    final source = _readSource('lib/screens/user/promotion_detail_screen.dart');
+
+    expect(source, contains('Future<void> _openPromotionHtmlLink('));
+    expect(source, contains('final uri = _normalizePromotionMediaOrLinkUrl(url);'));
+    expect(source, contains('if (uri == null) return;'));
+    expect(source, contains('LaunchMode.externalApplication'));
+  });
+
   testWidgets('promotion carousel renders no banner image when empty',
       (tester) async {
     await _pumpCarousel(

@@ -18,6 +18,9 @@ import { auth, db, storage } from '../firebase';
 
 export const PROMOTION_HOME_LIMIT = 10;
 export const PROMOTION_ADMIN_PAGE_SIZE = 10;
+export const PROMOTION_SEARCH_KEYWORD_MIN_LENGTH = 2;
+export const PROMOTION_SEARCH_KEYWORD_LIMIT = 500;
+export const PROMOTION_SEARCH_MAX_TOKEN_LENGTH = 64;
 
 const BLOCKED_PROMOTION_SELECTOR = 'script, style, iframe, object, embed';
 const ALLOWED_PROMOTION_TAGS = new Set([
@@ -64,7 +67,12 @@ const STYLE_SCRIPT_URL_PATTERN = new RegExp(
   'i'
 );
 const ALLOWED_EXTERNAL_PROTOCOLS = new Set(['http:', 'https:']);
-const SEARCH_KEYWORD_MIN_LENGTH = 2;
+const PROMOTION_BANNER_PATH_MARKERS = [
+  '/promotion_banners/',
+  '/promotion_images/',
+  '%2Fpromotion_banners%2F',
+  '%2Fpromotion_images%2F',
+];
 
 export function mapPromotionDoc(docSnapshot) {
   return {
@@ -132,22 +140,42 @@ export function normalizePromotionSearchQuery(value) {
     .replace(/\s+/g, ' ');
 }
 
+function hasKeywordCapacity(keywords) {
+  if (keywords.size >= PROMOTION_SEARCH_KEYWORD_LIMIT) return false;
+  return keywords.size < PROMOTION_SEARCH_KEYWORD_LIMIT;
+}
+
+function addKeyword(keywords, value) {
+  if (!hasKeywordCapacity(keywords)) return false;
+  keywords.add(value);
+  return hasKeywordCapacity(keywords);
+}
+
 function addSearchToken(keywords, value) {
   const normalizedValue = normalizePromotionSearchQuery(value);
   if (!normalizedValue) return;
 
-  if (normalizedValue.length >= SEARCH_KEYWORD_MIN_LENGTH) {
-    keywords.add(normalizedValue);
+  if (normalizedValue.length >= PROMOTION_SEARCH_KEYWORD_MIN_LENGTH) {
+    if (!addKeyword(keywords, normalizedValue.slice(0, PROMOTION_SEARCH_MAX_TOKEN_LENGTH))) {
+      return;
+    }
   }
 
-  normalizedValue.split(' ').forEach((token) => {
-    if (token.length < SEARCH_KEYWORD_MIN_LENGTH) return;
-    keywords.add(token);
+  for (let token of normalizedValue.split(' ')) {
+    if (!hasKeywordCapacity(keywords)) return;
 
-    for (let index = SEARCH_KEYWORD_MIN_LENGTH; index <= token.length; index += 1) {
+    token = token.slice(0, PROMOTION_SEARCH_MAX_TOKEN_LENGTH);
+    if (token.length < PROMOTION_SEARCH_KEYWORD_MIN_LENGTH) continue;
+    if (!addKeyword(keywords, token)) return;
+
+    for (
+      let index = PROMOTION_SEARCH_KEYWORD_MIN_LENGTH;
+      index <= token.length && keywords.size < PROMOTION_SEARCH_KEYWORD_LIMIT;
+      index += 1
+    ) {
       keywords.add(token.slice(0, index));
     }
-  });
+  }
 }
 
 export function buildPromotionSearchKeywords(promotion) {
@@ -159,7 +187,20 @@ export function buildPromotionSearchKeywords(promotion) {
   addSearchToken(keywords, promotion.externalLinkLabel);
   addSearchToken(keywords, promotion.externalLinkUrl);
 
-  return Array.from(keywords).slice(0, 500);
+  return Array.from(keywords);
+}
+
+function validatePromotionBannerImageUrl(bannerImageUrl) {
+  const normalizedUrl = normalizePromotionExternalUrl(bannerImageUrl);
+  const hasManagedPath = PROMOTION_BANNER_PATH_MARKERS.some((marker) => (
+    normalizedUrl.includes(marker)
+  ));
+
+  if (!normalizedUrl || !hasManagedPath) {
+    throw new Error('배너 이미지는 프로모션 이미지 업로드 경로의 http/https URL이어야 합니다.');
+  }
+
+  return normalizedUrl;
 }
 
 export async function savePromotion(form, editingPromotion = null) {
@@ -168,7 +209,7 @@ export async function savePromotion(form, editingPromotion = null) {
   const promotionPayload = {
     title: (form.title || '').trim(),
     summary: (form.summary || '').trim(),
-    bannerImageUrl: (form.bannerImageUrl || '').trim(),
+    bannerImageUrl: validatePromotionBannerImageUrl((form.bannerImageUrl || '').trim()),
     contentHtml: (form.contentHtml || '').trim(),
     externalLinkUrl: (form.externalLinkUrl || '').trim(),
     externalLinkLabel: (form.externalLinkLabel || '').trim(),

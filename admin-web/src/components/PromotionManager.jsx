@@ -62,6 +62,7 @@ import {
 } from '../utils/webDesignStyles';
 import {
   PROMOTION_ADMIN_PAGE_SIZE,
+  PROMOTION_SEARCH_KEYWORD_MIN_LENGTH,
   deletePromotion,
   normalizePromotionSearchQuery,
   savePromotion,
@@ -70,6 +71,7 @@ import {
 
 const ITEMS_PER_PAGE = PROMOTION_ADMIN_PAGE_SIZE;
 const QUERY_PAGE_SIZE = ITEMS_PER_PAGE;
+const PROMOTION_SEARCH_DEBOUNCE_MS = 350;
 
 const INITIAL_FORM = {
   title: '',
@@ -128,6 +130,7 @@ function PromotionManager() {
   const [saving, setSaving] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
@@ -171,6 +174,21 @@ function PromotionManager() {
     setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
     setHasMore(snapshot.docs.length === QUERY_PAGE_SIZE);
   };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const normalizedSearchQuery = normalizePromotionSearchQuery(searchInput);
+      const nextSearchQuery =
+        normalizedSearchQuery === '' ||
+        normalizedSearchQuery.length < PROMOTION_SEARCH_KEYWORD_MIN_LENGTH
+          ? ''
+          : searchInput;
+      setSearchQuery(nextSearchQuery);
+      setCurrentPage(0);
+    }, PROMOTION_SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
 
   useEffect(() => {
     let unsubscribe;
@@ -317,8 +335,7 @@ function PromotionManager() {
   };
 
   const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-    setCurrentPage(0);
+    setSearchInput(event.target.value);
   };
 
   const handleBannerUpload = async (event) => {
@@ -486,7 +503,7 @@ function PromotionManager() {
       <TextField
         fullWidth
         placeholder="제목, 요약, 본문, 링크 검색..."
-        value={searchQuery}
+        value={searchInput}
         onChange={handleSearchChange}
         InputProps={{
           startAdornment: (
