@@ -109,6 +109,24 @@ void main() {
     expect(source, contains('promotion.hasExternalLink'));
   });
 
+  test('promotion detail normalizes external CTA URLs before launching', () {
+    final source = _readSource('lib/screens/user/promotion_detail_screen.dart');
+
+    expect(source, contains('_normalizePromotionExternalUrl'));
+    expect(source, contains('final trimmedUrl = url?.trim() ?? \'\';'));
+    expect(source, contains('final uri = Uri.tryParse(trimmedUrl);'));
+    expect(source, contains('!uri.hasScheme'));
+    expect(source, contains('uri.host.isEmpty'));
+    expect(source, contains("uri.scheme == 'https' || uri.scheme == 'http'"));
+    expect(
+      source,
+      contains(
+          'final uri = _normalizePromotionExternalUrl(promotion.externalLinkUrl);'),
+    );
+    expect(source, contains('if (uri == null)'));
+    expect(source, contains('launchUrl(\n        uri,'));
+  });
+
   testWidgets('promotion carousel renders no banner image when empty',
       (tester) async {
     await _pumpCarousel(

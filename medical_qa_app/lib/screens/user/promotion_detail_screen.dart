@@ -8,6 +8,22 @@ import '../../design/app_spacing.dart';
 import '../../models/promotion_model.dart';
 import '../../utils/app_colors.dart';
 
+Uri? _normalizePromotionExternalUrl(String? url) {
+  final trimmedUrl = url?.trim() ?? '';
+  if (trimmedUrl.isEmpty) return null;
+
+  final uri = Uri.tryParse(trimmedUrl);
+  if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+    return null;
+  }
+
+  if (!(uri.scheme == 'https' || uri.scheme == 'http')) {
+    return null;
+  }
+
+  return uri;
+}
+
 class PromotionDetailScreen extends StatelessWidget {
   final PromotionModel promotion;
 
@@ -17,14 +33,18 @@ class PromotionDetailScreen extends StatelessWidget {
   });
 
   Future<void> _openExternalLink(BuildContext context) async {
-    final url = promotion.externalLinkUrl;
-    if (url == null || url.trim().isEmpty) return;
-
     final messenger = ScaffoldMessenger.of(context);
+    final uri = _normalizePromotionExternalUrl(promotion.externalLinkUrl);
+    if (uri == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('외부 페이지를 열 수 없습니다.')),
+      );
+      return;
+    }
 
     try {
       final launched = await launchUrl(
-        Uri.parse(url),
+        uri,
         mode: LaunchMode.externalApplication,
       );
       if (!launched) {
