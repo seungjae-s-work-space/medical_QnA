@@ -12,9 +12,10 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
-import { auth, db, storage } from '../firebase';
+import { auth, db, functions, storage } from '../firebase';
 
 export const PROMOTION_HOME_LIMIT = 10;
 export const PROMOTION_ADMIN_PAGE_SIZE = 10;
@@ -140,6 +141,34 @@ function resolvePromotionBannerContentType(file) {
   return PROMOTION_BANNER_CONTENT_TYPE_BY_EXTENSION[ext] || '';
 }
 
+function isAdminClaimPresent(claims = {}) {
+  return claims.admin === true || claims.role === 'admin';
+}
+
+async function ensureAdminStorageClaim() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error('관리자 로그인이 필요합니다.');
+  }
+
+  let tokenResult = await currentUser.getIdTokenResult(true);
+  if (isAdminClaimPresent(tokenResult.claims)) return;
+
+  try {
+    const ensureAdminAuthClaim = httpsCallable(functions, 'ensureAdminAuthClaim');
+    await ensureAdminAuthClaim();
+    await currentUser.getIdToken(true);
+    tokenResult = await currentUser.getIdTokenResult(true);
+  } catch (error) {
+    console.error('Admin auth claim sync failed:', error);
+    throw new Error('관리자 업로드 권한 확인에 실패했습니다. 다시 로그인 후 시도해주세요.');
+  }
+
+  if (!isAdminClaimPresent(tokenResult.claims)) {
+    throw new Error('관리자 업로드 권한이 아직 반영되지 않았습니다. 다시 로그인 후 시도해주세요.');
+  }
+}
+
 export async function uploadPromotionBanner(file) {
   if (file.size >= PROMOTION_BANNER_MAX_BYTES) {
     throw new Error('배너 이미지는 10MB 미만으로 업로드해주세요.');
@@ -155,6 +184,7 @@ export async function uploadPromotionBanner(file) {
   const storageRef = ref(storage, `promotion_banners/${fileName}`);
   const metadata = { contentType };
 
+  await ensureAdminStorageClaim();
   await uploadBytes(storageRef, file, metadata);
   return getDownloadURL(storageRef);
 }

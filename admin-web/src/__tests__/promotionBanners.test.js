@@ -180,9 +180,21 @@ describe('promotion banners', () => {
   });
 
   test('admin promotion upload validates image type and size before storage writes', () => {
+    const firebase = read('firebase.js');
+    const authContext = read('contexts/AuthContext.jsx');
     const service = read('services/promotionService.js');
     const manager = read('components/PromotionManager.jsx');
 
+    expect(firebase).toMatch(/import \{ getFunctions \} from 'firebase\/functions'/);
+    expect(firebase).toMatch(/export const functions = getFunctions\(app\)/);
+    expect(authContext).toMatch(/httpsCallable\(functions, 'ensureAdminAuthClaim'\)/);
+    expect(authContext).toMatch(/currentUser\.getIdToken\(true\)/);
+    expect(service).toMatch(/import \{ httpsCallable \} from 'firebase\/functions'/);
+    expect(service).toMatch(/function isAdminClaimPresent/);
+    expect(service).toMatch(/async function ensureAdminStorageClaim/);
+    expect(service).toMatch(/httpsCallable\(functions, 'ensureAdminAuthClaim'\)/);
+    expect(service).toMatch(/getIdTokenResult\(true\)/);
+    expect(service).toMatch(/getIdToken\(true\)/);
     expect(service).toMatch(/PROMOTION_BANNER_MAX_BYTES = 10 \* 1024 \* 1024/);
     expect(service).toMatch(/function resolvePromotionBannerContentType/);
     expect(service).toMatch(/image\/jpeg/);

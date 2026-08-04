@@ -1,6 +1,12 @@
-const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const {
+  onDocumentCreated,
+  onDocumentUpdated,
+  onDocumentWritten,
+} = require("firebase-functions/v2/firestore");
+const { HttpsError, onCall } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const { getStorage } = require("firebase-admin/storage");
@@ -16,8 +22,69 @@ const {
 initializeApp();
 
 const db = getFirestore();
+const auth = getAuth();
 const messaging = getMessaging();
 const storage = getStorage();
+
+function buildRoleClaims(existingClaims, role) {
+  const nextClaims = { ...(existingClaims || {}) };
+
+  if (role === "admin") {
+    nextClaims.admin = true;
+    nextClaims.role = "admin";
+    return nextClaims;
+  }
+
+  delete nextClaims.admin;
+  if (nextClaims.role === "admin") {
+    delete nextClaims.role;
+  }
+  return nextClaims;
+}
+
+function claimsEqual(left, right) {
+  return JSON.stringify(left || {}) === JSON.stringify(right || {});
+}
+
+async function syncAuthClaimsForUser(userId, role) {
+  if (!userId) return false;
+
+  const userRecord = await auth.getUser(userId);
+  const currentClaims = userRecord.customClaims || {};
+  const nextClaims = buildRoleClaims(currentClaims, role);
+
+  if (claimsEqual(currentClaims, nextClaims)) {
+    return false;
+  }
+
+  await auth.setCustomUserClaims(userId, nextClaims);
+  return true;
+}
+
+exports.syncUserRoleClaims = onDocumentWritten("users/{userId}", async (event) => {
+  const afterSnapshot = event.data?.after;
+  const role = afterSnapshot?.exists ? afterSnapshot.data()?.role : null;
+
+  await syncAuthClaimsForUser(event.params.userId, role);
+});
+
+exports.ensureAdminAuthClaim = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "로그인이 필요합니다.");
+  }
+
+  const userSnapshot = await db.collection("users").doc(uid).get();
+  const role = userSnapshot.exists ? userSnapshot.data()?.role : null;
+
+  if (role !== "admin") {
+    await syncAuthClaimsForUser(uid, role);
+    throw new HttpsError("permission-denied", "관리자 권한이 필요합니다.");
+  }
+
+  const updated = await syncAuthClaimsForUser(uid, role);
+  return { admin: true, updated };
+});
 
 exports.cleanupExpiredChatAttachments = onSchedule(
   {

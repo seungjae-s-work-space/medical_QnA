@@ -80,6 +80,9 @@ void main() {
     final rules = read('storage.rules');
 
     expect(rules, contains('function isAdmin()'));
+    expect(rules, contains('request.auth.token.admin == true'));
+    expect(rules, contains("request.auth.token.role == 'admin'"));
+    expect(rules, isNot(contains('firestore.get(')));
     expect(rules, contains('allow write: if isAdmin()'));
     expect(
       rules,

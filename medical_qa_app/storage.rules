@@ -7,7 +7,10 @@ service firebase.storage {
 
     function isAdmin() {
       return isAuthenticated()
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && (
+          request.auth.token.admin == true ||
+          request.auth.token.role == 'admin'
+        );
     }
 
     function isImageUnder(maxSize) {
