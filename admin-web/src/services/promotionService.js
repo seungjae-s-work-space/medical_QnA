@@ -21,6 +21,7 @@ export const PROMOTION_ADMIN_PAGE_SIZE = 10;
 export const PROMOTION_SEARCH_KEYWORD_MIN_LENGTH = 2;
 export const PROMOTION_SEARCH_KEYWORD_LIMIT = 500;
 export const PROMOTION_SEARCH_MAX_TOKEN_LENGTH = 64;
+export const PROMOTION_BANNER_MAX_BYTES = 10 * 1024 * 1024;
 
 const BLOCKED_PROMOTION_SELECTOR = 'script, style, iframe, object, embed';
 const ALLOWED_PROMOTION_TAGS = new Set([
@@ -73,6 +74,25 @@ const PROMOTION_BANNER_PATH_MARKERS = [
   'promotion_banners%2F',
   'promotion_images%2F',
 ];
+const PROMOTION_BANNER_CONTENT_TYPE_BY_EXTENSION = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+};
+const PROMOTION_BANNER_EXTENSION_BY_CONTENT_TYPE = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+};
+const ALLOWED_PROMOTION_BANNER_CONTENT_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+]);
 
 export function mapPromotionDoc(docSnapshot) {
   return {
@@ -109,11 +129,31 @@ export async function getPromotion(promotionId) {
   return promotion;
 }
 
+function resolvePromotionBannerContentType(file) {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  const fileContentType = (file.type || '').toLowerCase();
+
+  if (ALLOWED_PROMOTION_BANNER_CONTENT_TYPES.has(fileContentType)) {
+    return fileContentType;
+  }
+
+  return PROMOTION_BANNER_CONTENT_TYPE_BY_EXTENSION[ext] || '';
+}
+
 export async function uploadPromotionBanner(file) {
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  if (file.size >= PROMOTION_BANNER_MAX_BYTES) {
+    throw new Error('배너 이미지는 10MB 미만으로 업로드해주세요.');
+  }
+
+  const contentType = resolvePromotionBannerContentType(file);
+  if (!contentType) {
+    throw new Error('배너 이미지는 JPG, PNG, GIF, WEBP 파일만 업로드할 수 있습니다.');
+  }
+
+  const ext = PROMOTION_BANNER_EXTENSION_BY_CONTENT_TYPE[contentType] || 'jpg';
   const fileName = `${uuidv4()}.${ext}`;
   const storageRef = ref(storage, `promotion_banners/${fileName}`);
-  const metadata = file.type ? { contentType: file.type } : undefined;
+  const metadata = { contentType };
 
   await uploadBytes(storageRef, file, metadata);
   return getDownloadURL(storageRef);

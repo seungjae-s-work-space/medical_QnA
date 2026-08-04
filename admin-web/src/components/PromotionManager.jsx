@@ -350,7 +350,11 @@ function PromotionManager() {
       setSnackbar({ open: true, message: '배너 이미지가 업로드되었습니다', severity: 'success' });
     } catch (error) {
       console.error('Promotion banner upload error:', error);
-      setSnackbar({ open: true, message: '배너 업로드에 실패했습니다', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: error.message || '배너 업로드에 실패했습니다',
+        severity: 'error',
+      });
     } finally {
       setUploadingBanner(false);
       input.value = '';

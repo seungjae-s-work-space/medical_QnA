@@ -179,6 +179,23 @@ describe('promotion banners', () => {
     expect(service).toMatch(/bannerImageUrl: validatePromotionBannerImageUrl\(\(form\.bannerImageUrl \|\| ''\)\.trim\(\)\)/);
   });
 
+  test('admin promotion upload validates image type and size before storage writes', () => {
+    const service = read('services/promotionService.js');
+    const manager = read('components/PromotionManager.jsx');
+
+    expect(service).toMatch(/PROMOTION_BANNER_MAX_BYTES = 10 \* 1024 \* 1024/);
+    expect(service).toMatch(/function resolvePromotionBannerContentType/);
+    expect(service).toMatch(/image\/jpeg/);
+    expect(service).toMatch(/image\/png/);
+    expect(service).toMatch(/image\/webp/);
+    expect(service).toMatch(/image\/gif/);
+    expect(service).toMatch(/file\.size >= PROMOTION_BANNER_MAX_BYTES/);
+    expect(service).toMatch(/throw new Error\('배너 이미지는 10MB 미만으로 업로드해주세요\.'\)/);
+    expect(service).toMatch(/throw new Error\('배너 이미지는 JPG, PNG, GIF, WEBP 파일만 업로드할 수 있습니다\.'\)/);
+    expect(service).toMatch(/const metadata = \{ contentType \}/);
+    expect(manager).toMatch(/error\.message \|\| '배너 업로드에 실패했습니다'/);
+  });
+
   test('admin promotion save normalizes optional external links', () => {
     const service = read('services/promotionService.js');
 
