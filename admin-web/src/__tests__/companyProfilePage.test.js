@@ -1,0 +1,41 @@
+const fs = require('fs');
+const path = require('path');
+
+const srcDir = path.join(__dirname, '..');
+
+function read(relativePath) {
+  return fs.readFileSync(path.join(srcDir, relativePath), 'utf8');
+}
+
+describe('company profile page', () => {
+  test('company page is a public indexable route outside the admin layout', () => {
+    const app = read('App.jsx');
+
+    expect(app).toMatch(/import CompanyProfile/);
+    expect(app).toMatch(/path="\/company"/);
+    expect(app).toMatch(/<CompanyProfile \/>/);
+    expect(app).toMatch(/'\/company': \{/);
+    expect(app).toMatch(/난임상담톡톡 회사소개/);
+    expect(app).toMatch(/shouldIndex: true/);
+    expect(app).not.toMatch(/path="\/company"[\s\S]*?<Layout>[\s\S]*?<CompanyProfile \/>[\s\S]*?<\/Layout>/);
+  });
+
+  test('company profile component contains share-card copy and no Firebase reads', () => {
+    const companyProfile = read('components/CompanyProfile.jsx');
+
+    expect(companyProfile).toMatch(/난임상담톡톡/);
+    expect(companyProfile).toMatch(/난임 정보·상담 플랫폼/);
+    expect(companyProfile).toMatch(/무료 회원제 난임 정보·상담 서비스/);
+    expect(companyProfile).toMatch(/근거 중심 정보/);
+    expect(companyProfile).toMatch(/전문가 상담 흐름/);
+    expect(companyProfile).toMatch(/구독\/인앱결제 없이 운영/);
+    expect(companyProfile).toMatch(/agisungong\.net\/company/);
+    expect(companyProfile).toMatch(/navigator\.clipboard\.writeText/);
+    expect(companyProfile).toMatch(/navigate\('\/'\)/);
+    expect(companyProfile).toMatch(/navigate\('\/chat'\)/);
+    expect(companyProfile).not.toMatch(/from ['"]\.\.\/firebase['"]/);
+    expect(companyProfile).not.toMatch(/collection\(/);
+    expect(companyProfile).not.toMatch(/getDocs\(/);
+    expect(companyProfile).not.toMatch(/onSnapshot\(/);
+  });
+});

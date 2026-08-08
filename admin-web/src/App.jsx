@@ -14,6 +14,7 @@ import VideoManager from './components/VideoManager';
 import UserManagement from './components/UserManagement';
 import PromotionManager from './components/PromotionManager';
 import PromotionDetail from './components/PromotionDetail';
+import CompanyProfile from './components/CompanyProfile';
 import { CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colors } from './theme';
@@ -92,6 +93,12 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
       description: '난임상담톡톡 로그인 및 회원가입 화면입니다.',
       shouldIndex: false,
     },
+    '/company': {
+      title: `난임상담톡톡 회사소개 | ${SITE_NAME}`,
+      description:
+        '외부 공유용 난임상담톡톡 회사소개 페이지입니다. 난임 정보, 뉴스, 백과, 상담 흐름을 한눈에 확인할 수 있습니다.',
+      shouldIndex: true,
+    },
     '/encyclopedia': {
       title: `난임백과 | ${SITE_NAME}`,
       description: '난임 치료와 임신 준비에 도움이 되는 정보를 한곳에서 확인할 수 있습니다.',
@@ -162,27 +169,36 @@ function SeoManager({ isAdmin, isLoggedIn }) {
   return null;
 }
 
-function AppRoutes() {
-  const { isAdmin, isLoggedIn, loading } = useAuth();
+function LoadingScreen() {
+  return (
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      sx={{ bgcolor: colors.background }}
+    >
+      <CircularProgress sx={{ color: colors.textSecondary }} />
+    </Box>
+  );
+}
 
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-        sx={{ bgcolor: colors.background }}
-      >
-        <CircularProgress sx={{ color: colors.textSecondary }} />
-      </Box>
-    );
+function RoutedAppContent() {
+  const { isAdmin, isLoggedIn, loading } = useAuth();
+  const location = useLocation();
+  const isCompanyRoute = location.pathname === '/company';
+
+  if (loading && !isCompanyRoute) {
+    return <LoadingScreen />;
   }
 
   return (
-    <BrowserRouter>
+    <>
       <SeoManager isAdmin={isAdmin} isLoggedIn={isLoggedIn} />
       <Routes>
+        {/* 공개 회사소개 페이지 */}
+        <Route path="/company" element={<CompanyProfile />} />
+
         {/* 로그인 페이지 */}
         <Route
           path="/login"
@@ -302,6 +318,14 @@ function AppRoutes() {
         {/* 기타 경로는 홈으로 */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+    </>
+  );
+}
+
+function AppRoutes() {
+  return (
+    <BrowserRouter>
+      <RoutedAppContent />
     </BrowserRouter>
   );
 }
