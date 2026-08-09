@@ -56,6 +56,20 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/primaryLight|cardTint|backgroundWarm|aqua/);
   });
 
+  test('company profile includes lightweight interactive editorial touches', () => {
+    const companyProfile = read('components/CompanyProfile.jsx');
+
+    expect(companyProfile).toMatch(/scrollProgress/);
+    expect(companyProfile).toMatch(/setScrollProgress/);
+    expect(companyProfile).toMatch(/addEventListener\('scroll'/);
+    expect(companyProfile).toMatch(/activeSection/);
+    expect(companyProfile).toMatch(/setActiveSection/);
+    expect(companyProfile).toMatch(/aria-pressed/);
+    expect(companyProfile).toMatch(/component="button"/);
+    expect(companyProfile).toMatch(/링크 복사됨/);
+    expect(companyProfile).toMatch(/지금 보고 있는 관점/);
+  });
+
   test('company route has a static GitHub Pages entrypoint for direct share links', () => {
     const companyIndexPath = path.join(srcDir, '..', 'public', 'company', 'index.html');
 

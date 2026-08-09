@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -76,9 +76,14 @@ const primaryButtonSx = {
   bgcolor: companyPalette.emerald,
   color: companyPalette.surface,
   boxShadow: '0 14px 30px rgba(24, 61, 52, 0.16)',
+  transition: 'transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease',
   '&:hover': {
     bgcolor: '#102E27',
     boxShadow: '0 16px 34px rgba(24, 61, 52, 0.2)',
+    transform: 'translateY(-1px)',
+  },
+  '&:active': {
+    transform: 'translateY(0)',
   },
 };
 
@@ -89,26 +94,64 @@ const secondaryButtonSx = {
   borderColor: companyPalette.lineStrong,
   color: companyPalette.ink,
   bgcolor: companyPalette.surface,
+  transition: 'transform 160ms ease, border-color 160ms ease, background-color 160ms ease',
   '&:hover': {
     borderColor: companyPalette.emerald,
     bgcolor: companyPalette.emeraldSoft,
+    transform: 'translateY(-1px)',
+  },
+  '&:active': {
+    transform: 'translateY(0)',
   },
 };
 
 function CompanyProfile() {
   const navigate = useNavigate();
   const [copyMessage, setCopyMessage] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [activeSection, setActiveSection] = useState(profileSections[0].label);
+  const activeProfileSection =
+    profileSections.find((section) => section.label === activeSection) || profileSections[0];
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const nextProgress =
+        scrollableHeight > 0 ? Math.min(window.scrollY / scrollableHeight, 1) : 0;
+
+      setScrollProgress(nextProgress);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!copied) {
+      return undefined;
+    }
+
+    const copiedTimer = window.setTimeout(() => setCopied(false), 2200);
+
+    return () => window.clearTimeout(copiedTimer);
+  }, [copied]);
 
   const handleCopy = async () => {
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      setCopied(false);
       setCopyMessage('링크 복사를 지원하지 않는 브라우저입니다.');
       return;
     }
 
     try {
       await navigator.clipboard.writeText(COMPANY_URL);
+      setCopied(true);
       setCopyMessage('소개 링크를 복사했습니다.');
     } catch (error) {
+      setCopied(false);
       setCopyMessage('링크를 복사하지 못했습니다.');
     }
   };
@@ -123,6 +166,19 @@ function CompanyProfile() {
         py: { xs: 2.5, sm: 6 },
       }}
     >
+      <Box
+        aria-hidden="true"
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: `${Math.round(scrollProgress * 100)}%`,
+          height: 3,
+          bgcolor: companyPalette.emerald,
+          zIndex: 1300,
+          transition: 'width 0.12s ease-out',
+        }}
+      />
       <Box
         sx={{
           width: '100%',
@@ -166,58 +222,93 @@ function CompanyProfile() {
             component="section"
             sx={{
               pb: { xs: 4, sm: 5 },
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) 190px' },
+              gap: { xs: 3.2, sm: 4 },
+              alignItems: 'end',
               borderBottom: `1px solid ${companyPalette.line}`,
             }}
           >
-            <Typography
-              sx={{
-                color: companyPalette.champagne,
-                fontSize: 13,
-                fontWeight: 800,
-                mb: 2,
-              }}
-            >
-              난임 정보·상담 플랫폼
-            </Typography>
-            <Typography
-              component="h1"
-              sx={{
-                color: companyPalette.ink,
-                fontSize: { xs: 39, sm: 52 },
-                fontWeight: 900,
-                lineHeight: 1.06,
-                letterSpacing: 0,
-                mb: 2.2,
-              }}
-            >
-              난임상담톡톡
-            </Typography>
-            <Typography
-              sx={{
-                color: companyPalette.muted,
-                fontSize: { xs: 17, sm: 19 },
-                lineHeight: 1.72,
-                maxWidth: 590,
-                mb: 3.2,
-              }}
-            >
-              난임 전문 기자와 골통주부가 함께 만든, 무료 회원제 난임 정보·상담 서비스입니다.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-              <Button
-                endIcon={<ArrowForwardRoundedIcon />}
-                onClick={() => navigate('/')}
-                sx={primaryButtonSx}
+            <Box>
+              <Typography
+                sx={{
+                  color: companyPalette.champagne,
+                  fontSize: 13,
+                  fontWeight: 800,
+                  mb: 2,
+                }}
               >
-                서비스 보기
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/chat')}
-                sx={secondaryButtonSx}
+                난임 정보·상담 플랫폼
+              </Typography>
+              <Typography
+                component="h1"
+                sx={{
+                  color: companyPalette.ink,
+                  fontSize: { xs: 39, sm: 52 },
+                  fontWeight: 900,
+                  lineHeight: 1.06,
+                  letterSpacing: 0,
+                  mb: 2.2,
+                }}
               >
-                상담 시작하기
-              </Button>
+                난임상담톡톡
+              </Typography>
+              <Typography
+                sx={{
+                  color: companyPalette.muted,
+                  fontSize: { xs: 17, sm: 19 },
+                  lineHeight: 1.72,
+                  maxWidth: 590,
+                  mb: 3.2,
+                }}
+              >
+                난임 전문 기자와 골통주부가 함께 만든, 무료 회원제 난임 정보·상담 서비스입니다.
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
+                <Button
+                  endIcon={<ArrowForwardRoundedIcon />}
+                  onClick={() => navigate('/')}
+                  sx={primaryButtonSx}
+                >
+                  서비스 보기
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/chat')}
+                  sx={secondaryButtonSx}
+                >
+                  상담 시작하기
+                </Button>
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                borderTop: `2px solid ${companyPalette.emerald}`,
+                pt: 1.6,
+                display: { xs: 'none', sm: 'block' },
+              }}
+            >
+              <Typography
+                sx={{
+                  color: companyPalette.subtle,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  mb: 1,
+                }}
+              >
+                지금 보고 있는 관점
+              </Typography>
+              <Typography
+                sx={{
+                  color: companyPalette.ink,
+                  fontSize: 16,
+                  fontWeight: 850,
+                  lineHeight: 1.5,
+                }}
+              >
+                {activeProfileSection.title}
+              </Typography>
             </Box>
           </Box>
 
@@ -230,24 +321,67 @@ function CompanyProfile() {
               borderBottom: `1px solid ${companyPalette.line}`,
             }}
           >
-            {profileSections.map((section) => (
+            {profileSections.map((section, index) => {
+              const isActive = activeSection === section.label;
+
+              return (
               <Box
                 key={section.label}
+                component="button"
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => setActiveSection(section.label)}
+                onMouseEnter={() => setActiveSection(section.label)}
                 sx={{
+                  appearance: 'none',
+                  width: '100%',
+                  p: { xs: 1.4, sm: 1.6 },
+                  ml: { xs: -1.4, sm: -1.6 },
+                  border: 0,
+                  borderLeft: `2px solid ${
+                    isActive ? companyPalette.emerald : companyPalette.line
+                  }`,
+                  borderRadius: 1,
+                  bgcolor: isActive ? companyPalette.surface : 'transparent',
+                  boxShadow: isActive ? '0 18px 36px rgba(24, 61, 52, 0.08)' : 'none',
                   display: 'grid',
                   gridTemplateColumns: { xs: '1fr', sm: '128px minmax(0, 1fr)' },
                   gap: { xs: 0.9, sm: 2.5 },
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition:
+                    'border-color 180ms ease, background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease',
+                  '&:hover': {
+                    borderLeftColor: companyPalette.emerald,
+                    bgcolor: companyPalette.surface,
+                    transform: 'translateX(2px)',
+                  },
+                  '&:active': {
+                    transform: 'translateX(0)',
+                  },
                 }}
               >
-                <Typography
-                  sx={{
-                    color: companyPalette.champagne,
-                    fontSize: 12,
-                    fontWeight: 800,
-                  }}
-                >
-                  {section.label}
-                </Typography>
+                <Box>
+                  <Typography
+                    sx={{
+                      color: isActive ? companyPalette.emerald : companyPalette.champagne,
+                      fontSize: 12,
+                      fontWeight: 800,
+                      mb: 0.5,
+                    }}
+                  >
+                    {section.label}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: companyPalette.subtle,
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {String(index + 1).padStart(2, '0')}
+                  </Typography>
+                </Box>
                 <Box>
                   <Typography
                     sx={{
@@ -271,7 +405,8 @@ function CompanyProfile() {
                   </Typography>
                 </Box>
               </Box>
-            ))}
+              );
+            })}
           </Box>
 
           <Box
@@ -358,6 +493,7 @@ function CompanyProfile() {
                       justifyContent: 'space-between',
                       color: companyPalette.ink,
                       borderRadius: 0,
+                      transition: 'color 160ms ease, transform 160ms ease',
                       '& .MuiButton-startIcon': {
                         color: companyPalette.emerald,
                       },
@@ -367,6 +503,10 @@ function CompanyProfile() {
                       '&:hover': {
                         bgcolor: 'transparent',
                         color: companyPalette.emerald,
+                        transform: 'translateX(2px)',
+                      },
+                      '&:active': {
+                        transform: 'translateX(0)',
                       },
                     }}
                     startIcon={item.icon}
@@ -410,7 +550,7 @@ function CompanyProfile() {
               onClick={handleCopy}
               sx={primaryButtonSx}
             >
-              회사소개 링크 복사
+              {copied ? '링크 복사됨' : '회사소개 링크 복사'}
             </Button>
             <Typography
               sx={{
