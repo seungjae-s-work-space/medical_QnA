@@ -39,6 +39,23 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/onSnapshot\(/);
   });
 
+  test('company profile uses an independent refined palette instead of app dashboard styling', () => {
+    const companyProfile = read('components/CompanyProfile.jsx');
+
+    expect(companyProfile).toMatch(/companyPalette/);
+    expect(companyProfile).toMatch(/#FCFBF8/);
+    expect(companyProfile).toMatch(/#183D34/);
+    expect(companyProfile).toMatch(/#2B2F2D/);
+    expect(companyProfile).toMatch(/#B89B62/);
+    expect(companyProfile).toMatch(/NANIMTALK/);
+    expect(companyProfile).toMatch(/Who we are/);
+    expect(companyProfile).toMatch(/What we do/);
+    expect(companyProfile).not.toMatch(/import \{ colors \} from '\.\.\/theme'/);
+    expect(companyProfile).not.toMatch(/linear-gradient/);
+    expect(companyProfile).not.toMatch(/colors\./);
+    expect(companyProfile).not.toMatch(/primaryLight|cardTint|backgroundWarm|aqua/);
+  });
+
   test('company route has a static GitHub Pages entrypoint for direct share links', () => {
     const companyIndexPath = path.join(srcDir, '..', 'public', 'company', 'index.html');
 
