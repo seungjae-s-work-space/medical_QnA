@@ -38,4 +38,18 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/getDocs\(/);
     expect(companyProfile).not.toMatch(/onSnapshot\(/);
   });
+
+  test('company route has a static GitHub Pages entrypoint for direct share links', () => {
+    const companyIndexPath = path.join(srcDir, '..', 'public', 'company', 'index.html');
+
+    expect(fs.existsSync(companyIndexPath)).toBe(true);
+
+    const companyIndex = fs.readFileSync(companyIndexPath, 'utf8');
+
+    expect(companyIndex).toMatch(/난임상담톡톡 회사소개/);
+    expect(companyIndex).toMatch(/agisungong\.net\/company/);
+    expect(companyIndex).toMatch(/URLSearchParams/);
+    expect(companyIndex).toMatch(/\?p=/);
+    expect(companyIndex).toMatch(/encodeURIComponent\(redirectPath\)/);
+  });
 });
