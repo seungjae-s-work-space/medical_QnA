@@ -33,13 +33,16 @@ describe('company profile page', () => {
     const companyProfile = read('components/CompanyProfile.jsx');
 
     expect(companyProfile).toMatch(/난임상담톡톡/);
-    expect(companyProfile).toMatch(/법인·사업 소개/);
-    expect(companyProfile).toMatch(/디지털 헬스케어 콘텐츠 팀/);
-    expect(companyProfile).toMatch(/난임 정보와 상담 접점을 운영합니다/);
+    expect(companyProfile).toMatch(/공식 사업 소개/);
+    expect(companyProfile).toMatch(/난임 전문 기자와 골통주부/);
+    expect(companyProfile).toMatch(/난임 정보 콘텐츠와 상담 접점을 운영합니다/);
     expect(companyProfile).toMatch(/무료 회원제 난임 정보·상담 서비스/);
+    expect(companyProfile).toMatch(/콘텐츠·뉴스·상담 서비스/);
     expect(companyProfile).toMatch(/근거 중심 정보/);
     expect(companyProfile).toMatch(/사업 영역/);
     expect(companyProfile).toMatch(/운영 원칙/);
+    expect(companyProfile).toMatch(/의료기관 연결 및 유도 행위를 하지 않습니다/);
+    expect(companyProfile).toMatch(/제휴·광고·콘텐츠 협업/);
     expect(companyProfile).toMatch(/구독\/인앱결제 없이 운영/);
     expect(companyProfile).toMatch(/agisungong\.net\/company/);
     expect(companyProfile).toMatch(/navigator\.clipboard\.writeText/);
@@ -85,6 +88,7 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/component="button"/);
     expect(companyProfile).toMatch(/링크 복사됨/);
     expect(companyProfile).not.toMatch(/위로보다 방향이 필요한 순간/);
+    expect(companyProfile).not.toMatch(/필요한 정보를 짧고 명확하게 연결합니다/);
   });
 
   test('company route has a static GitHub Pages entrypoint for direct share links', () => {

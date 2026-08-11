@@ -34,35 +34,35 @@ const companyPalette = {
 const profileSections = [
   {
     label: '회사 소개',
-    title: '디지털 헬스케어 콘텐츠 팀',
-    body: '취재와 당사자 관점을 바탕으로 난임 정보를 정리합니다.',
+    title: '난임 전문 기자와 골통주부가 함께 운영',
+    body: '난임 치료 과정에 필요한 정보 콘텐츠와 상담 접점을 제공합니다.',
   },
   {
     label: '사업 영역',
-    title: '백과·뉴스·상담 운영',
-    body: '읽고, 확인하고, 질문하는 흐름을 제공합니다.',
+    title: '콘텐츠·뉴스·상담 서비스',
+    body: '난임백과, 생식의학 뉴스, 상담 채팅, 영상 콘텐츠를 통합 운영합니다.',
   },
   {
     label: '운영 원칙',
-    title: '무료 회원제 운영',
-    body: '구독/인앱결제 없이 운영하며 의료기관 연결을 하지 않습니다.',
+    title: '무료 회원제·비의료기관 연계 운영',
+    body: '구독/인앱결제 없이 운영하며 의료기관 연결 및 유도 행위를 하지 않습니다.',
   },
 ];
 
 const businessItems = [
   {
     title: '근거 중심 정보',
-    body: '난임백과와 해설형 콘텐츠를 제공합니다.',
+    body: '난임백과와 해설형 콘텐츠를 운영합니다.',
     icon: <AutoStoriesRoundedIcon />,
   },
   {
     title: '뉴스 큐레이션',
-    body: '생식의학 동향을 읽기 쉽게 정리합니다.',
+    body: '국내외 생식의학 뉴스를 선별해 제공합니다.',
     icon: <NewspaperRoundedIcon />,
   },
   {
     title: '상담 접점',
-    body: '회원이 이어서 질문할 수 있는 채팅을 제공합니다.',
+    body: '로그인 기반 상담 채팅을 제공합니다.',
     icon: <MedicalInformationRoundedIcon />,
   },
 ];
@@ -306,7 +306,7 @@ function CompanyProfile() {
                   mb: 1.4,
                 }}
               >
-                법인·사업 소개
+                공식 사업 소개
               </Typography>
               <Typography
                 component="h1"
@@ -320,7 +320,7 @@ function CompanyProfile() {
                   mb: { xs: 2.4, sm: 3.2 },
                 }}
               >
-                난임 정보 사업을 운영합니다.
+                난임 정보 콘텐츠와 상담 접점을 운영합니다.
               </Typography>
               <Typography
                 sx={{
@@ -330,7 +330,7 @@ function CompanyProfile() {
                   maxWidth: 620,
                 }}
               >
-                디지털 헬스케어 콘텐츠 팀이 운영하는 무료 회원제 난임 정보·상담 서비스입니다.
+                난임상담톡톡은 난임 전문 기자와 골통주부가 함께 운영하는 무료 회원제 난임 정보·상담 서비스입니다.
               </Typography>
             </Box>
 
@@ -395,7 +395,7 @@ function CompanyProfile() {
                     mb: 3,
                   }}
               >
-                  난임 정보와 상담 접점을 운영합니다.
+                  콘텐츠, 뉴스, 상담을 하나의 서비스로 제공합니다.
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
                   <Button
@@ -530,7 +530,7 @@ function CompanyProfile() {
                     lineHeight: 1.65,
                   }}
                 >
-                  필요한 정보를 짧고 명확하게 연결합니다.
+                  난임백과, 뉴스, 상담, 영상 콘텐츠를 중심으로 운영합니다.
                 </Typography>
               </Box>
 
@@ -632,7 +632,7 @@ function CompanyProfile() {
                     lineHeight: 1.14,
                   }}
                 >
-                  무료 회원제 · 의료기관 연결 없음
+                  무료 회원제 · 비의료기관 연계 운영
                 </Typography>
                 <Typography
                   sx={{
@@ -641,7 +641,7 @@ function CompanyProfile() {
                     lineHeight: 1.62,
                   }}
                 >
-                  구독/인앱결제 없이 운영합니다.
+                  구독/인앱결제 없이 운영하며 의료기관 연결 및 유도 행위를 하지 않습니다.
                 </Typography>
               </Box>
             </Box>
@@ -665,7 +665,7 @@ function CompanyProfile() {
                     mb: 1.2,
                   }}
                 >
-                  서비스 구성
+                  문의 및 서비스
                 </Typography>
                 <Typography
                   sx={{
@@ -674,7 +674,7 @@ function CompanyProfile() {
                     lineHeight: 1.65,
                   }}
                 >
-                  실제 서비스로 바로 이동합니다.
+                  제휴·광고·콘텐츠 협업 검토 시 이 페이지를 공유하세요.
                 </Typography>
               </Box>
 
