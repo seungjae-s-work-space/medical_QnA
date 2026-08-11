@@ -104,7 +104,7 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
     '/company': {
       title: `난임상담톡톡 회사소개 | ${SITE_NAME}`,
       description:
-        '난임상담톡톡 공식 회사소개 페이지입니다. 난임 전문 기자와 골통주부가 운영하는 난임 정보 콘텐츠와 상담 접점을 소개합니다.',
+        '난임상담톡톡 공식 회사소개 페이지입니다. 난임 전문 기자와 골통주부가 운영하는 무료 회원제 난임 정보·상담 서비스를 소개합니다.',
       shouldIndex: true,
     },
     '/encyclopedia': {

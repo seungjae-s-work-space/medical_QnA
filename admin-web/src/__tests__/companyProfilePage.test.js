@@ -35,10 +35,11 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/난임상담톡톡/);
     expect(companyProfile).toMatch(/공식 사업 소개/);
     expect(companyProfile).toMatch(/난임 전문 기자와 골통주부/);
-    expect(companyProfile).toMatch(/난임 정보 콘텐츠와 상담 접점을 운영합니다/);
+    expect(companyProfile).toMatch(/난임 치료 여정에 필요한 정보를 한곳에 모읍니다/);
     expect(companyProfile).toMatch(/무료 회원제 난임 정보·상담 서비스/);
     expect(companyProfile).toMatch(/콘텐츠·뉴스·상담 서비스/);
     expect(companyProfile).toMatch(/근거 중심 정보/);
+    expect(companyProfile).toMatch(/상담 서비스/);
     expect(companyProfile).toMatch(/사업 영역/);
     expect(companyProfile).toMatch(/운영 원칙/);
     expect(companyProfile).toMatch(/의료기관 연결 및 유도 행위를 하지 않습니다/);
@@ -58,6 +59,11 @@ describe('company profile page', () => {
     const companyProfile = read('components/CompanyProfile.jsx');
 
     expect(companyProfile).toMatch(/companyPalette/);
+    expect(companyProfile).toMatch(/companyFontFamily/);
+    expect(companyProfile).toMatch(/Apple SD Gothic Neo/);
+    expect(companyProfile).toMatch(/Pretendard/);
+    expect(companyProfile).toMatch(/Noto Sans KR/);
+    expect(companyProfile).toMatch(/wordBreak: 'keep-all'/);
     expect(companyProfile).toMatch(/#FCFBF8/);
     expect(companyProfile).toMatch(/#183D34/);
     expect(companyProfile).toMatch(/#2B2F2D/);
@@ -74,6 +80,9 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/linear-gradient/);
     expect(companyProfile).not.toMatch(/colors\./);
     expect(companyProfile).not.toMatch(/primaryLight|cardTint|backgroundWarm|aqua/);
+    expect(companyProfile).not.toMatch(/letterSpacing: '0\./);
+    expect(companyProfile).not.toMatch(/fontWeight: 9/);
+    expect(companyProfile).not.toMatch(/fontWeight: 850/);
   });
 
   test('company profile includes lightweight interactive editorial touches', () => {
@@ -89,6 +98,7 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/링크 복사됨/);
     expect(companyProfile).not.toMatch(/위로보다 방향이 필요한 순간/);
     expect(companyProfile).not.toMatch(/필요한 정보를 짧고 명확하게 연결합니다/);
+    expect(companyProfile).not.toMatch(/난임 정보 콘텐츠와 상담 접점/);
   });
 
   test('company route has a static GitHub Pages entrypoint for direct share links', () => {

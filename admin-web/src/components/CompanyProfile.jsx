@@ -31,11 +31,38 @@ const companyPalette = {
   black: '#111312',
 };
 
+const companyFontFamily = [
+  '"Apple SD Gothic Neo"',
+  'Pretendard',
+  '"Noto Sans KR"',
+  'Inter',
+  '-apple-system',
+  'BlinkMacSystemFont',
+  '"Segoe UI"',
+  'sans-serif',
+].join(', ');
+
+const baseTextSx = {
+  fontFamily: companyFontFamily,
+  letterSpacing: 0,
+  wordBreak: 'keep-all',
+};
+
+const labelTextSx = {
+  ...baseTextSx,
+  fontWeight: 700,
+};
+
+const buttonTextSx = {
+  ...baseTextSx,
+  fontWeight: 700,
+};
+
 const profileSections = [
   {
     label: '회사 소개',
     title: '난임 전문 기자와 골통주부가 함께 운영',
-    body: '난임 치료 과정에 필요한 정보 콘텐츠와 상담 접점을 제공합니다.',
+    body: '난임 치료 과정에 필요한 정보와 상담 서비스를 제공합니다.',
   },
   {
     label: '사업 영역',
@@ -61,7 +88,7 @@ const businessItems = [
     icon: <NewspaperRoundedIcon />,
   },
   {
-    title: '상담 접점',
+    title: '상담 서비스',
     body: '로그인 기반 상담 채팅을 제공합니다.',
     icon: <MedicalInformationRoundedIcon />,
   },
@@ -92,13 +119,13 @@ const innerPaperSx = {
 };
 
 const primaryButtonSx = {
+  ...buttonTextSx,
   minHeight: 42,
   px: 2,
   borderRadius: 0.6,
   bgcolor: companyPalette.black,
   color: companyPalette.surface,
   fontSize: 12,
-  fontWeight: 850,
   transition: 'transform 160ms ease, background-color 160ms ease',
   '&:hover': {
     bgcolor: companyPalette.emerald,
@@ -110,6 +137,7 @@ const primaryButtonSx = {
 };
 
 const secondaryButtonSx = {
+  ...buttonTextSx,
   minHeight: 42,
   px: 2,
   borderRadius: 0.6,
@@ -117,7 +145,6 @@ const secondaryButtonSx = {
   color: companyPalette.ink,
   bgcolor: companyPalette.surface,
   fontSize: 12,
-  fontWeight: 850,
   transition: 'transform 160ms ease, border-color 160ms ease, background-color 160ms ease',
   '&:hover': {
     borderColor: companyPalette.emerald,
@@ -184,6 +211,15 @@ function CompanyProfile() {
         minHeight: '100vh',
         bgcolor: companyPalette.page,
         color: companyPalette.ink,
+        fontFamily: companyFontFamily,
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
+        textRendering: 'optimizeLegibility',
+        wordBreak: 'keep-all',
+        '& .MuiTypography-root, & .MuiButton-root': {
+          fontFamily: companyFontFamily,
+          letterSpacing: 0,
+        },
         px: { xs: 1.5, sm: 3 },
         py: { xs: 3, sm: 6.5 },
       }}
@@ -204,10 +240,9 @@ function CompanyProfile() {
 
       <Typography
         sx={{
+          ...labelTextSx,
           color: companyPalette.surface,
           fontSize: 12,
-          fontWeight: 800,
-          letterSpacing: '0.16em',
           textAlign: 'center',
           mb: 1.2,
         }}
@@ -216,10 +251,10 @@ function CompanyProfile() {
       </Typography>
       <Typography
         sx={{
+          ...baseTextSx,
           color: 'rgba(252, 251, 248, 0.82)',
-          fontSize: { xs: 17, sm: 20 },
-          fontWeight: 650,
-          letterSpacing: '0.08em',
+          fontSize: { xs: 16, sm: 18 },
+          fontWeight: 500,
           textAlign: 'center',
           mb: { xs: 3.4, sm: 5.4 },
         }}
@@ -260,7 +295,9 @@ function CompanyProfile() {
                   }}
                 />
               </Box>
-              <Typography sx={{ fontSize: 12, fontWeight: 850 }}>NANIMTALK</Typography>
+              <Typography sx={{ ...labelTextSx, fontSize: 12, fontWeight: 800 }}>
+                NANIMTALK
+              </Typography>
             </Box>
 
             <Box
@@ -274,10 +311,9 @@ function CompanyProfile() {
                 <Typography
                   key={item}
                   sx={{
+                    ...labelTextSx,
                     color: companyPalette.ink,
                     fontSize: 10,
-                    fontWeight: 850,
-                    letterSpacing: '0.08em',
                   }}
                 >
                   {item}
@@ -299,10 +335,9 @@ function CompanyProfile() {
             >
               <Typography
                 sx={{
+                  ...labelTextSx,
                   color: companyPalette.muted,
                   fontSize: 11,
-                  fontWeight: 850,
-                  letterSpacing: '0.08em',
                   mb: 1.4,
                 }}
               >
@@ -311,22 +346,24 @@ function CompanyProfile() {
               <Typography
                 component="h1"
                 sx={{
+                  ...baseTextSx,
                   color: companyPalette.black,
-                  fontSize: { xs: 43, sm: 70, md: 86 },
-                  fontWeight: 900,
-                  lineHeight: 0.98,
-                  letterSpacing: 0,
-                  maxWidth: 850,
+                  fontSize: { xs: 34, sm: 54, md: 68 },
+                  fontWeight: 800,
+                  lineHeight: 1.12,
+                  maxWidth: 820,
                   mb: { xs: 2.4, sm: 3.2 },
                 }}
               >
-                난임 정보 콘텐츠와 상담 접점을 운영합니다.
+                난임 치료 여정에 필요한 정보를 한곳에 모읍니다.
               </Typography>
               <Typography
                 sx={{
+                  ...baseTextSx,
                   color: companyPalette.muted,
                   fontSize: { xs: 16, sm: 19 },
-                  lineHeight: 1.72,
+                  fontWeight: 400,
+                  lineHeight: 1.76,
                   maxWidth: 620,
                 }}
               >
@@ -376,10 +413,9 @@ function CompanyProfile() {
               >
                 <Typography
                   sx={{
+                    ...labelTextSx,
                     color: companyPalette.muted,
                     fontSize: 11,
-                    fontWeight: 850,
-                    letterSpacing: '0.08em',
                     mb: 1.4,
                   }}
                 >
@@ -387,11 +423,11 @@ function CompanyProfile() {
                 </Typography>
                 <Typography
                   sx={{
+                    ...baseTextSx,
                     color: companyPalette.black,
-                    fontSize: { xs: 33, sm: 46, md: 54 },
-                    fontWeight: 900,
-                    lineHeight: 1.04,
-                    letterSpacing: 0,
+                    fontSize: { xs: 30, sm: 40, md: 48 },
+                    fontWeight: 800,
+                    lineHeight: 1.14,
                     mb: 3,
                   }}
               >
@@ -454,9 +490,10 @@ function CompanyProfile() {
                       >
                         <Typography
                           sx={{
+                            ...labelTextSx,
                             color: isActive ? companyPalette.emerald : companyPalette.champagne,
                             fontSize: 13,
-                            fontWeight: 900,
+                            fontWeight: 800,
                           }}
                         >
                           {String(index + 1).padStart(2, '0')}
@@ -464,10 +501,9 @@ function CompanyProfile() {
                         <Box>
                           <Typography
                             sx={{
+                              ...labelTextSx,
                               color: companyPalette.black,
                               fontSize: 14,
-                              fontWeight: 900,
-                              letterSpacing: '0.04em',
                               mb: 0.6,
                             }}
                           >
@@ -475,10 +511,11 @@ function CompanyProfile() {
                           </Typography>
                           <Typography
                             sx={{
+                              ...baseTextSx,
                               color: companyPalette.ink,
                               fontSize: { xs: 18, sm: 20 },
-                              fontWeight: 850,
-                              lineHeight: 1.34,
+                              fontWeight: 700,
+                              lineHeight: 1.38,
                               mb: 0.7,
                             }}
                           >
@@ -486,9 +523,11 @@ function CompanyProfile() {
                           </Typography>
                           <Typography
                             sx={{
+                              ...baseTextSx,
                               color: companyPalette.muted,
                               fontSize: 13.5,
-                              lineHeight: 1.65,
+                              fontWeight: 400,
+                              lineHeight: 1.68,
                             }}
                           >
                             {section.body}
@@ -514,10 +553,11 @@ function CompanyProfile() {
               <Box>
                 <Typography
                   sx={{
+                    ...baseTextSx,
                     color: companyPalette.black,
                     fontSize: { xs: 28, sm: 34 },
-                    fontWeight: 900,
-                    lineHeight: 1.02,
+                    fontWeight: 800,
+                    lineHeight: 1.12,
                     mb: 1.2,
                   }}
                 >
@@ -525,9 +565,11 @@ function CompanyProfile() {
                 </Typography>
                 <Typography
                   sx={{
+                    ...baseTextSx,
                     color: companyPalette.muted,
                     fontSize: 14,
-                    lineHeight: 1.65,
+                    fontWeight: 400,
+                    lineHeight: 1.68,
                   }}
                 >
                   난임백과, 뉴스, 상담, 영상 콘텐츠를 중심으로 운영합니다.
@@ -575,9 +617,10 @@ function CompanyProfile() {
                     </Box>
                     <Typography
                       sx={{
+                        ...baseTextSx,
                         color: companyPalette.black,
                         fontSize: 17,
-                        fontWeight: 900,
+                        fontWeight: 800,
                         mb: 1,
                       }}
                     >
@@ -585,9 +628,11 @@ function CompanyProfile() {
                     </Typography>
                     <Typography
                       sx={{
+                        ...baseTextSx,
                         color: companyPalette.muted,
                         fontSize: 13.5,
-                        lineHeight: 1.62,
+                        fontWeight: 400,
+                        lineHeight: 1.66,
                       }}
                     >
                       {item.body}
@@ -617,28 +662,30 @@ function CompanyProfile() {
               >
                 <Typography
                   sx={{
+                    ...labelTextSx,
                     color: 'rgba(252, 251, 248, 0.66)',
                     fontSize: 11,
-                    fontWeight: 850,
-                    letterSpacing: '0.08em',
                   }}
                 >
                   운영 원칙
                 </Typography>
                 <Typography
                   sx={{
+                    ...baseTextSx,
                     fontSize: { xs: 24, sm: 31 },
-                    fontWeight: 900,
-                    lineHeight: 1.14,
+                    fontWeight: 800,
+                    lineHeight: 1.2,
                   }}
                 >
                   무료 회원제 · 비의료기관 연계 운영
                 </Typography>
                 <Typography
                   sx={{
+                    ...baseTextSx,
                     color: 'rgba(252, 251, 248, 0.72)',
                     fontSize: 13.5,
-                    lineHeight: 1.62,
+                    fontWeight: 400,
+                    lineHeight: 1.66,
                   }}
                 >
                   구독/인앱결제 없이 운영하며 의료기관 연결 및 유도 행위를 하지 않습니다.
@@ -658,10 +705,11 @@ function CompanyProfile() {
               <Box>
                 <Typography
                   sx={{
+                    ...baseTextSx,
                     color: companyPalette.black,
                     fontSize: { xs: 27, sm: 34 },
-                    fontWeight: 900,
-                    lineHeight: 1.06,
+                    fontWeight: 800,
+                    lineHeight: 1.12,
                     mb: 1.2,
                   }}
                 >
@@ -669,9 +717,11 @@ function CompanyProfile() {
                 </Typography>
                 <Typography
                   sx={{
+                    ...baseTextSx,
                     color: companyPalette.muted,
                     fontSize: 14,
-                    lineHeight: 1.65,
+                    fontWeight: 400,
+                    lineHeight: 1.68,
                   }}
                 >
                   제휴·광고·콘텐츠 협업 검토 시 이 페이지를 공유하세요.
@@ -687,13 +737,13 @@ function CompanyProfile() {
                       onClick={() => navigate(item.path)}
                       endIcon={<ArrowForwardRoundedIcon />}
                       sx={{
+                        ...buttonTextSx,
                         minHeight: 58,
                         px: 0,
                         justifyContent: 'space-between',
                         color: companyPalette.ink,
                         borderRadius: 0,
                         fontSize: 15,
-                        fontWeight: 850,
                         transition: 'color 160ms ease, transform 160ms ease',
                         '& .MuiButton-startIcon': {
                           color: companyPalette.emerald,
