@@ -17,8 +17,9 @@ import YouTubeIcon from '@mui/icons-material/YouTube';
 const COMPANY_URL = 'https://agisungong.net/company';
 
 const companyPalette = {
-  page: '#FCFBF8',
-  surface: '#FFFFFF',
+  page: '#565653',
+  surface: '#FCFBF8',
+  paper: '#F6F3EC',
   ink: '#2B2F2D',
   muted: '#6E746F',
   subtle: '#9EA59F',
@@ -27,38 +28,42 @@ const companyPalette = {
   emerald: '#183D34',
   emeraldSoft: '#EEF4F1',
   champagne: '#B89B62',
+  black: '#111312',
 };
 
 const profileSections = [
   {
-    label: 'Who we are',
-    title: '난임 당사자와 실무자의 언어를 함께 이해하는 팀',
-    body: '난임 전문 기자의 취재력과 골통주부의 당사자 관점을 바탕으로, 복잡한 정보를 차분하게 정리합니다.',
+    label: '회사 소개',
+    title: '디지털 헬스케어 콘텐츠 팀',
+    body: '취재와 당사자 관점을 바탕으로 난임 정보를 정리합니다.',
   },
   {
-    label: 'What we do',
-    title: '정보, 뉴스, 상담 흐름을 한곳에 모읍니다',
-    body: '근거 중심 정보와 실제 치료 과정에서 필요한 질문을 연결해 사용자가 다음 선택을 더 선명하게 볼 수 있도록 돕습니다.',
+    label: '사업 영역',
+    title: '백과·뉴스·상담 운영',
+    body: '읽고, 확인하고, 질문하는 흐름을 제공합니다.',
   },
   {
-    label: 'Why it matters',
-    title: '위로보다 방향이 필요한 순간을 위해 만듭니다',
-    body: '난임상담톡톡은 무료 회원제 난임 정보·상담 서비스로, 구독/인앱결제 없이 운영됩니다.',
+    label: '운영 원칙',
+    title: '무료 회원제 운영',
+    body: '구독/인앱결제 없이 운영하며 의료기관 연결을 하지 않습니다.',
   },
 ];
 
-const trustItems = [
+const businessItems = [
   {
     title: '근거 중심 정보',
-    body: '난임백과와 뉴스로 임신 준비와 치료 흐름을 정리합니다.',
+    body: '난임백과와 해설형 콘텐츠를 제공합니다.',
+    icon: <AutoStoriesRoundedIcon />,
   },
   {
-    title: '전문가 상담 흐름',
-    body: '로그인 후 상담 채팅으로 개인 상황을 이어서 확인할 수 있습니다.',
+    title: '뉴스 큐레이션',
+    body: '생식의학 동향을 읽기 쉽게 정리합니다.',
+    icon: <NewspaperRoundedIcon />,
   },
   {
-    title: '무료 회원제',
-    body: '구독/인앱결제 없이 운영하며 정보 접근성을 우선합니다.',
+    title: '상담 접점',
+    body: '회원이 이어서 질문할 수 있는 채팅을 제공합니다.',
+    icon: <MedicalInformationRoundedIcon />,
   },
 ];
 
@@ -69,17 +74,34 @@ const serviceLinks = [
   { label: '공지사항', path: '/notice', icon: <MedicalInformationRoundedIcon /> },
 ];
 
+const editorialFrameSx = {
+  width: '100%',
+  maxWidth: 1040,
+  mx: 'auto',
+  bgcolor: companyPalette.surface,
+  border: `1px solid ${companyPalette.lineStrong}`,
+  boxShadow: '0 34px 86px rgba(17, 19, 18, 0.24)',
+  p: { xs: 1, sm: 1.3 },
+};
+
+const innerPaperSx = {
+  border: `1px solid ${companyPalette.lineStrong}`,
+  bgcolor: companyPalette.surface,
+  px: { xs: 2, sm: 3.4, md: 4 },
+  py: { xs: 2, sm: 3.2, md: 3.8 },
+};
+
 const primaryButtonSx = {
-  minHeight: 48,
-  px: 2.4,
-  borderRadius: 999,
-  bgcolor: companyPalette.emerald,
+  minHeight: 42,
+  px: 2,
+  borderRadius: 0.6,
+  bgcolor: companyPalette.black,
   color: companyPalette.surface,
-  boxShadow: '0 14px 30px rgba(24, 61, 52, 0.16)',
-  transition: 'transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease',
+  fontSize: 12,
+  fontWeight: 850,
+  transition: 'transform 160ms ease, background-color 160ms ease',
   '&:hover': {
-    bgcolor: '#102E27',
-    boxShadow: '0 16px 34px rgba(24, 61, 52, 0.2)',
+    bgcolor: companyPalette.emerald,
     transform: 'translateY(-1px)',
   },
   '&:active': {
@@ -88,12 +110,14 @@ const primaryButtonSx = {
 };
 
 const secondaryButtonSx = {
-  minHeight: 48,
-  px: 2.4,
-  borderRadius: 999,
+  minHeight: 42,
+  px: 2,
+  borderRadius: 0.6,
   borderColor: companyPalette.lineStrong,
   color: companyPalette.ink,
   bgcolor: companyPalette.surface,
+  fontSize: 12,
+  fontWeight: 850,
   transition: 'transform 160ms ease, border-color 160ms ease, background-color 160ms ease',
   '&:hover': {
     borderColor: companyPalette.emerald,
@@ -111,8 +135,6 @@ function CompanyProfile() {
   const [copied, setCopied] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [activeSection, setActiveSection] = useState(profileSections[0].label);
-  const activeProfileSection =
-    profileSections.find((section) => section.label === activeSection) || profileSections[0];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -162,8 +184,8 @@ function CompanyProfile() {
         minHeight: '100vh',
         bgcolor: companyPalette.page,
         color: companyPalette.ink,
-        px: { xs: 2, sm: 3 },
-        py: { xs: 2.5, sm: 6 },
+        px: { xs: 1.5, sm: 3 },
+        py: { xs: 3, sm: 6.5 },
       }}
     >
       <Box
@@ -174,275 +196,389 @@ function CompanyProfile() {
           left: 0,
           width: `${Math.round(scrollProgress * 100)}%`,
           height: 3,
-          bgcolor: companyPalette.emerald,
+          bgcolor: companyPalette.champagne,
           zIndex: 1300,
           transition: 'width 0.12s ease-out',
         }}
       />
-      <Box
+
+      <Typography
         sx={{
-          width: '100%',
-          maxWidth: 680,
-          mx: 'auto',
+          color: companyPalette.surface,
+          fontSize: 12,
+          fontWeight: 800,
+          letterSpacing: '0.16em',
+          textAlign: 'center',
+          mb: 1.2,
         }}
       >
-        <Box
-          component="header"
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            mb: { xs: 5, sm: 7 },
-          }}
-        >
-          <Typography
-            sx={{
-              color: companyPalette.emerald,
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: '0.12em',
-            }}
-          >
-            NANIMTALK
-          </Typography>
-          <Typography
-            sx={{
-              color: companyPalette.subtle,
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            agisungong.net/company
-          </Typography>
-        </Box>
+        회사소개서
+      </Typography>
+      <Typography
+        sx={{
+          color: 'rgba(252, 251, 248, 0.82)',
+          fontSize: { xs: 17, sm: 20 },
+          fontWeight: 650,
+          letterSpacing: '0.08em',
+          textAlign: 'center',
+          mb: { xs: 3.4, sm: 5.4 },
+        }}
+      >
+        agisungong.net/company
+      </Typography>
 
-        <Box component="main">
+      <Box sx={editorialFrameSx}>
+        <Box sx={innerPaperSx}>
           <Box
-            component="section"
+            component="header"
             sx={{
-              pb: { xs: 4, sm: 5 },
+              minHeight: 42,
+              borderBottom: `1px solid ${companyPalette.ink}`,
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) 190px' },
-              gap: { xs: 3.2, sm: 4 },
-              alignItems: 'end',
-              borderBottom: `1px solid ${companyPalette.line}`,
+              gridTemplateColumns: { xs: '1fr auto', md: '180px 1fr auto' },
+              alignItems: 'center',
+              gap: 1.4,
+              pb: 1.3,
             }}
           >
-            <Box>
-              <Typography
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                aria-hidden="true"
                 sx={{
-                  color: companyPalette.champagne,
-                  fontSize: 13,
-                  fontWeight: 800,
-                  mb: 2,
+                  width: 19,
+                  height: 19,
+                  border: `1px solid ${companyPalette.ink}`,
+                  display: 'grid',
+                  placeItems: 'center',
                 }}
               >
-                난임 정보·상담 플랫폼
-              </Typography>
-              <Typography
-                component="h1"
-                sx={{
-                  color: companyPalette.ink,
-                  fontSize: { xs: 39, sm: 52 },
-                  fontWeight: 900,
-                  lineHeight: 1.06,
-                  letterSpacing: 0,
-                  mb: 2.2,
-                }}
-              >
-                난임상담톡톡
-              </Typography>
-              <Typography
-                sx={{
-                  color: companyPalette.muted,
-                  fontSize: { xs: 17, sm: 19 },
-                  lineHeight: 1.72,
-                  maxWidth: 590,
-                  mb: 3.2,
-                }}
-              >
-                난임 전문 기자와 골통주부가 함께 만든, 무료 회원제 난임 정보·상담 서비스입니다.
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-                <Button
-                  endIcon={<ArrowForwardRoundedIcon />}
-                  onClick={() => navigate('/')}
-                  sx={primaryButtonSx}
-                >
-                  서비스 보기
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate('/chat')}
-                  sx={secondaryButtonSx}
-                >
-                  상담 시작하기
-                </Button>
+                <Box
+                  sx={{
+                    width: 5,
+                    height: 5,
+                    bgcolor: companyPalette.emerald,
+                  }}
+                />
               </Box>
+              <Typography sx={{ fontSize: 12, fontWeight: 850 }}>NANIMTALK</Typography>
             </Box>
 
             <Box
               sx={{
-                borderTop: `2px solid ${companyPalette.emerald}`,
-                pt: 1.6,
-                display: { xs: 'none', sm: 'block' },
+                display: { xs: 'none', md: 'flex' },
+                justifyContent: 'center',
+                gap: 2.2,
+              }}
+            >
+              {['소개', '사업', '원칙', '문의'].map((item) => (
+                <Typography
+                  key={item}
+                  sx={{
+                    color: companyPalette.ink,
+                    fontSize: 10,
+                    fontWeight: 850,
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  {item}
+                </Typography>
+              ))}
+            </Box>
+
+            <Button onClick={handleCopy} sx={{ ...primaryButtonSx, minHeight: 30, px: 1.4 }}>
+              {copied ? '링크 복사됨' : 'SHARE'}
+            </Button>
+          </Box>
+
+          <Box component="main">
+            <Box
+              component="section"
+              sx={{
+                py: { xs: 3.2, sm: 4.8 },
               }}
             >
               <Typography
                 sx={{
-                  color: companyPalette.subtle,
-                  fontSize: 12,
-                  fontWeight: 800,
-                  mb: 1,
+                  color: companyPalette.muted,
+                  fontSize: 11,
+                  fontWeight: 850,
+                  letterSpacing: '0.08em',
+                  mb: 1.4,
                 }}
               >
-                지금 보고 있는 관점
+                법인·사업 소개
+              </Typography>
+              <Typography
+                component="h1"
+                sx={{
+                  color: companyPalette.black,
+                  fontSize: { xs: 43, sm: 70, md: 86 },
+                  fontWeight: 900,
+                  lineHeight: 0.98,
+                  letterSpacing: 0,
+                  maxWidth: 850,
+                  mb: { xs: 2.4, sm: 3.2 },
+                }}
+              >
+                난임 정보 사업을 운영합니다.
               </Typography>
               <Typography
                 sx={{
-                  color: companyPalette.ink,
-                  fontSize: 16,
-                  fontWeight: 850,
-                  lineHeight: 1.5,
+                  color: companyPalette.muted,
+                  fontSize: { xs: 16, sm: 19 },
+                  lineHeight: 1.72,
+                  maxWidth: 620,
                 }}
               >
-                {activeProfileSection.title}
+                디지털 헬스케어 콘텐츠 팀이 운영하는 무료 회원제 난임 정보·상담 서비스입니다.
               </Typography>
             </Box>
-          </Box>
 
-          <Box
-            component="section"
-            sx={{
-              py: { xs: 3.5, sm: 4.5 },
-              display: 'grid',
-              gap: { xs: 2.4, sm: 2.8 },
-              borderBottom: `1px solid ${companyPalette.line}`,
-            }}
-          >
-            {profileSections.map((section, index) => {
-              const isActive = activeSection === section.label;
-
-              return (
-              <Box
-                key={section.label}
-                component="button"
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => setActiveSection(section.label)}
-                onMouseEnter={() => setActiveSection(section.label)}
-                sx={{
-                  appearance: 'none',
-                  width: '100%',
-                  p: { xs: 1.4, sm: 1.6 },
-                  ml: { xs: -1.4, sm: -1.6 },
-                  border: 0,
-                  borderLeft: `2px solid ${
-                    isActive ? companyPalette.emerald : companyPalette.line
-                  }`,
-                  borderRadius: 1,
-                  bgcolor: isActive ? companyPalette.surface : 'transparent',
-                  boxShadow: isActive ? '0 18px 36px rgba(24, 61, 52, 0.08)' : 'none',
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: '128px minmax(0, 1fr)' },
-                  gap: { xs: 0.9, sm: 2.5 },
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  transition:
-                    'border-color 180ms ease, background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease',
-                  '&:hover': {
-                    borderLeftColor: companyPalette.emerald,
-                    bgcolor: companyPalette.surface,
-                    transform: 'translateX(2px)',
-                  },
-                  '&:active': {
-                    transform: 'translateX(0)',
-                  },
-                }}
-              >
-                <Box>
-                  <Typography
-                    sx={{
-                      color: isActive ? companyPalette.emerald : companyPalette.champagne,
-                      fontSize: 12,
-                      fontWeight: 800,
-                      mb: 0.5,
-                    }}
-                  >
-                    {section.label}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      color: companyPalette.subtle,
-                      fontSize: 11,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {String(index + 1).padStart(2, '0')}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography
-                    sx={{
-                      color: companyPalette.ink,
-                      fontSize: { xs: 18, sm: 19 },
-                      fontWeight: 850,
-                      lineHeight: 1.44,
-                      mb: 0.8,
-                    }}
-                  >
-                    {section.title}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      color: companyPalette.muted,
-                      fontSize: 14.5,
-                      lineHeight: 1.72,
-                    }}
-                  >
-                    {section.body}
-                  </Typography>
-                </Box>
-              </Box>
-              );
-            })}
-          </Box>
-
-          <Box
-            component="section"
-            sx={{
-              py: { xs: 3.5, sm: 4.5 },
-              borderBottom: `1px solid ${companyPalette.line}`,
-            }}
-          >
-            <Typography
+            <Box
+              component="section"
               sx={{
-                color: companyPalette.ink,
-                fontSize: 16,
-                fontWeight: 850,
-                mb: 1.8,
+                borderRadius: 0.8,
+                overflow: 'hidden',
+                border: `1px solid ${companyPalette.lineStrong}`,
+                bgcolor: companyPalette.paper,
+                mb: { xs: 3.4, sm: 4.4 },
               }}
             >
-              Service signals
-            </Typography>
-            <Box sx={{ display: 'grid', gap: 0 }}>
-              {trustItems.map((item, index) => (
-                <Box key={item.title}>
-                  {index > 0 && <Divider sx={{ borderColor: companyPalette.line }} />}
+              <Box
+                component="img"
+                src="/home-dashboard.png"
+                alt="난임상담톡톡 서비스 소개 이미지"
+                sx={{
+                  display: 'block',
+                  width: '100%',
+                  height: { xs: 248, sm: 360, md: 430 },
+                  objectFit: 'cover',
+                  objectPosition: '50% 34%',
+                }}
+              />
+            </Box>
+
+            <Box
+              component="section"
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1.05fr 0.95fr' },
+                borderTop: `1px solid ${companyPalette.ink}`,
+                borderBottom: `1px solid ${companyPalette.ink}`,
+              }}
+            >
+              <Box
+                sx={{
+                  py: { xs: 3.2, md: 4.2 },
+                  pr: { md: 5 },
+                  borderRight: { md: `1px solid ${companyPalette.ink}` },
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: companyPalette.muted,
+                    fontSize: 11,
+                    fontWeight: 850,
+                    letterSpacing: '0.08em',
+                    mb: 1.4,
+                  }}
+                >
+                  사업 개요
+                </Typography>
+                <Typography
+                  sx={{
+                    color: companyPalette.black,
+                    fontSize: { xs: 33, sm: 46, md: 54 },
+                    fontWeight: 900,
+                    lineHeight: 1.04,
+                    letterSpacing: 0,
+                    mb: 3,
+                  }}
+              >
+                  난임 정보와 상담 접점을 운영합니다.
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
+                  <Button
+                    endIcon={<ArrowForwardRoundedIcon />}
+                    onClick={() => navigate('/')}
+                    sx={primaryButtonSx}
+                  >
+                    서비스 보기
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate('/chat')}
+                    sx={secondaryButtonSx}
+                  >
+                    상담 시작하기
+                  </Button>
+                </Box>
+              </Box>
+
+              <Box sx={{ py: { xs: 1.2, md: 2.6 }, pl: { md: 3.4 } }}>
+                {profileSections.map((section, index) => {
+                  const isActive = activeSection === section.label;
+
+                  return (
+                    <Box key={section.label}>
+                      {index > 0 && <Divider sx={{ borderColor: companyPalette.lineStrong }} />}
+                      <Box
+                        component="button"
+                        type="button"
+                        aria-pressed={isActive}
+                        onClick={() => setActiveSection(section.label)}
+                        onMouseEnter={() => setActiveSection(section.label)}
+                        sx={{
+                          appearance: 'none',
+                          width: '100%',
+                          border: 0,
+                          borderRadius: 0,
+                          bgcolor: isActive ? companyPalette.emeraldSoft : 'transparent',
+                          display: 'grid',
+                          gridTemplateColumns: '42px minmax(0, 1fr)',
+                          gap: 1.6,
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          py: 2,
+                          px: { xs: 0.8, md: 1.2 },
+                          transition:
+                            'background-color 180ms ease, transform 180ms ease, color 180ms ease',
+                          '&:hover': {
+                            bgcolor: companyPalette.emeraldSoft,
+                            transform: 'translateX(2px)',
+                          },
+                          '&:active': {
+                            transform: 'translateX(0)',
+                          },
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            color: isActive ? companyPalette.emerald : companyPalette.champagne,
+                            fontSize: 13,
+                            fontWeight: 900,
+                          }}
+                        >
+                          {String(index + 1).padStart(2, '0')}
+                        </Typography>
+                        <Box>
+                          <Typography
+                            sx={{
+                              color: companyPalette.black,
+                              fontSize: 14,
+                              fontWeight: 900,
+                              letterSpacing: '0.04em',
+                              mb: 0.6,
+                            }}
+                          >
+                            {section.label}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              color: companyPalette.ink,
+                              fontSize: { xs: 18, sm: 20 },
+                              fontWeight: 850,
+                              lineHeight: 1.34,
+                              mb: 0.7,
+                            }}
+                          >
+                            {section.title}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              color: companyPalette.muted,
+                              fontSize: 13.5,
+                              lineHeight: 1.65,
+                            }}
+                          >
+                            {section.body}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
+
+            <Box
+              component="section"
+              sx={{
+                py: { xs: 3.4, sm: 4.4 },
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '260px minmax(0, 1fr)' },
+                gap: { xs: 2.4, md: 3.4 },
+                borderBottom: `1px solid ${companyPalette.ink}`,
+              }}
+            >
+              <Box>
+                <Typography
+                  sx={{
+                    color: companyPalette.black,
+                    fontSize: { xs: 28, sm: 34 },
+                    fontWeight: 900,
+                    lineHeight: 1.02,
+                    mb: 1.2,
+                  }}
+                >
+                  사업 영역
+                </Typography>
+                <Typography
+                  sx={{
+                    color: companyPalette.muted,
+                    fontSize: 14,
+                    lineHeight: 1.65,
+                  }}
+                >
+                  필요한 정보를 짧고 명확하게 연결합니다.
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+                  borderTop: { xs: `1px solid ${companyPalette.lineStrong}`, sm: 0 },
+                  borderLeft: { sm: `1px solid ${companyPalette.lineStrong}` },
+                }}
+              >
+                {businessItems.map((item, index) => (
                   <Box
+                    key={item.title}
                     sx={{
-                      py: 1.8,
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', sm: '168px minmax(0, 1fr)' },
-                      gap: { xs: 0.6, sm: 2 },
+                      minHeight: 150,
+                      p: { xs: 2.1, sm: 2.3 },
+                      borderRight: {
+                        sm: index < businessItems.length - 1
+                          ? `1px solid ${companyPalette.lineStrong}`
+                          : 0,
+                      },
+                      borderBottom: {
+                        xs: index < businessItems.length - 1
+                          ? `1px solid ${companyPalette.lineStrong}`
+                          : 0,
+                        sm: 0,
+                      },
+                      display: 'flex',
+                      flexDirection: 'column',
                     }}
                   >
-                    <Typography
+                    <Box
                       sx={{
                         color: companyPalette.emerald,
-                        fontSize: 14,
-                        fontWeight: 850,
+                        display: 'flex',
+                        mb: 2.2,
+                        '& svg': { fontSize: 25 },
+                      }}
+                    >
+                      {item.icon}
+                    </Box>
+                    <Typography
+                      sx={{
+                        color: companyPalette.black,
+                        fontSize: 17,
+                        fontWeight: 900,
+                        mb: 1,
                       }}
                     >
                       {item.title}
@@ -450,118 +586,149 @@ function CompanyProfile() {
                     <Typography
                       sx={{
                         color: companyPalette.muted,
-                        fontSize: 14,
-                        lineHeight: 1.65,
+                        fontSize: 13.5,
+                        lineHeight: 1.62,
                       }}
                     >
                       {item.body}
                     </Typography>
                   </Box>
-                </Box>
-              ))}
+                ))}
+              </Box>
             </Box>
-          </Box>
 
-          <Box
-            component="section"
-            sx={{
-              py: { xs: 3.5, sm: 4.5 },
-              borderBottom: `1px solid ${companyPalette.line}`,
-            }}
-          >
-            <Typography
+            <Box
+              component="section"
               sx={{
-                color: companyPalette.ink,
-                fontSize: 16,
-                fontWeight: 850,
-                mb: 1.5,
+                py: { xs: 3.4, sm: 4.4 },
+                borderBottom: `1px solid ${companyPalette.ink}`,
               }}
             >
-              Explore
-            </Typography>
-            <Box>
-              {serviceLinks.map((item, index) => (
-                <Box key={item.path}>
-                  {index > 0 && <Divider sx={{ borderColor: companyPalette.line }} />}
+              <Box
+                sx={{
+                  bgcolor: companyPalette.black,
+                  color: companyPalette.surface,
+                  p: { xs: 2.4, sm: 3 },
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '180px minmax(0, 1fr) 220px' },
+                  gap: { xs: 1.8, md: 3 },
+                  alignItems: 'center',
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: 'rgba(252, 251, 248, 0.66)',
+                    fontSize: 11,
+                    fontWeight: 850,
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  운영 원칙
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: { xs: 24, sm: 31 },
+                    fontWeight: 900,
+                    lineHeight: 1.14,
+                  }}
+                >
+                  무료 회원제 · 의료기관 연결 없음
+                </Typography>
+                <Typography
+                  sx={{
+                    color: 'rgba(252, 251, 248, 0.72)',
+                    fontSize: 13.5,
+                    lineHeight: 1.62,
+                  }}
+                >
+                  구독/인앱결제 없이 운영합니다.
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box
+              component="section"
+              sx={{
+                py: { xs: 3.4, sm: 4.4 },
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '250px minmax(0, 1fr)' },
+                gap: { xs: 2, md: 4 },
+              }}
+            >
+              <Box>
+                <Typography
+                  sx={{
+                    color: companyPalette.black,
+                    fontSize: { xs: 27, sm: 34 },
+                    fontWeight: 900,
+                    lineHeight: 1.06,
+                    mb: 1.2,
+                  }}
+                >
+                  서비스 구성
+                </Typography>
+                <Typography
+                  sx={{
+                    color: companyPalette.muted,
+                    fontSize: 14,
+                    lineHeight: 1.65,
+                  }}
+                >
+                  실제 서비스로 바로 이동합니다.
+                </Typography>
+              </Box>
+
+              <Box>
+                {serviceLinks.map((item, index) => (
+                  <Box key={item.path}>
+                    {index > 0 && <Divider sx={{ borderColor: companyPalette.lineStrong }} />}
+                    <Button
+                      fullWidth
+                      onClick={() => navigate(item.path)}
+                      endIcon={<ArrowForwardRoundedIcon />}
+                      sx={{
+                        minHeight: 58,
+                        px: 0,
+                        justifyContent: 'space-between',
+                        color: companyPalette.ink,
+                        borderRadius: 0,
+                        fontSize: 15,
+                        fontWeight: 850,
+                        transition: 'color 160ms ease, transform 160ms ease',
+                        '& .MuiButton-startIcon': {
+                          color: companyPalette.emerald,
+                        },
+                        '& .MuiButton-endIcon': {
+                          color: companyPalette.subtle,
+                        },
+                        '&:hover': {
+                          bgcolor: 'transparent',
+                          color: companyPalette.emerald,
+                          transform: 'translateX(3px)',
+                        },
+                        '&:active': {
+                          transform: 'translateX(0)',
+                        },
+                      }}
+                      startIcon={item.icon}
+                    >
+                      {item.label}
+                    </Button>
+                  </Box>
+                ))}
+
+                <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap', mt: 2.8 }}>
                   <Button
                     fullWidth
-                    onClick={() => navigate(item.path)}
-                    endIcon={<ArrowForwardRoundedIcon />}
-                    sx={{
-                      minHeight: 52,
-                      px: 0,
-                      justifyContent: 'space-between',
-                      color: companyPalette.ink,
-                      borderRadius: 0,
-                      transition: 'color 160ms ease, transform 160ms ease',
-                      '& .MuiButton-startIcon': {
-                        color: companyPalette.emerald,
-                      },
-                      '& .MuiButton-endIcon': {
-                        color: companyPalette.subtle,
-                      },
-                      '&:hover': {
-                        bgcolor: 'transparent',
-                        color: companyPalette.emerald,
-                        transform: 'translateX(2px)',
-                      },
-                      '&:active': {
-                        transform: 'translateX(0)',
-                      },
-                    }}
-                    startIcon={item.icon}
+                    startIcon={<ContentCopyRoundedIcon />}
+                    onClick={handleCopy}
+                    sx={primaryButtonSx}
                   >
-                    {item.label}
+                    {copied ? '링크 복사됨' : '회사소개 링크 복사'}
                   </Button>
                 </Box>
-              ))}
+              </Box>
             </Box>
-          </Box>
-
-          <Box
-            component="section"
-            sx={{
-              py: { xs: 3.5, sm: 4.5 },
-            }}
-          >
-            <Typography
-              sx={{
-                color: companyPalette.ink,
-                fontSize: 16,
-                fontWeight: 850,
-                mb: 1,
-              }}
-            >
-              Contact / Link
-            </Typography>
-            <Typography
-              sx={{
-                color: companyPalette.muted,
-                fontSize: 14.5,
-                lineHeight: 1.72,
-                mb: 2,
-              }}
-            >
-              외부 미팅이나 소개가 필요할 때 아래 링크를 공유하세요.
-            </Typography>
-            <Button
-              fullWidth
-              startIcon={<ContentCopyRoundedIcon />}
-              onClick={handleCopy}
-              sx={primaryButtonSx}
-            >
-              {copied ? '링크 복사됨' : '회사소개 링크 복사'}
-            </Button>
-            <Typography
-              sx={{
-                color: companyPalette.subtle,
-                fontSize: 12.5,
-                lineHeight: 1.65,
-                mt: 2.4,
-              }}
-            >
-              본 서비스는 의료법과 생명윤리법을 준수하며 의료기관 연결 및 유도 행위를 하지 않습니다.
-            </Typography>
           </Box>
         </Box>
       </Box>

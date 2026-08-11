@@ -54,6 +54,14 @@ function buildAbsoluteUrl(pathname) {
   return `${SITE_URL}${normalizedPath}`;
 }
 
+function normalizePathname(pathname) {
+  if (!pathname || pathname === '/') {
+    return '/';
+  }
+
+  return pathname.replace(/\/+$/, '');
+}
+
 function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
   if (pathname.startsWith('/chat/')) {
     return {
@@ -148,12 +156,13 @@ function SeoManager({ isAdmin, isLoggedIn }) {
   const location = useLocation();
 
   useEffect(() => {
+    const normalizedPathname = normalizePathname(location.pathname);
     const { title, description, shouldIndex } = getRouteMetadata(
-      location.pathname,
+      normalizedPathname,
       isAdmin,
       isLoggedIn
     );
-    const canonicalUrl = buildAbsoluteUrl(location.pathname);
+    const canonicalUrl = buildAbsoluteUrl(normalizedPathname);
 
     document.title = title;
     updateMetaTag('name', 'description', description);
@@ -186,7 +195,8 @@ function LoadingScreen() {
 function RoutedAppContent() {
   const { isAdmin, isLoggedIn, loading } = useAuth();
   const location = useLocation();
-  const isCompanyRoute = location.pathname === '/company';
+  const normalizedPathname = normalizePathname(location.pathname);
+  const isCompanyRoute = normalizedPathname === '/company';
 
   if (loading && !isCompanyRoute) {
     return <LoadingScreen />;
@@ -197,7 +207,7 @@ function RoutedAppContent() {
       <SeoManager isAdmin={isAdmin} isLoggedIn={isLoggedIn} />
       <Routes>
         {/* 공개 회사소개 페이지 */}
-        <Route path="/company" element={<CompanyProfile />} />
+        <Route path="/company/*" element={<CompanyProfile />} />
 
         {/* 로그인 페이지 */}
         <Route
