@@ -33,11 +33,12 @@ describe('company profile page', () => {
     const companyProfile = read('components/CompanyProfile.jsx');
 
     expect(companyProfile).toMatch(/난임상담톡톡/);
-    expect(companyProfile).toMatch(/공식 사업 소개/);
+    expect(companyProfile).toMatch(/무료 회원제 난임 정보·상담 플랫폼/);
     expect(companyProfile).toMatch(/난임 전문 기자와 골통주부/);
-    expect(companyProfile).toMatch(/난임상담톡톡은 난임을 준비하는 사람들이 정보를 이해하고, 다음 선택을 준비할 수 있도록 돕는 플랫폼입니다/);
     expect(companyProfile).toMatch(/생식의학 뉴스·난임백과·상담 콘텐츠를 무료 회원제로 제공합니다/);
     expect(companyProfile).toMatch(/정보와 상담의 접근성을 높이는 데 집중합니다/);
+    expect(companyProfile).not.toMatch(/공식 사업 소개/);
+    expect(companyProfile).not.toMatch(/난임상담톡톡은 난임을 준비하는 사람들이 정보를 이해하고, 다음 선택을 준비할 수 있도록 돕는 플랫폼입니다/);
     expect(companyProfile).not.toMatch(/난임상담톡톡은 난임 전문 콘텐츠와 상담 서비스를 제공하는 무료 회원제 플랫폼입니다/);
     expect(companyProfile).not.toMatch(/난임 치료 여정에 필요한 정보를 한곳에 모읍니다/);
     expect(companyProfile).toMatch(/무료 회원제로 제공합니다/);
@@ -79,6 +80,7 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/#2B2F2D/);
     expect(companyProfile).toMatch(/#B89B62/);
     expect(companyProfile).toMatch(/NANIMTALK/);
+    expect(companyProfile).toMatch(/component="h1"/);
     expect(companyProfile).toMatch(/회사 소개/);
     expect(companyProfile).toMatch(/사업 개요/);
     expect(companyProfile).toMatch(/editorialFrameSx/);

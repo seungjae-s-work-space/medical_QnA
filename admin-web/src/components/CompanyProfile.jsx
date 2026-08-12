@@ -343,26 +343,39 @@ function CompanyProfile() {
               <Typography
                 sx={{
                   ...labelTextSx,
-                  color: companyPalette.muted,
-                  fontSize: 11,
-                  mb: 1.4,
+                  color: companyPalette.champagne,
+                  fontSize: 12,
+                  mb: 1.1,
                 }}
               >
-                공식 사업 소개
+                NANIMTALK
               </Typography>
               <Typography
                 component="h1"
                 sx={{
                   ...companyDisplayTextSx,
                   color: companyPalette.black,
-                  fontSize: { xs: 31, sm: 46, md: 58 },
-                  fontWeight: 760,
-                  lineHeight: 1.18,
-                  maxWidth: 880,
-                  mb: { xs: 2.4, sm: 3.2 },
+                  fontSize: { xs: 39, sm: 58, md: 74 },
+                  fontWeight: 780,
+                  lineHeight: 1.04,
+                  maxWidth: 760,
+                  mb: { xs: 2, sm: 2.6 },
                 }}
               >
-                난임상담톡톡은 난임을 준비하는 사람들이 정보를 이해하고, 다음 선택을 준비할 수 있도록 돕는 플랫폼입니다.
+                난임상담톡톡
+              </Typography>
+              <Typography
+                sx={{
+                  ...companyDisplayTextSx,
+                  color: companyPalette.ink,
+                  fontSize: { xs: 20, sm: 27, md: 31 },
+                  fontWeight: 690,
+                  lineHeight: 1.34,
+                  maxWidth: 760,
+                  mb: { xs: 2.3, sm: 3 },
+                }}
+              >
+                난임 전문 기자와 골통주부가 함께 운영하는 무료 회원제 난임 정보·상담 플랫폼
               </Typography>
               <Typography
                 sx={{
