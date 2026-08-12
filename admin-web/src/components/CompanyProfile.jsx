@@ -120,7 +120,7 @@ const serviceLinks = [
 
 const companyHeroImage = {
   src: '/home-dashboard.png?v=3a2a078',
-  alt: '난임상담톡톡 홈 이미지',
+  alt: '아기성공연구소 서비스 홈 이미지',
 };
 
 const editorialFrameSx = {
@@ -303,7 +303,7 @@ function CompanyProfile() {
                 />
               </Box>
               <Typography sx={{ ...labelTextSx, fontSize: 12, fontWeight: 800 }}>
-                NANIMTALK
+                AGISUNGONG LAB
               </Typography>
             </Box>
 
@@ -348,7 +348,7 @@ function CompanyProfile() {
                   mb: 1.1,
                 }}
               >
-                NANIMTALK
+                AGISUNGONG LAB
               </Typography>
               <Typography
                 component="h1"
@@ -362,7 +362,7 @@ function CompanyProfile() {
                   mb: { xs: 2, sm: 2.6 },
                 }}
               >
-                난임상담톡톡
+                아기성공연구소
               </Typography>
               <Typography
                 sx={{

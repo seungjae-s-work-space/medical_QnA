@@ -15,7 +15,8 @@ describe('company profile page', () => {
     expect(app).toMatch(/path="\/company\/\*"/);
     expect(app).toMatch(/<CompanyProfile \/>/);
     expect(app).toMatch(/'\/company': \{/);
-    expect(app).toMatch(/난임상담톡톡 회사소개/);
+    expect(app).toMatch(/아기성공연구소 회사소개/);
+    expect(app).not.toMatch(/난임상담톡톡 회사소개/);
     expect(app).toMatch(/shouldIndex: true/);
     expect(app).not.toMatch(/path="\/company"[\s\S]*?<Layout>[\s\S]*?<CompanyProfile \/>[\s\S]*?<\/Layout>/);
   });
@@ -32,7 +33,8 @@ describe('company profile page', () => {
   test('company profile component contains share-card copy and no Firebase reads', () => {
     const companyProfile = read('components/CompanyProfile.jsx');
 
-    expect(companyProfile).toMatch(/난임상담톡톡/);
+    expect(companyProfile).toMatch(/아기성공연구소/);
+    expect(companyProfile).not.toMatch(/>\s*난임상담톡톡\s*</);
     expect(companyProfile).toMatch(/무료 회원제 난임 정보·상담 플랫폼/);
     expect(companyProfile).toMatch(/난임 전문 기자가 운영하는 무료 회원제 난임 정보·상담 플랫폼/);
     expect(companyProfile).not.toMatch(/난임 전문 기자와 골통주부가 함께 운영하는 무료 회원제 난임 정보·상담 플랫폼/);
@@ -80,7 +82,8 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/#183D34/);
     expect(companyProfile).toMatch(/#2B2F2D/);
     expect(companyProfile).toMatch(/#B89B62/);
-    expect(companyProfile).toMatch(/NANIMTALK/);
+    expect(companyProfile).toMatch(/AGISUNGONG LAB/);
+    expect(companyProfile).not.toMatch(/NANIMTALK/);
     expect(companyProfile).toMatch(/component="h1"/);
     expect(companyProfile).toMatch(/회사 소개/);
     expect(companyProfile).toMatch(/사업 개요/);
@@ -146,7 +149,8 @@ describe('company profile page', () => {
 
     const companyIndex = fs.readFileSync(companyIndexPath, 'utf8');
 
-    expect(companyIndex).toMatch(/난임상담톡톡 회사소개/);
+    expect(companyIndex).toMatch(/아기성공연구소 회사소개/);
+    expect(companyIndex).not.toMatch(/난임상담톡톡 회사소개/);
     expect(companyIndex).toMatch(/agisungong\.net\/company/);
     expect(companyIndex).toMatch(/URLSearchParams/);
     expect(companyIndex).toMatch(/\?p=/);
