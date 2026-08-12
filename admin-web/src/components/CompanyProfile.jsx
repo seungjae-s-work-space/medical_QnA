@@ -375,7 +375,7 @@ function CompanyProfile() {
                   mb: { xs: 2.3, sm: 3 },
                 }}
               >
-                난임 전문 기자와 골통주부가 함께 운영하는 무료 회원제 난임 정보·상담 플랫폼
+                난임 전문 기자가 운영하는 무료 회원제 난임 정보·상담 플랫폼
               </Typography>
               <Typography
                 sx={{

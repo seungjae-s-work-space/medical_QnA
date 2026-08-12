@@ -34,7 +34,8 @@ describe('company profile page', () => {
 
     expect(companyProfile).toMatch(/난임상담톡톡/);
     expect(companyProfile).toMatch(/무료 회원제 난임 정보·상담 플랫폼/);
-    expect(companyProfile).toMatch(/난임 전문 기자와 골통주부/);
+    expect(companyProfile).toMatch(/난임 전문 기자가 운영하는 무료 회원제 난임 정보·상담 플랫폼/);
+    expect(companyProfile).not.toMatch(/난임 전문 기자와 골통주부가 함께 운영하는 무료 회원제 난임 정보·상담 플랫폼/);
     expect(companyProfile).toMatch(/생식의학 뉴스·난임백과·상담 콘텐츠를 무료 회원제로 제공합니다/);
     expect(companyProfile).toMatch(/정보와 상담의 접근성을 높이는 데 집중합니다/);
     expect(companyProfile).not.toMatch(/공식 사업 소개/);
