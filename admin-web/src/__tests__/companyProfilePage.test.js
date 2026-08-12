@@ -90,8 +90,11 @@ describe('company profile page', () => {
 
     expect(companyProfile).toMatch(/companyHeroImage/);
     expect(companyProfile).toMatch(/home-dashboard\.png/);
-    expect(companyProfile).toMatch(/대표 이미지/);
+    expect(companyProfile).not.toMatch(/대표 이미지/);
     expect(companyProfile).not.toMatch(/홈 화면 대표 이미지/);
+    expect(companyProfile).not.toMatch(/서비스의 분위기와 핵심 메시지/);
+    expect(companyProfile).not.toMatch(/난임상담톡톡 공식 홈 이미지/);
+    expect(companyProfile).not.toMatch(/representativeImageFrameSx/);
     expect(companyProfile).not.toMatch(/phoneMockupSx/);
     expect(companyProfile).not.toMatch(/companyScreenshots/);
     expect(companyProfile).not.toMatch(/company-app-home\.jpg/);

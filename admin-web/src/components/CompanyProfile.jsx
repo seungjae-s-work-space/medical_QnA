@@ -161,28 +161,12 @@ const secondaryButtonSx = {
   },
 };
 
-const representativeImageFrameSx = {
-  position: 'relative',
-  overflow: 'hidden',
-  width: '100%',
-  maxWidth: { xs: 330, sm: 410, md: 460 },
-  border: `1px solid ${companyPalette.lineStrong}`,
-  bgcolor: companyPalette.surface,
-  boxShadow: '0 24px 52px rgba(17, 19, 18, 0.18)',
-  p: { xs: 0.9, sm: 1.1 },
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    inset: 0,
-    border: `1px solid ${companyPalette.surface}`,
-    pointerEvents: 'none',
-  },
-};
-
 const representativeImageSx = {
   display: 'block',
   width: '100%',
+  maxWidth: { xs: 340, sm: 500, md: 620 },
   height: 'auto',
+  mx: 'auto',
   objectFit: 'contain',
 };
 
@@ -404,87 +388,20 @@ function CompanyProfile() {
             <Box
               component="section"
               sx={{
-                border: `1px solid ${companyPalette.lineStrong}`,
-                bgcolor: companyPalette.paper,
                 mb: { xs: 3.4, sm: 4.4 },
+                display: 'grid',
+                placeItems: 'center',
+                py: { xs: 1.2, sm: 2 },
+                overflow: 'hidden',
               }}
             >
               <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', md: '270px minmax(0, 1fr)' },
-                  gap: { xs: 2.4, md: 3.2 },
-                  p: { xs: 2, sm: 2.6, md: 3 },
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: 2,
-                    borderBottom: { xs: `1px solid ${companyPalette.lineStrong}`, md: 0 },
-                    borderRight: { md: `1px solid ${companyPalette.lineStrong}` },
-                    pb: { xs: 2.4, md: 0 },
-                    pr: { md: 3 },
-                  }}
-                >
-                  <Box>
-                    <Typography
-                      sx={{
-                        ...labelTextSx,
-                        color: companyPalette.muted,
-                        fontSize: 11,
-                        mb: 1.2,
-                      }}
-                    >
-                      대표 이미지
-                    </Typography>
-                    <Typography
-                      sx={{
-                        ...baseTextSx,
-                        color: companyPalette.muted,
-                        fontSize: 13.5,
-                        fontWeight: 400,
-                        lineHeight: 1.68,
-                      }}
-                    >
-                      서비스의 분위기와 핵심 메시지를 보여주는 홈 대표 이미지를 그대로 사용합니다.
-                    </Typography>
-                  </Box>
-
-                  <Typography
-                    sx={{
-                      ...baseTextSx,
-                      color: companyPalette.subtle,
-                      fontSize: 12,
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    난임상담톡톡 공식 홈 이미지
-                  </Typography>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: 'grid',
-                    placeItems: 'center',
-                    minHeight: { xs: 430, sm: 560, md: 620 },
-                    overflow: 'hidden',
-                    py: { xs: 1.2, sm: 2 },
-                  }}
-                >
-                  <Box sx={representativeImageFrameSx}>
-                    <Box
-                      component="img"
-                      src={companyHeroImage.src}
-                      alt={companyHeroImage.alt}
-                      loading="lazy"
-                      sx={representativeImageSx}
-                    />
-                  </Box>
-                </Box>
-              </Box>
+                component="img"
+                src={companyHeroImage.src}
+                alt={companyHeroImage.alt}
+                loading="lazy"
+                sx={representativeImageSx}
+              />
             </Box>
 
             <Box
