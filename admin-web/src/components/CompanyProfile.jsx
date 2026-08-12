@@ -345,7 +345,7 @@ function CompanyProfile() {
                   mb: { xs: 2.4, sm: 3.2 },
                 }}
               >
-                난임 치료 여정에 필요한 정보를 한곳에 모읍니다.
+                난임상담톡톡은 난임 전문 콘텐츠와 상담 서비스를 제공하는 무료 회원제 플랫폼입니다.
               </Typography>
               <Typography
                 sx={{
