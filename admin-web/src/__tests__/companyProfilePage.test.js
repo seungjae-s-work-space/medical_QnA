@@ -91,7 +91,7 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/companyHeroImage/);
     expect(companyProfile).toMatch(/home-dashboard\.png/);
     expect(companyProfile).toMatch(/대표 이미지/);
-    expect(companyProfile).toMatch(/홈 화면 대표 이미지/);
+    expect(companyProfile).not.toMatch(/홈 화면 대표 이미지/);
     expect(companyProfile).not.toMatch(/phoneMockupSx/);
     expect(companyProfile).not.toMatch(/companyScreenshots/);
     expect(companyProfile).not.toMatch(/company-app-home\.jpg/);

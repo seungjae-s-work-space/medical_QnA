@@ -102,9 +102,8 @@ const serviceLinks = [
 ];
 
 const companyHeroImage = {
-  title: '홈 화면 대표 이미지',
   src: '/home-dashboard.png',
-  alt: '난임상담톡톡 홈 화면 대표 이미지',
+  alt: '난임상담톡톡 홈 이미지',
 };
 
 const editorialFrameSx = {
@@ -444,18 +443,6 @@ function CompanyProfile() {
                     <Typography
                       sx={{
                         ...baseTextSx,
-                        color: companyPalette.black,
-                        fontSize: { xs: 25, sm: 30, md: 32 },
-                        fontWeight: 800,
-                        lineHeight: 1.18,
-                        mb: 1.4,
-                      }}
-                    >
-                      홈 화면 대표 이미지
-                    </Typography>
-                    <Typography
-                      sx={{
-                        ...baseTextSx,
                         color: companyPalette.muted,
                         fontSize: 13.5,
                         fontWeight: 400,
@@ -496,17 +483,6 @@ function CompanyProfile() {
                       sx={representativeImageSx}
                     />
                   </Box>
-
-                  <Typography
-                    sx={{
-                      ...labelTextSx,
-                      color: companyPalette.muted,
-                      fontSize: 12,
-                      mt: 1.5,
-                    }}
-                  >
-                    {companyHeroImage.title}
-                  </Typography>
                 </Box>
               </Box>
             </Box>
