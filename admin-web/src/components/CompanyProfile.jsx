@@ -101,10 +101,10 @@ const serviceLinks = [
   { label: '공지사항', path: '/notice', icon: <MedicalInformationRoundedIcon /> },
 ];
 
-const companyHeroScreenshot = {
-  title: '앱 홈 화면',
-  src: '/company-app-home.jpg',
-  alt: '난임상담톡톡 앱 홈 화면',
+const companyHeroImage = {
+  title: '홈 화면 대표 이미지',
+  src: '/home-dashboard.png',
+  alt: '난임상담톡톡 홈 화면 대표 이미지',
 };
 
 const editorialFrameSx = {
@@ -162,55 +162,29 @@ const secondaryButtonSx = {
   },
 };
 
-const phoneMockupSx = {
+const representativeImageFrameSx = {
   position: 'relative',
   overflow: 'hidden',
   width: '100%',
-  maxWidth: { xs: 230, sm: 288, md: 318 },
-  aspectRatio: '379 / 820',
-  borderRadius: { xs: 4.2, sm: 5 },
-  border: `7px solid ${companyPalette.black}`,
-  bgcolor: companyPalette.black,
-  boxShadow: '0 28px 56px rgba(17, 19, 18, 0.28)',
-  p: 0.5,
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 12,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: 60,
-    height: 16,
-    borderRadius: 999,
-    bgcolor: companyPalette.black,
-    zIndex: 2,
-  },
+  maxWidth: { xs: 330, sm: 410, md: 460 },
+  border: `1px solid ${companyPalette.lineStrong}`,
+  bgcolor: companyPalette.surface,
+  boxShadow: '0 24px 52px rgba(17, 19, 18, 0.18)',
+  p: { xs: 0.9, sm: 1.1 },
   '&::after': {
     content: '""',
     position: 'absolute',
     inset: 0,
-    borderRadius: 'inherit',
-    boxShadow: 'inset 0 0 0 1px rgba(252, 251, 248, 0.16)',
+    border: `1px solid ${companyPalette.surface}`,
     pointerEvents: 'none',
   },
 };
 
-const mockupScreenSx = {
-  position: 'relative',
-  zIndex: 1,
-  width: '100%',
-  height: '100%',
-  overflow: 'hidden',
-  borderRadius: { xs: 3.1, sm: 3.8 },
-  bgcolor: companyPalette.surface,
-};
-
-const phoneImageSx = {
+const representativeImageSx = {
   display: 'block',
   width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  objectPosition: 'top center',
+  height: 'auto',
+  objectFit: 'contain',
 };
 
 function CompanyProfile() {
@@ -465,7 +439,7 @@ function CompanyProfile() {
                         mb: 1.2,
                       }}
                     >
-                      서비스 화면
+                      대표 이미지
                     </Typography>
                     <Typography
                       sx={{
@@ -477,7 +451,7 @@ function CompanyProfile() {
                         mb: 1.4,
                       }}
                     >
-                      실제 앱 홈 화면
+                      홈 화면 대표 이미지
                     </Typography>
                     <Typography
                       sx={{
@@ -488,7 +462,7 @@ function CompanyProfile() {
                         lineHeight: 1.68,
                       }}
                     >
-                      채팅, 백과, 뉴스, 영상으로 이어지는 서비스 구조를 한 화면에서 보여줍니다.
+                      서비스의 분위기와 핵심 메시지를 보여주는 홈 대표 이미지를 그대로 사용합니다.
                     </Typography>
                   </Box>
 
@@ -500,7 +474,7 @@ function CompanyProfile() {
                       lineHeight: 1.55,
                     }}
                   >
-                    실제 앱 화면
+                    난임상담톡톡 공식 홈 이미지
                   </Typography>
                 </Box>
 
@@ -513,16 +487,14 @@ function CompanyProfile() {
                     py: { xs: 1.2, sm: 2 },
                   }}
                 >
-                  <Box sx={phoneMockupSx}>
-                    <Box sx={mockupScreenSx}>
-                      <Box
-                        component="img"
-                        src={companyHeroScreenshot.src}
-                        alt={companyHeroScreenshot.alt}
-                        loading="lazy"
-                        sx={phoneImageSx}
-                      />
-                    </Box>
+                  <Box sx={representativeImageFrameSx}>
+                    <Box
+                      component="img"
+                      src={companyHeroImage.src}
+                      alt={companyHeroImage.alt}
+                      loading="lazy"
+                      sx={representativeImageSx}
+                    />
                   </Box>
 
                   <Typography
@@ -533,7 +505,7 @@ function CompanyProfile() {
                       mt: 1.5,
                     }}
                   >
-                    {companyHeroScreenshot.title}
+                    {companyHeroImage.title}
                   </Typography>
                 </Box>
               </Box>
