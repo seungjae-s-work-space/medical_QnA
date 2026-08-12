@@ -102,7 +102,7 @@ const serviceLinks = [
 ];
 
 const companyHeroImage = {
-  src: '/home-dashboard.png',
+  src: '/home-dashboard.png?v=3a2a078',
   alt: '난임상담톡톡 홈 이미지',
 };
 
