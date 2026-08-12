@@ -84,28 +84,26 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/fontWeight: 850/);
   });
 
-  test('company profile uses real app screenshots instead of the home dashboard image', () => {
+  test('company profile uses one app screenshot in a phone mockup instead of a gallery', () => {
     const companyProfile = read('components/CompanyProfile.jsx');
     const publicDir = path.join(srcDir, '..', 'public');
 
-    expect(companyProfile).toMatch(/companyScreenshots/);
+    expect(companyProfile).toMatch(/companyHeroScreenshot/);
+    expect(companyProfile).toMatch(/phoneMockupSx/);
     expect(companyProfile).toMatch(/company-app-home\.jpg/);
-    expect(companyProfile).toMatch(/company-app-encyclopedia\.jpg/);
-    expect(companyProfile).toMatch(/company-app-news\.jpg/);
     expect(companyProfile).toMatch(/서비스 화면/);
     expect(companyProfile).toMatch(/실제 앱 화면/);
+    expect(companyProfile).not.toMatch(/companyScreenshots/);
+    expect(companyProfile).not.toMatch(/company-app-encyclopedia\.jpg/);
+    expect(companyProfile).not.toMatch(/company-app-news\.jpg/);
     expect(companyProfile).not.toMatch(/home-dashboard\.png/);
 
-    [
-      'company-app-home.jpg',
-      'company-app-encyclopedia.jpg',
-      'company-app-news.jpg',
-    ].forEach((fileName) => {
-      const filePath = path.join(publicDir, fileName);
+    const homeScreenshotPath = path.join(publicDir, 'company-app-home.jpg');
 
-      expect(fs.existsSync(filePath)).toBe(true);
-      expect(fs.statSync(filePath).size).toBeLessThan(500 * 1024);
-    });
+    expect(fs.existsSync(homeScreenshotPath)).toBe(true);
+    expect(fs.statSync(homeScreenshotPath).size).toBeLessThan(500 * 1024);
+    expect(fs.existsSync(path.join(publicDir, 'company-app-encyclopedia.jpg'))).toBe(false);
+    expect(fs.existsSync(path.join(publicDir, 'company-app-news.jpg'))).toBe(false);
   });
 
   test('company profile includes lightweight interactive editorial touches', () => {

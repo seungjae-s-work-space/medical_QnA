@@ -101,26 +101,11 @@ const serviceLinks = [
   { label: '공지사항', path: '/notice', icon: <MedicalInformationRoundedIcon /> },
 ];
 
-const companyScreenshots = [
-  {
-    title: '홈',
-    caption: '채팅, 백과, 뉴스, 영상을 한 화면에서',
-    src: '/company-app-home.jpg',
-    alt: '난임상담톡톡 앱 홈 화면',
-  },
-  {
-    title: '난임백과',
-    caption: '주제별 난임 정보를 보기 쉽게 정리',
-    src: '/company-app-encyclopedia.jpg',
-    alt: '난임상담톡톡 앱 난임백과 화면',
-  },
-  {
-    title: '난임뉴스',
-    caption: '생식의학 뉴스를 선별해 제공',
-    src: '/company-app-news.jpg',
-    alt: '난임상담톡톡 앱 난임뉴스 화면',
-  },
-];
+const companyHeroScreenshot = {
+  title: '앱 홈 화면',
+  src: '/company-app-home.jpg',
+  alt: '난임상담톡톡 앱 홈 화면',
+};
 
 const editorialFrameSx = {
   width: '100%',
@@ -177,14 +162,47 @@ const secondaryButtonSx = {
   },
 };
 
-const phoneFrameSx = {
+const phoneMockupSx = {
   position: 'relative',
   overflow: 'hidden',
-  borderRadius: 1,
-  border: `1px solid ${companyPalette.lineStrong}`,
-  bgcolor: companyPalette.surface,
-  boxShadow: '0 24px 44px rgba(17, 19, 18, 0.16)',
+  width: '100%',
+  maxWidth: { xs: 230, sm: 288, md: 318 },
   aspectRatio: '379 / 820',
+  borderRadius: { xs: 4.2, sm: 5 },
+  border: `7px solid ${companyPalette.black}`,
+  bgcolor: companyPalette.black,
+  boxShadow: '0 28px 56px rgba(17, 19, 18, 0.28)',
+  p: 0.5,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 12,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 60,
+    height: 16,
+    borderRadius: 999,
+    bgcolor: companyPalette.black,
+    zIndex: 2,
+  },
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    borderRadius: 'inherit',
+    boxShadow: 'inset 0 0 0 1px rgba(252, 251, 248, 0.16)',
+    pointerEvents: 'none',
+  },
+};
+
+const mockupScreenSx = {
+  position: 'relative',
+  zIndex: 1,
+  width: '100%',
+  height: '100%',
+  overflow: 'hidden',
+  borderRadius: { xs: 3.1, sm: 3.8 },
+  bgcolor: companyPalette.surface,
 };
 
 const phoneImageSx = {
@@ -459,7 +477,7 @@ function CompanyProfile() {
                         mb: 1.4,
                       }}
                     >
-                      실제 앱 화면으로 보는 난임상담톡톡
+                      실제 앱 홈 화면
                     </Typography>
                     <Typography
                       sx={{
@@ -470,7 +488,7 @@ function CompanyProfile() {
                         lineHeight: 1.68,
                       }}
                     >
-                      홈, 난임백과, 난임뉴스 화면을 통해 서비스의 주요 정보 흐름을 확인할 수 있습니다.
+                      채팅, 백과, 뉴스, 영상으로 이어지는 서비스 구조를 한 화면에서 보여줍니다.
                     </Typography>
                   </Box>
 
@@ -489,63 +507,34 @@ function CompanyProfile() {
                 <Box
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns: { xs: 'repeat(3, minmax(150px, 1fr))', sm: '1.1fr 0.78fr' },
-                    gridTemplateRows: { sm: 'repeat(2, minmax(0, 1fr))' },
-                    gap: { xs: 1.2, sm: 1.6, md: 2 },
-                    overflowX: { xs: 'auto', sm: 'visible' },
-                    pb: { xs: 0.6, sm: 0 },
+                    placeItems: 'center',
+                    minHeight: { xs: 430, sm: 560, md: 620 },
+                    overflow: 'hidden',
+                    py: { xs: 1.2, sm: 2 },
                   }}
                 >
-                  <Box
-                    sx={{
-                      ...phoneFrameSx,
-                      gridRow: { sm: '1 / span 2' },
-                      maxWidth: { xs: 178, sm: 310, md: 330 },
-                      justifySelf: { xs: 'start', sm: 'center' },
-                      alignSelf: 'center',
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={companyScreenshots[0].src}
-                      alt={companyScreenshots[0].alt}
-                      loading="lazy"
-                      sx={phoneImageSx}
-                    />
+                  <Box sx={phoneMockupSx}>
+                    <Box sx={mockupScreenSx}>
+                      <Box
+                        component="img"
+                        src={companyHeroScreenshot.src}
+                        alt={companyHeroScreenshot.alt}
+                        loading="lazy"
+                        sx={phoneImageSx}
+                      />
+                    </Box>
                   </Box>
 
-                  {companyScreenshots.slice(1).map((screen) => (
-                    <Box
-                      key={screen.src}
-                      sx={{
-                        minWidth: { xs: 150, sm: 0 },
-                        maxWidth: { xs: 168, sm: 210, md: 230 },
-                        justifySelf: { xs: 'start', sm: 'center' },
-                        alignSelf: 'center',
-                      }}
-                    >
-                      <Box sx={phoneFrameSx}>
-                        <Box
-                          component="img"
-                          src={screen.src}
-                          alt={screen.alt}
-                          loading="lazy"
-                          sx={phoneImageSx}
-                        />
-                      </Box>
-                      <Typography
-                        sx={{
-                          ...baseTextSx,
-                          color: companyPalette.ink,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          mt: 1,
-                        }}
-                      >
-                        {screen.title}
-                      </Typography>
-                    </Box>
-                  ))}
+                  <Typography
+                    sx={{
+                      ...labelTextSx,
+                      color: companyPalette.muted,
+                      fontSize: 12,
+                      mt: 1.5,
+                    }}
+                  >
+                    {companyHeroScreenshot.title}
+                  </Typography>
                 </Box>
               </Box>
             </Box>
@@ -585,7 +574,7 @@ function CompanyProfile() {
                     lineHeight: 1.14,
                     mb: 3,
                   }}
-              >
+                >
                   콘텐츠, 뉴스, 상담을 하나의 서비스로 제공합니다.
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
