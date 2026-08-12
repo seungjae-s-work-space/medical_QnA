@@ -49,6 +49,8 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/navigator\.clipboard\.writeText/);
     expect(companyProfile).toMatch(/navigate\('\/'\)/);
     expect(companyProfile).toMatch(/navigate\('\/chat'\)/);
+    expect(companyProfile).not.toMatch(/회사소개서/);
+    expect(companyProfile).not.toMatch(/>\s*agisungong\.net\/company\s*</);
     expect(companyProfile).not.toMatch(/from ['"]\.\.\/firebase['"]/);
     expect(companyProfile).not.toMatch(/collection\(/);
     expect(companyProfile).not.toMatch(/getDocs\(/);

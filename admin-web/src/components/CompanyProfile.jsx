@@ -252,30 +252,6 @@ function CompanyProfile() {
         }}
       />
 
-      <Typography
-        sx={{
-          ...labelTextSx,
-          color: companyPalette.surface,
-          fontSize: 12,
-          textAlign: 'center',
-          mb: 1.2,
-        }}
-      >
-        회사소개서
-      </Typography>
-      <Typography
-        sx={{
-          ...baseTextSx,
-          color: 'rgba(252, 251, 248, 0.82)',
-          fontSize: { xs: 16, sm: 18 },
-          fontWeight: 500,
-          textAlign: 'center',
-          mb: { xs: 3.4, sm: 5.4 },
-        }}
-      >
-        agisungong.net/company
-      </Typography>
-
       <Box sx={editorialFrameSx}>
         <Box sx={innerPaperSx}>
           <Box
