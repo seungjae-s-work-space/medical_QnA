@@ -35,9 +35,12 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/난임상담톡톡/);
     expect(companyProfile).toMatch(/공식 사업 소개/);
     expect(companyProfile).toMatch(/난임 전문 기자와 골통주부/);
-    expect(companyProfile).toMatch(/난임상담톡톡은 난임 전문 콘텐츠와 상담 서비스를 제공하는 무료 회원제 플랫폼입니다/);
+    expect(companyProfile).toMatch(/난임상담톡톡은 난임을 준비하는 사람들이 정보를 이해하고, 다음 선택을 준비할 수 있도록 돕는 플랫폼입니다/);
+    expect(companyProfile).toMatch(/생식의학 뉴스·난임백과·상담 콘텐츠를 무료 회원제로 제공합니다/);
+    expect(companyProfile).toMatch(/정보와 상담의 접근성을 높이는 데 집중합니다/);
+    expect(companyProfile).not.toMatch(/난임상담톡톡은 난임 전문 콘텐츠와 상담 서비스를 제공하는 무료 회원제 플랫폼입니다/);
     expect(companyProfile).not.toMatch(/난임 치료 여정에 필요한 정보를 한곳에 모읍니다/);
-    expect(companyProfile).toMatch(/무료 회원제 난임 정보·상담 서비스/);
+    expect(companyProfile).toMatch(/무료 회원제로 제공합니다/);
     expect(companyProfile).toMatch(/콘텐츠·뉴스·상담 서비스/);
     expect(companyProfile).toMatch(/근거 중심 정보/);
     expect(companyProfile).toMatch(/상담 서비스/);
@@ -63,6 +66,10 @@ describe('company profile page', () => {
 
     expect(companyProfile).toMatch(/companyPalette/);
     expect(companyProfile).toMatch(/companyFontFamily/);
+    expect(companyProfile).toMatch(/companyDisplayTextSx/);
+    expect(companyProfile).toMatch(/companyBodyTextSx/);
+    expect(companyProfile).toMatch(/-apple-system/);
+    expect(companyProfile).toMatch(/BlinkMacSystemFont/);
     expect(companyProfile).toMatch(/Apple SD Gothic Neo/);
     expect(companyProfile).toMatch(/Pretendard/);
     expect(companyProfile).toMatch(/Noto Sans KR/);
@@ -83,6 +90,7 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/colors\./);
     expect(companyProfile).not.toMatch(/primaryLight|cardTint|backgroundWarm|aqua/);
     expect(companyProfile).not.toMatch(/letterSpacing: '0\./);
+    expect(companyProfile).not.toMatch(/fontSize: \{ xs: 34, sm: 54, md: 68 \}/);
     expect(companyProfile).not.toMatch(/fontWeight: 9/);
     expect(companyProfile).not.toMatch(/fontWeight: 850/);
   });

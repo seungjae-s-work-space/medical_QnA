@@ -32,12 +32,16 @@ const companyPalette = {
 };
 
 const companyFontFamily = [
-  '"Apple SD Gothic Neo"',
-  'Pretendard',
-  '"Noto Sans KR"',
-  'Inter',
   '-apple-system',
   'BlinkMacSystemFont',
+  '"SF Pro Display"',
+  '"SF Pro Text"',
+  '"Apple SD Gothic Neo"',
+  '"Pretendard Variable"',
+  'Pretendard',
+  '"Spoqa Han Sans Neo"',
+  '"Noto Sans KR"',
+  'Inter',
   '"Segoe UI"',
   'sans-serif',
 ].join(', ');
@@ -48,14 +52,27 @@ const baseTextSx = {
   wordBreak: 'keep-all',
 };
 
+const companyDisplayTextSx = {
+  ...baseTextSx,
+  fontFamily: companyFontFamily,
+  fontKerning: 'normal',
+  textWrap: 'balance',
+};
+
+const companyBodyTextSx = {
+  ...baseTextSx,
+  fontWeight: 400,
+  lineHeight: 1.82,
+};
+
 const labelTextSx = {
   ...baseTextSx,
-  fontWeight: 700,
+  fontWeight: 650,
 };
 
 const buttonTextSx = {
   ...baseTextSx,
-  fontWeight: 700,
+  fontWeight: 650,
 };
 
 const profileSections = [
@@ -336,28 +353,26 @@ function CompanyProfile() {
               <Typography
                 component="h1"
                 sx={{
-                  ...baseTextSx,
+                  ...companyDisplayTextSx,
                   color: companyPalette.black,
-                  fontSize: { xs: 34, sm: 54, md: 68 },
-                  fontWeight: 800,
-                  lineHeight: 1.12,
-                  maxWidth: 820,
+                  fontSize: { xs: 31, sm: 46, md: 58 },
+                  fontWeight: 760,
+                  lineHeight: 1.18,
+                  maxWidth: 880,
                   mb: { xs: 2.4, sm: 3.2 },
                 }}
               >
-                난임상담톡톡은 난임 전문 콘텐츠와 상담 서비스를 제공하는 무료 회원제 플랫폼입니다.
+                난임상담톡톡은 난임을 준비하는 사람들이 정보를 이해하고, 다음 선택을 준비할 수 있도록 돕는 플랫폼입니다.
               </Typography>
               <Typography
                 sx={{
-                  ...baseTextSx,
+                  ...companyBodyTextSx,
                   color: companyPalette.muted,
-                  fontSize: { xs: 16, sm: 19 },
-                  fontWeight: 400,
-                  lineHeight: 1.76,
-                  maxWidth: 620,
+                  fontSize: { xs: 15.5, sm: 18 },
+                  maxWidth: 700,
                 }}
               >
-                난임상담톡톡은 난임 전문 기자와 골통주부가 함께 운영하는 무료 회원제 난임 정보·상담 서비스입니다.
+                난임 전문 기자와 골통주부가 함께 운영하며, 생식의학 뉴스·난임백과·상담 콘텐츠를 무료 회원제로 제공합니다. 의료기관 연결이나 유도 없이 정보와 상담의 접근성을 높이는 데 집중합니다.
               </Typography>
             </Box>
 
