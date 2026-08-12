@@ -101,6 +101,27 @@ const serviceLinks = [
   { label: '공지사항', path: '/notice', icon: <MedicalInformationRoundedIcon /> },
 ];
 
+const companyScreenshots = [
+  {
+    title: '홈',
+    caption: '채팅, 백과, 뉴스, 영상을 한 화면에서',
+    src: '/company-app-home.jpg',
+    alt: '난임상담톡톡 앱 홈 화면',
+  },
+  {
+    title: '난임백과',
+    caption: '주제별 난임 정보를 보기 쉽게 정리',
+    src: '/company-app-encyclopedia.jpg',
+    alt: '난임상담톡톡 앱 난임백과 화면',
+  },
+  {
+    title: '난임뉴스',
+    caption: '생식의학 뉴스를 선별해 제공',
+    src: '/company-app-news.jpg',
+    alt: '난임상담톡톡 앱 난임뉴스 화면',
+  },
+];
+
 const editorialFrameSx = {
   width: '100%',
   maxWidth: 1040,
@@ -154,6 +175,24 @@ const secondaryButtonSx = {
   '&:active': {
     transform: 'translateY(0)',
   },
+};
+
+const phoneFrameSx = {
+  position: 'relative',
+  overflow: 'hidden',
+  borderRadius: 1,
+  border: `1px solid ${companyPalette.lineStrong}`,
+  bgcolor: companyPalette.surface,
+  boxShadow: '0 24px 44px rgba(17, 19, 18, 0.16)',
+  aspectRatio: '379 / 820',
+};
+
+const phoneImageSx = {
+  display: 'block',
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  objectPosition: 'top center',
 };
 
 function CompanyProfile() {
@@ -374,25 +413,141 @@ function CompanyProfile() {
             <Box
               component="section"
               sx={{
-                borderRadius: 0.8,
-                overflow: 'hidden',
                 border: `1px solid ${companyPalette.lineStrong}`,
                 bgcolor: companyPalette.paper,
                 mb: { xs: 3.4, sm: 4.4 },
               }}
             >
               <Box
-                component="img"
-                src="/home-dashboard.png"
-                alt="난임상담톡톡 서비스 소개 이미지"
                 sx={{
-                  display: 'block',
-                  width: '100%',
-                  height: { xs: 248, sm: 360, md: 430 },
-                  objectFit: 'cover',
-                  objectPosition: '50% 34%',
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '270px minmax(0, 1fr)' },
+                  gap: { xs: 2.4, md: 3.2 },
+                  p: { xs: 2, sm: 2.6, md: 3 },
                 }}
-              />
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: 2,
+                    borderBottom: { xs: `1px solid ${companyPalette.lineStrong}`, md: 0 },
+                    borderRight: { md: `1px solid ${companyPalette.lineStrong}` },
+                    pb: { xs: 2.4, md: 0 },
+                    pr: { md: 3 },
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      sx={{
+                        ...labelTextSx,
+                        color: companyPalette.muted,
+                        fontSize: 11,
+                        mb: 1.2,
+                      }}
+                    >
+                      서비스 화면
+                    </Typography>
+                    <Typography
+                      sx={{
+                        ...baseTextSx,
+                        color: companyPalette.black,
+                        fontSize: { xs: 25, sm: 30, md: 32 },
+                        fontWeight: 800,
+                        lineHeight: 1.18,
+                        mb: 1.4,
+                      }}
+                    >
+                      실제 앱 화면으로 보는 난임상담톡톡
+                    </Typography>
+                    <Typography
+                      sx={{
+                        ...baseTextSx,
+                        color: companyPalette.muted,
+                        fontSize: 13.5,
+                        fontWeight: 400,
+                        lineHeight: 1.68,
+                      }}
+                    >
+                      홈, 난임백과, 난임뉴스 화면을 통해 서비스의 주요 정보 흐름을 확인할 수 있습니다.
+                    </Typography>
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      ...baseTextSx,
+                      color: companyPalette.subtle,
+                      fontSize: 12,
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    실제 앱 화면
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: 'repeat(3, minmax(150px, 1fr))', sm: '1.1fr 0.78fr' },
+                    gridTemplateRows: { sm: 'repeat(2, minmax(0, 1fr))' },
+                    gap: { xs: 1.2, sm: 1.6, md: 2 },
+                    overflowX: { xs: 'auto', sm: 'visible' },
+                    pb: { xs: 0.6, sm: 0 },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      ...phoneFrameSx,
+                      gridRow: { sm: '1 / span 2' },
+                      maxWidth: { xs: 178, sm: 310, md: 330 },
+                      justifySelf: { xs: 'start', sm: 'center' },
+                      alignSelf: 'center',
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={companyScreenshots[0].src}
+                      alt={companyScreenshots[0].alt}
+                      loading="lazy"
+                      sx={phoneImageSx}
+                    />
+                  </Box>
+
+                  {companyScreenshots.slice(1).map((screen) => (
+                    <Box
+                      key={screen.src}
+                      sx={{
+                        minWidth: { xs: 150, sm: 0 },
+                        maxWidth: { xs: 168, sm: 210, md: 230 },
+                        justifySelf: { xs: 'start', sm: 'center' },
+                        alignSelf: 'center',
+                      }}
+                    >
+                      <Box sx={phoneFrameSx}>
+                        <Box
+                          component="img"
+                          src={screen.src}
+                          alt={screen.alt}
+                          loading="lazy"
+                          sx={phoneImageSx}
+                        />
+                      </Box>
+                      <Typography
+                        sx={{
+                          ...baseTextSx,
+                          color: companyPalette.ink,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          mt: 1,
+                        }}
+                      >
+                        {screen.title}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
             </Box>
 
             <Box

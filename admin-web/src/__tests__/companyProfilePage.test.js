@@ -71,7 +71,6 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/NANIMTALK/);
     expect(companyProfile).toMatch(/회사 소개/);
     expect(companyProfile).toMatch(/사업 개요/);
-    expect(companyProfile).toMatch(/home-dashboard\.png/);
     expect(companyProfile).toMatch(/editorialFrameSx/);
     expect(companyProfile).not.toMatch(/OUR ROLE/);
     expect(companyProfile).not.toMatch(/BUSINESS PROFILE/);
@@ -83,6 +82,30 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/letterSpacing: '0\./);
     expect(companyProfile).not.toMatch(/fontWeight: 9/);
     expect(companyProfile).not.toMatch(/fontWeight: 850/);
+  });
+
+  test('company profile uses real app screenshots instead of the home dashboard image', () => {
+    const companyProfile = read('components/CompanyProfile.jsx');
+    const publicDir = path.join(srcDir, '..', 'public');
+
+    expect(companyProfile).toMatch(/companyScreenshots/);
+    expect(companyProfile).toMatch(/company-app-home\.jpg/);
+    expect(companyProfile).toMatch(/company-app-encyclopedia\.jpg/);
+    expect(companyProfile).toMatch(/company-app-news\.jpg/);
+    expect(companyProfile).toMatch(/서비스 화면/);
+    expect(companyProfile).toMatch(/실제 앱 화면/);
+    expect(companyProfile).not.toMatch(/home-dashboard\.png/);
+
+    [
+      'company-app-home.jpg',
+      'company-app-encyclopedia.jpg',
+      'company-app-news.jpg',
+    ].forEach((fileName) => {
+      const filePath = path.join(publicDir, fileName);
+
+      expect(fs.existsSync(filePath)).toBe(true);
+      expect(fs.statSync(filePath).size).toBeLessThan(500 * 1024);
+    });
   });
 
   test('company profile includes lightweight interactive editorial touches', () => {
