@@ -16,7 +16,7 @@ describe('company profile page', () => {
     expect(app).toMatch(/<CompanyProfile \/>/);
     expect(app).toMatch(/'\/company': \{/);
     expect(app).toMatch(/아기성공연구소 회사소개/);
-    expect(app).not.toMatch(/난임상담톡톡 회사소개/);
+    expect(app).not.toMatch(/난임정보톡톡 회사소개/);
     expect(app).toMatch(/shouldIndex: true/);
     expect(app).not.toMatch(/path="\/company"[\s\S]*?<Layout>[\s\S]*?<CompanyProfile \/>[\s\S]*?<\/Layout>/);
   });
@@ -34,7 +34,7 @@ describe('company profile page', () => {
     const companyProfile = read('components/CompanyProfile.jsx');
 
     expect(companyProfile).toMatch(/아기성공연구소/);
-    expect(companyProfile).not.toMatch(/>\s*난임상담톡톡\s*</);
+    expect(companyProfile).not.toMatch(/>\s*난임정보톡톡\s*</);
     expect(companyProfile).toMatch(/무료 회원제 난임 정보·상담 플랫폼/);
     expect(companyProfile).toMatch(/난임 전문 기자가 운영하는 무료 회원제 난임 정보·상담 플랫폼/);
     expect(companyProfile).toMatch(/난임 전문 기자가 운영하며, 생식의학 뉴스·난임백과·상담 콘텐츠를 무료 회원제로 제공합니다/);
@@ -43,8 +43,8 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/난임 전문 기자와 골통주부가 함께 운영하는 무료 회원제 난임 정보·상담 플랫폼/);
     expect(companyProfile).toMatch(/정보와 상담의 접근성을 높이는 데 집중합니다/);
     expect(companyProfile).not.toMatch(/공식 사업 소개/);
-    expect(companyProfile).not.toMatch(/난임상담톡톡은 난임을 준비하는 사람들이 정보를 이해하고, 다음 선택을 준비할 수 있도록 돕는 플랫폼입니다/);
-    expect(companyProfile).not.toMatch(/난임상담톡톡은 난임 전문 콘텐츠와 상담 서비스를 제공하는 무료 회원제 플랫폼입니다/);
+    expect(companyProfile).not.toMatch(/난임정보톡톡은 난임을 준비하는 사람들이 정보를 이해하고, 다음 선택을 준비할 수 있도록 돕는 플랫폼입니다/);
+    expect(companyProfile).not.toMatch(/난임정보톡톡은 난임 전문 콘텐츠와 상담 서비스를 제공하는 무료 회원제 플랫폼입니다/);
     expect(companyProfile).not.toMatch(/난임 치료 여정에 필요한 정보를 한곳에 모읍니다/);
     expect(companyProfile).toMatch(/무료 회원제로 제공합니다/);
     expect(companyProfile).toMatch(/콘텐츠·뉴스·상담 서비스/);
@@ -112,7 +112,7 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/대표 이미지/);
     expect(companyProfile).not.toMatch(/홈 화면 대표 이미지/);
     expect(companyProfile).not.toMatch(/서비스의 분위기와 핵심 메시지/);
-    expect(companyProfile).not.toMatch(/난임상담톡톡 공식 홈 이미지/);
+    expect(companyProfile).not.toMatch(/난임정보톡톡 공식 홈 이미지/);
     expect(companyProfile).not.toMatch(/representativeImageFrameSx/);
     expect(companyProfile).not.toMatch(/phoneMockupSx/);
     expect(companyProfile).not.toMatch(/companyScreenshots/);
@@ -152,7 +152,7 @@ describe('company profile page', () => {
     const companyIndex = fs.readFileSync(companyIndexPath, 'utf8');
 
     expect(companyIndex).toMatch(/아기성공연구소 회사소개/);
-    expect(companyIndex).not.toMatch(/난임상담톡톡 회사소개/);
+    expect(companyIndex).not.toMatch(/난임정보톡톡 회사소개/);
     expect(companyIndex).toMatch(/agisungong\.net\/company/);
     expect(companyIndex).toMatch(/URLSearchParams/);
     expect(companyIndex).toMatch(/\?p=/);

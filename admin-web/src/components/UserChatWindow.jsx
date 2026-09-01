@@ -746,7 +746,7 @@ function UserChatWindow() {
             letterSpacing: '-0.03em',
           }}
         >
-          난임상담톡톡
+          난임정보톡톡
         </Typography>
         <Typography
           sx={{
@@ -757,7 +757,7 @@ function UserChatWindow() {
             lineHeight: 1.9,
           }}
         >
-          난임상담톡톡 공식 홈페이지에서는 난임백과, 뉴스, 공지사항, 아기성공TV와 전문가 1:1
+          난임정보톡톡 공식 홈페이지에서는 난임백과, 뉴스, 공지사항, 아기성공TV와 전문가 1:1
           상담을 제공합니다.
         </Typography>
         <Typography

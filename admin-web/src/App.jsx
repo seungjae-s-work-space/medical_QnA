@@ -19,11 +19,11 @@ import { CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colors } from './theme';
 
-const SITE_NAME = '난임상담톡톡';
+const SITE_NAME = '난임정보톡톡';
 const SITE_URL = 'https://agisungong.net';
 const DEFAULT_TITLE = `${SITE_NAME} 공식 홈페이지 | 난임 정보 포털`;
 const DEFAULT_DESCRIPTION =
-  '난임상담톡톡 공식 홈페이지입니다. 난임백과, 뉴스, 공지사항, 아기성공TV와 전문가 상담을 제공하는 난임 정보 포털입니다.';
+  '난임정보톡톡 공식 홈페이지입니다. 난임백과, 뉴스, 공지사항, 아기성공TV와 전문가 상담을 제공하는 난임 정보 포털입니다.';
 
 function updateMetaTag(attribute, key, content) {
   let tag = document.head.querySelector(`meta[${attribute}="${key}"]`);
@@ -74,7 +74,7 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
   if (pathname.startsWith('/promotions/')) {
     return {
       title: `프로모션 | ${SITE_NAME}`,
-      description: '난임상담톡톡에서 진행 중인 프로모션과 안내를 확인할 수 있습니다.',
+      description: '난임정보톡톡에서 진행 중인 프로모션과 안내를 확인할 수 있습니다.',
       shouldIndex: true,
     };
   }
@@ -98,7 +98,7 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
         },
     '/login': {
       title: `로그인 | ${SITE_NAME}`,
-      description: '난임상담톡톡 로그인 및 회원가입 화면입니다.',
+      description: '난임정보톡톡 로그인 및 회원가입 화면입니다.',
       shouldIndex: false,
     },
     '/company': {

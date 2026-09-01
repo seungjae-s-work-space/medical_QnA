@@ -153,7 +153,7 @@ function HomeDashboard() {
                 letterSpacing: 0,
               }}
             >
-              난임상담톡톡
+              난임정보톡톡
             </Typography>
             <Typography
               sx={{
@@ -201,7 +201,7 @@ function HomeDashboard() {
             <Box
               component="img"
               src="/home-dashboard.png"
-              alt="난임상담톡톡"
+              alt="난임정보톡톡"
               sx={{
                 display: 'block',
                 width: '100%',

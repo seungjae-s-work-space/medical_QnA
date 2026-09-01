@@ -49,6 +49,6 @@ describe('web design refresh', () => {
     expect(layout).toMatch(/navItemSx/);
     expect(home).toMatch(/home-dashboard\.png/);
     expect(home).toMatch(/linear-gradient/);
-    expect(home).toMatch(/난임상담톡톡/);
+    expect(home).toMatch(/난임정보톡톡/);
   });
 });

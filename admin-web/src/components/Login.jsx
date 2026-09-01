@@ -205,7 +205,7 @@ function Login() {
               letterSpacing: '-0.02em',
             }}
           >
-            난임상담톡톡
+            난임정보톡톡
           </Typography>
           <Typography
             variant="h6"
@@ -272,7 +272,7 @@ function Login() {
               }}
             >
               {isSignupMode
-                ? '계정을 만들고 난임상담톡톡 서비스를 시작해 보세요'
+                ? '계정을 만들고 난임정보톡톡 서비스를 시작해 보세요'
                 : '계정에 로그인하여 상담과 콘텐츠를 이용하세요'}
             </Typography>
           </Box>

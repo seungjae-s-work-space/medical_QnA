@@ -246,7 +246,7 @@ function Layout({ children }) {
                 fontSize: 18,
               }}
             >
-              난임상담톡톡
+              난임정보톡톡
             </Typography>
             <Typography
               variant="caption"
