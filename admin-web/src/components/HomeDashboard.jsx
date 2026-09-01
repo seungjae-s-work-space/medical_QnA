@@ -200,7 +200,7 @@ function HomeDashboard() {
           >
             <Box
               component="img"
-              src="/home-dashboard.png"
+              src="/home-dashboard.png?v=info-talktalk-poster"
               alt="난임정보톡톡"
               sx={{
                 display: 'block',

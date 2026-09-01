@@ -119,7 +119,7 @@ const serviceLinks = [
 ];
 
 const companyHeroImage = {
-  src: '/home-dashboard.png?v=3a2a078',
+  src: '/home-dashboard.png?v=info-talktalk-poster',
   alt: '아기성공연구소 서비스 홈 이미지',
 };
 

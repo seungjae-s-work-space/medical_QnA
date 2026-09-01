@@ -108,7 +108,7 @@ describe('company profile page', () => {
     const publicDir = path.join(srcDir, '..', 'public');
 
     expect(companyProfile).toMatch(/companyHeroImage/);
-    expect(companyProfile).toMatch(/home-dashboard\.png\?v=3a2a078/);
+    expect(companyProfile).toMatch(/home-dashboard\.png\?v=info-talktalk-poster/);
     expect(companyProfile).not.toMatch(/대표 이미지/);
     expect(companyProfile).not.toMatch(/홈 화면 대표 이미지/);
     expect(companyProfile).not.toMatch(/서비스의 분위기와 핵심 메시지/);
