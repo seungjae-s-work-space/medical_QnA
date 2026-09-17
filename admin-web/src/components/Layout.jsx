@@ -16,11 +16,16 @@ import {
   Avatar,
   Divider,
   Badge,
+  IconButton,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
+import MaleRoundedIcon from '@mui/icons-material/MaleRounded';
 import CampaignRoundedIcon from '@mui/icons-material/CampaignRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
@@ -55,6 +60,9 @@ const navItemSx = (isActive) => ({
 });
 
 function Layout({ children }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin, isLoggedIn } = useAuth();
@@ -132,6 +140,14 @@ function Layout({ children }) {
         visible: true, // 모든 사용자
       },
       {
+        path: '/male-infertility',
+        label: '남성난임',
+        icon: <MaleRoundedIcon />,
+        description: isAdmin ? '남성난임 콘텐츠 관리' : '남성난임 정보 보기',
+        badge: 0,
+        visible: true,
+      },
+      {
         path: '/video',
         label: '아기성공TV',
         icon: <YouTubeIcon />,
@@ -177,6 +193,7 @@ function Layout({ children }) {
   };
 
   const handleMenuNavigation = (path) => {
+    setMobileMenuOpen(false);
     if (shouldShowMembershipPrompt(path, isLoggedIn)) {
       const normalizedCurrentPath =
         location.pathname.replace(/\/+$/, '') || '/';
@@ -209,9 +226,12 @@ function Layout({ children }) {
     >
       {/* Sidebar */}
       <Drawer
-        variant="permanent"
+        variant={isMobile ? 'temporary' : 'permanent'}
+        open={!isMobile || mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
-          width: DRAWER_WIDTH,
+          width: isMobile ? 0 : DRAWER_WIDTH,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
@@ -405,10 +425,21 @@ function Layout({ children }) {
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0,
           minHeight: '100vh',
           overflow: 'auto',
         }}
       >
+        {isMobile && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, minHeight: 56, bgcolor: colors.background, borderBottom: `1px solid ${colors.border}` }}>
+            <IconButton aria-label="메뉴 열기" onClick={() => setMobileMenuOpen(true)}>
+              <MenuRoundedIcon />
+            </IconButton>
+            <Typography sx={{ fontSize: 17, fontWeight: 700, color: colors.textPrimary }}>
+              난임정보톡톡
+            </Typography>
+          </Box>
+        )}
         {children}
       </Box>
       <MembershipRequiredDialog

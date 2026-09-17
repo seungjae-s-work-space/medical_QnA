@@ -13,6 +13,8 @@ import '../../widgets/membership_required_dialog.dart';
 import '../../widgets/promotion_carousel.dart';
 import 'chat_screen.dart';
 import 'encyclopedia_screen.dart';
+import '../../models/article_section.dart';
+import '../../widgets/home_news_banner.dart';
 import 'news_screen.dart';
 import 'notice_screen.dart';
 import 'video_screen.dart';
@@ -481,15 +483,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openMaleInfertilityScreen() {
+    if (_checkGuestAndShowMembershipPrompt(_openMaleInfertilityContent)) return;
+    _openMaleInfertilityContent();
+  }
+
+  void _openMaleInfertilityContent() {
+    _pushFeaturePage(
+      title: ArticleSection.maleInfertility.title,
+      child: const EncyclopediaScreen(section: ArticleSection.maleInfertility),
+    );
+  }
+
   Widget _buildFeatureMosaic() {
     return LayoutBuilder(
       builder: (context, constraints) {
         const gap = 14.0;
         final largeWidth = (constraints.maxWidth - gap) / 2;
-        final largeHeight = largeWidth * 0.86;
+        final largeHeight = (largeWidth * 0.86).clamp(184.0, 300.0);
 
         return Column(
           children: [
+            HomeNewsBanner(onTap: _openNewsScreen),
+            const SizedBox(height: gap),
             Row(
               children: [
                 Expanded(
@@ -530,13 +546,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: SizedBox(
                     height: largeHeight,
                     child: _LargeFeatureCard(
-                      title: '난임뉴스',
-                      icon: Icons.public_outlined,
-                      tone: const Color(0xFF0C457B),
-                      surfaceTint: const Color(0xFFA5BBEC),
-                      imageAsset: 'assets/grid/news.png',
+                      title: '남성난임',
+                      icon: Icons.male_rounded,
+                      tone: AppColors.accentDeep,
+                      surfaceTint: AppColors.accentSoft,
+                      imageAsset: 'assets/grid/encyclopedia.png',
                       imageAlignment: Alignment.centerRight,
-                      onTap: _openNewsScreen,
+                      onTap: _openMaleInfertilityScreen,
                     ),
                   ),
                 ),

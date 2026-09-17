@@ -8,6 +8,7 @@ import ConversationList from './components/ConversationList';
 import ChatWindow from './components/ChatWindow';
 import UserChatWindow from './components/UserChatWindow';
 import EncyclopediaManager from './components/EncyclopediaManager';
+import { ARTICLE_SECTIONS } from './utils/articleSections';
 import NewsManager from './components/NewsManager';
 import NoticeManager from './components/NoticeManager';
 import VideoManager from './components/VideoManager';
@@ -115,6 +116,11 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
     '/news': {
       title: `뉴스 | ${SITE_NAME}`,
       description: '난임, 임신 준비, 의료 분야의 최신 소식을 확인할 수 있습니다.',
+      shouldIndex: true,
+    },
+    '/male-infertility': {
+      title: `남성난임 | ${SITE_NAME}`,
+      description: '남성난임과 임신 준비에 관한 정보를 확인할 수 있습니다.',
       shouldIndex: true,
     },
     '/notice': {
@@ -260,7 +266,19 @@ function RoutedAppContent() {
           path="/encyclopedia"
           element={
             <Layout>
-              <EncyclopediaManager readOnly={!isAdmin} />
+              <EncyclopediaManager key="encyclopedia" readOnly={!isAdmin} />
+            </Layout>
+          }
+        />
+        <Route
+          path="/male-infertility"
+          element={
+            <Layout>
+              <EncyclopediaManager
+                key="male-infertility"
+                section={ARTICLE_SECTIONS.maleInfertility}
+                readOnly={!isAdmin}
+              />
             </Layout>
           }
         />

@@ -1,0 +1,10 @@
+{
+  "name": "medical-qa-firebase-rules-tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test male-infertility.test.mjs" },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "3.0.4",
+    "firebase": "10.14.1"
+  }
+}

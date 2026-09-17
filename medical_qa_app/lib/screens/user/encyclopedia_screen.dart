@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../../models/encyclopedia_model.dart';
+import '../../models/article_section.dart';
 import '../../services/encyclopedia_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/app_colors.dart';
@@ -13,14 +14,18 @@ import '../../widgets/screenshot_warning_listener.dart';
 import 'package:intl/intl.dart';
 
 class EncyclopediaScreen extends StatefulWidget {
-  const EncyclopediaScreen({super.key});
+  const EncyclopediaScreen(
+      {super.key, this.section = ArticleSection.encyclopedia});
+
+  final ArticleSection section;
 
   @override
   State<EncyclopediaScreen> createState() => _EncyclopediaScreenState();
 }
 
 class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
-  final EncyclopediaService _service = EncyclopediaService();
+  late final EncyclopediaService _service =
+      EncyclopediaService(section: widget.section);
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -33,6 +38,7 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = false;
   bool _isOpeningArticle = false;
+  bool _loadFailed = false;
   int _totalItemCount = 0;
   DocumentSnapshot? _lastDocument;
 
@@ -58,22 +64,33 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   }
 
   Future<void> _loadArticles() async {
-    final pageFuture =
-        _service.getPublishedArticlesPage(pageSize: _queryPageSize);
-    final countFuture = _service.getPublishedArticlesCount();
-    final result = await pageFuture;
-    final totalItemCount = await countFuture;
-    if (mounted) {
-      setState(() {
-        _allArticles = result.items;
-        _lastDocument = result.lastDocument;
-        _hasMore = result.hasMore;
-        _totalItemCount = totalItemCount;
-        _isLoading = false;
-        if (_currentPage >= _totalPages && _totalPages > 0) {
-          _currentPage = _totalPages - 1;
-        }
-      });
+    setState(() {
+      _isLoading = true;
+      _loadFailed = false;
+    });
+    try {
+      final result =
+          await _service.getPublishedArticlesPage(pageSize: _queryPageSize);
+      final totalItemCount = await _service.getPublishedArticlesCount();
+      if (mounted) {
+        setState(() {
+          _allArticles = result.items;
+          _lastDocument = result.lastDocument;
+          _hasMore = result.hasMore;
+          _totalItemCount = totalItemCount;
+          _isLoading = false;
+          if (_currentPage >= _totalPages && _totalPages > 0) {
+            _currentPage = _totalPages - 1;
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _loadFailed = true;
+        });
+      }
     }
   }
 
@@ -155,6 +172,22 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
   Widget _buildArticleList() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_loadFailed) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('글을 불러오지 못했습니다.'),
+            TextButton.icon(
+              onPressed: _loadArticles,
+              icon: const Icon(Icons.refresh),
+              label: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      );
     }
 
     if (_allArticles.isEmpty) {
@@ -475,13 +508,16 @@ class _EncyclopediaScreenState extends State<EncyclopediaScreen> {
 
     // 게스트 모드가 아닐 때만 조회수 증가
     if (!authProvider.isGuest) {
-      _service.incrementViewCount(article.id);
+      _service.incrementViewCount(article.id).catchError((Object error) {
+        debugPrint('Article view count update failed: $error');
+      });
     }
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EncyclopediaDetailScreen(article: displayArticle),
+        builder: (context) => EncyclopediaDetailScreen(
+            article: displayArticle, section: widget.section),
       ),
     );
 
@@ -986,13 +1022,17 @@ String _cleanHtmlContent(String html) {
 // 상세 화면
 class EncyclopediaDetailScreen extends StatelessWidget {
   final EncyclopediaModel article;
+  final ArticleSection section;
 
-  const EncyclopediaDetailScreen({super.key, required this.article});
+  const EncyclopediaDetailScreen(
+      {super.key,
+      required this.article,
+      this.section = ArticleSection.encyclopedia});
 
   @override
   Widget build(BuildContext context) {
     return ScreenshotWarningListener(
-      contentType: 'encyclopedia',
+      contentType: section.collectionName,
       contentId: article.id,
       contentTitle: article.title,
       child: Scaffold(
@@ -1004,9 +1044,9 @@ class EncyclopediaDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            '난임백과',
-            style: TextStyle(
+          title: Text(
+            section.title,
+            style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 20,
               fontWeight: FontWeight.w600,

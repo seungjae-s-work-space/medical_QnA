@@ -92,6 +92,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // 남성난임: 공개 글 열람, 관리자 편집, 회원의 조회수 증가
+    match /male_infertility/{articleId} {
+      allow read: if resource.data.isPublished == true || isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+                       (isAuthenticated() &&
+                        resource.data.isPublished == true &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount']) &&
+                        request.resource.data.viewCount == resource.data.viewCount + 1);
+    }
+
     // notices 컬렉션 (공지사항)
     match /notices/{noticeId} {
       // 읽기: 공개된 글은 모두(비로그인 포함), 비공개 글은 관리자만

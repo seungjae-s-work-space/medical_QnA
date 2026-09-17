@@ -30,6 +30,7 @@ import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import RemoveRedEyeRoundedIcon from '@mui/icons-material/RemoveRedEyeRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
+import MaleRoundedIcon from '@mui/icons-material/MaleRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
@@ -60,6 +61,7 @@ import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
 import { getArticleContentSx } from '../utils/articleContentStyles';
+import { ARTICLE_SECTIONS } from '../utils/articleSections';
 import {
   handleQuillPasteWithPreservedScroll,
   installQuillDialogScrollGuard,
@@ -142,9 +144,13 @@ const mergeConsecutiveBlockquotes = (html) => {
 const ITEMS_PER_PAGE = 17;
 const QUERY_PAGE_SIZE = ITEMS_PER_PAGE;
 
-function EncyclopediaManager({ readOnly = false }) {
+function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.encyclopedia }) {
+  const collectionName = section.collection;
+  const SectionIcon = section === ARTICLE_SECTIONS.maleInfertility ? MaleRoundedIcon : AutoStoriesRoundedIcon;
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -204,7 +210,7 @@ function EncyclopediaManager({ readOnly = false }) {
       const mimeType = blob.type || 'image/jpeg';
       const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
       const fileName = `${uuidv4()}.${ext}`;
-      const storageRef = ref(storage, `encyclopedia_images/${fileName}`);
+      const storageRef = ref(storage, `${collectionName}_images/${fileName}`);
 
       // 메타데이터와 함께 업로드
       const metadata = { contentType: mimeType };
@@ -246,7 +252,7 @@ function EncyclopediaManager({ readOnly = false }) {
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${uuidv4()}.${ext}`;
-      const storageRef = ref(storage, `encyclopedia_thumbnails/${fileName}`);
+      const storageRef = ref(storage, `${collectionName}_thumbnails/${fileName}`);
       const metadata = { contentType: file.type };
       await uploadBytes(storageRef, file, metadata);
       const url = await getDownloadURL(storageRef);
@@ -264,7 +270,7 @@ function EncyclopediaManager({ readOnly = false }) {
     if (!readOnly || !auth.currentUser) return;
 
     try {
-      await updateDoc(doc(db, 'encyclopedia', article.id), {
+      await updateDoc(doc(db, collectionName, article.id), {
         viewCount: increment(1),
       });
       setArticles((prev) => prev.map((item) => (
@@ -302,7 +308,7 @@ function EncyclopediaManager({ readOnly = false }) {
         // 파일 확장자 추출
         const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
         const fileName = `${uuidv4()}.${ext}`;
-        const storageRef = ref(storage, `encyclopedia_images/${fileName}`);
+        const storageRef = ref(storage, `${collectionName}_images/${fileName}`);
 
         // 메타데이터와 함께 업로드
         const metadata = { contentType: file.type };
@@ -369,7 +375,7 @@ function EncyclopediaManager({ readOnly = false }) {
         borderRadius: '4px',
       },
     },
-  }), []);
+  }), [collectionName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Quill 붙여넣기/삽입이 DialogContent 스크롤을 튕기지 않도록 보호
   useEffect(() => {
@@ -389,12 +395,12 @@ function EncyclopediaManager({ readOnly = false }) {
     }
     constraints.push(limit(QUERY_PAGE_SIZE));
 
-    return query(collection(db, 'encyclopedia'), ...constraints);
+    return query(collection(db, collectionName), ...constraints);
   };
 
   const buildArticlesCountQuery = () => {
     const constraints = readOnly ? [where('isPublished', '==', true)] : [];
-    return query(collection(db, 'encyclopedia'), ...constraints);
+    return query(collection(db, collectionName), ...constraints);
   };
 
   const mapArticlesSnapshot = (snapshot) => snapshot.docs.map((doc) => ({
@@ -412,36 +418,47 @@ function EncyclopediaManager({ readOnly = false }) {
     setHasMore(snapshot.docs.length === QUERY_PAGE_SIZE);
   };
 
-  // 데이터 로드 함수
-  const loadArticles = async () => {
-    await loadTotalCount();
+  useEffect(() => {
+    let active = true;
+    let unsubscribe;
+    setLoading(true);
+    setLoadError(false);
+    setArticles([]);
+    setCurrentPage(0);
     const q = buildArticlesQuery();
-
-    if (readOnly) {
-      // 일반 사용자: 일회성 조회 (read 수 절약)
-      const snapshot = await getDocs(q);
-      const articleList = mapArticlesSnapshot(snapshot);
-      setArticles(articleList);
+    const receivePage = (snapshot) => {
+      if (!active) return;
+      setArticles(mapArticlesSnapshot(snapshot));
       updatePaginationCursor(snapshot);
       setLoading(false);
-    } else {
-      // 관리자: 실시간 리스너 (CRUD 반영)
-      return onSnapshot(q, (snapshot) => {
-        const articleList = mapArticlesSnapshot(snapshot);
-        setArticles(articleList);
-        updatePaginationCursor(snapshot);
+    };
+    const fail = (error) => {
+      if (active) {
+        console.error('Article load failed:', error);
+        setLoadError(true);
         setLoading(false);
-      });
-    }
-  };
-
-  useEffect(() => {
-    let unsubscribe;
-    loadArticles().then((result) => {
-      unsubscribe = result;
-    });
-    return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
-  }, [readOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+      }
+    };
+    const load = async () => {
+      try {
+        const count = await getCountFromServer(buildArticlesCountQuery());
+        if (!active) return;
+        setTotalItemCount(count.data().count);
+        if (readOnly) {
+          receivePage(await getDocs(q));
+        } else {
+          unsubscribe = onSnapshot(q, receivePage, fail);
+        }
+      } catch (error) {
+        fail(error);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, [readOnly, collectionName, reloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const readArticlesPage = async (cursor) => {
     const snapshot = await getDocs(buildArticlesQuery(cursor));
@@ -570,7 +587,7 @@ function EncyclopediaManager({ readOnly = false }) {
       const user = auth.currentUser;
 
       if (editingArticle) {
-        await updateDoc(doc(db, 'encyclopedia', editingArticle.id), {
+        await updateDoc(doc(db, collectionName, editingArticle.id), {
           title: title.trim(),
           content: convertedContent,
           imageUrl,
@@ -581,7 +598,7 @@ function EncyclopediaManager({ readOnly = false }) {
         });
         setSnackbar({ open: true, message: '글이 수정되었습니다', severity: 'success' });
       } else {
-        await addDoc(collection(db, 'encyclopedia'), {
+        await addDoc(collection(db, collectionName), {
           title: title.trim(),
           content: convertedContent,
           imageUrl,
@@ -609,7 +626,7 @@ function EncyclopediaManager({ readOnly = false }) {
 
   const handleTogglePublish = async (article) => {
     try {
-      await updateDoc(doc(db, 'encyclopedia', article.id), {
+      await updateDoc(doc(db, collectionName, article.id), {
         isPublished: !article.isPublished,
         updatedAt: serverTimestamp(),
       });
@@ -628,7 +645,7 @@ function EncyclopediaManager({ readOnly = false }) {
     if (!window.confirm(`"${article.title}" 글을 삭제하시겠습니까?`)) return;
 
     try {
-      await deleteDoc(doc(db, 'encyclopedia', article.id));
+      await deleteDoc(doc(db, collectionName, article.id));
       setSnackbar({ open: true, message: '삭제되었습니다', severity: 'success' });
       await loadTotalCount();
     } catch (error) {
@@ -682,6 +699,17 @@ function EncyclopediaManager({ readOnly = false }) {
     );
   }
 
+  if (loadError) {
+    return (
+      <Box sx={widePageShellSx}>
+        <Typography variant="h4" sx={{ mb: 2 }}>{section.title}</Typography>
+        <Alert severity="error" action={<Button onClick={() => setReloadKey((value) => value + 1)}>다시 시도</Button>}>
+          글을 불러오지 못했습니다.
+        </Alert>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={widePageShellSx}>
       {/* Header */}
@@ -689,10 +717,10 @@ function EncyclopediaManager({ readOnly = false }) {
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <Box>
             <Typography variant="h4" sx={{ color: colors.textPrimary, mb: 1 }}>
-              {readOnly ? '난임백과' : '난임백과 관리'}
+              {readOnly ? section.title : `${section.title} 관리`}
             </Typography>
             <Typography variant="body1" sx={{ color: colors.textSecondary }}>
-              {readOnly ? '난임 관련 정보를 확인하세요' : '난임 관련 정보를 작성하고 관리하세요'}
+              {readOnly ? section.description : section.adminDescription}
             </Typography>
           </Box>
           {!readOnly && (
@@ -777,7 +805,7 @@ function EncyclopediaManager({ readOnly = false }) {
               mb: 2,
             }}
           >
-            <AutoStoriesRoundedIcon sx={{ fontSize: 36, color: colors.textTertiary }} />
+            <SectionIcon sx={{ fontSize: 36, color: colors.textTertiary }} />
           </Box>
           <Typography sx={{ color: colors.textSecondary, fontSize: 15, fontWeight: 500 }}>
             {searchQuery ? '검색 결과가 없습니다' : '등록된 글이 없습니다'}
@@ -812,7 +840,7 @@ function EncyclopediaManager({ readOnly = false }) {
                       justifyContent: 'center',
                     }}
                   >
-                    <AutoStoriesRoundedIcon sx={{ fontSize: 56, color: colors.textTertiary, opacity: 0.5 }} />
+                    <SectionIcon sx={{ fontSize: 56, color: colors.textTertiary, opacity: 0.5 }} />
                   </Box>
                 )}
                 <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
@@ -1078,7 +1106,7 @@ function EncyclopediaManager({ readOnly = false }) {
                 }}
               >
                 <ReactQuill
-                  key={editingArticle?.id || 'new-encyclopedia'}
+                  key={editingArticle?.id || `new-${collectionName}`}
                   ref={quillRef}
                   theme="snow"
                   defaultValue={content}
