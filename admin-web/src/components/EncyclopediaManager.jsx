@@ -15,12 +15,14 @@ import {
   Switch,
   FormControlLabel,
   Chip,
+  Checkbox,
   CircularProgress,
   Snackbar,
   Alert,
   Grid,
   InputAdornment,
 } from '@mui/material';
+import ArticleMoveDialog from './ArticleMoveDialog';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
@@ -147,6 +149,7 @@ const QUERY_PAGE_SIZE = ITEMS_PER_PAGE;
 function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.encyclopedia }) {
   const collectionName = section.collection;
   const SectionIcon = section === ARTICLE_SECTIONS.maleInfertility ? MaleRoundedIcon : AutoStoriesRoundedIcon;
+  const canMoveArticles = !readOnly && collectionName === 'encyclopedia';
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -157,6 +160,10 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [searchQuery, setSearchQuery] = useState('');
   const [viewArticle, setViewArticle] = useState(null);
+  const [articleToMove, setArticleToMove] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const firstPageIdsRef = useRef(new Set());
+  const lastLoadedDocRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
   const [hasMore, setHasMore] = useState(false);
@@ -408,12 +415,41 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
     ...doc.data(),
   }));
 
+  const receiveFirstPage = (snapshot) => {
+    const nextArticles = mapArticlesSnapshot(snapshot);
+    const previousIds = firstPageIdsRef.current;
+    const nextIds = new Set(nextArticles.map((article) => article.id));
+    firstPageIdsRef.current = nextIds;
+    const boundary = nextArticles[nextArticles.length - 1];
+    const isPastBoundary = (article) => {
+      const timestamp = article.createdAt;
+      const lastTimestamp = boundary?.createdAt;
+      if (nextArticles.length < QUERY_PAGE_SIZE || !timestamp || !lastTimestamp) return false;
+      return timestamp.seconds < lastTimestamp.seconds
+        || (timestamp.seconds === lastTimestamp.seconds && timestamp.nanoseconds < lastTimestamp.nanoseconds)
+        || (timestamp.seconds === lastTimestamp.seconds && timestamp.nanoseconds === lastTimestamp.nanoseconds
+          && article.id < boundary.id);
+    };
+    setArticles((current) => {
+      const loadedPastFirstPage = current.some((article) => !previousIds.has(article.id));
+      return [
+        ...nextArticles,
+        ...current.filter((article) => !nextIds.has(article.id)
+          && (!previousIds.has(article.id) || (loadedPastFirstPage && isPastBoundary(article)))),
+      ];
+    });
+    if (previousIds.size === 0 || previousIds.has(lastLoadedDocRef.current?.id)) {
+      updatePaginationCursor(snapshot);
+    }
+  };
+
   const loadTotalCount = async () => {
     const snapshot = await getCountFromServer(buildArticlesCountQuery());
     setTotalItemCount(snapshot.data().count);
   };
 
   const updatePaginationCursor = (snapshot) => {
+    lastLoadedDocRef.current = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
     setLastVisibleDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
     setHasMore(snapshot.docs.length === QUERY_PAGE_SIZE);
   };
@@ -424,12 +460,14 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
     setLoading(true);
     setLoadError(false);
     setArticles([]);
+    setSelectedIds([]);
+    firstPageIdsRef.current = new Set();
+    lastLoadedDocRef.current = null;
     setCurrentPage(0);
     const q = buildArticlesQuery();
     const receivePage = (snapshot) => {
       if (!active) return;
-      setArticles(mapArticlesSnapshot(snapshot));
-      updatePaginationCursor(snapshot);
+      receiveFirstPage(snapshot);
       setLoading(false);
     };
     const fail = (error) => {
@@ -504,8 +542,12 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
       }
 
       if (appendedArticles.length > 0) {
-        setArticles((prev) => [...prev, ...appendedArticles]);
+        setArticles((prev) => {
+          const loadedIds = new Set(prev.map((article) => article.id));
+          return [...prev, ...appendedArticles.filter((article) => !loadedIds.has(article.id))];
+        });
       }
+      lastLoadedDocRef.current = cursor;
       setLastVisibleDoc(cursor);
       setHasMore(nextHasMore);
       if (page < loadedPageCount) setCurrentPage(page);
@@ -638,6 +680,27 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
       await loadTotalCount();
     } catch (error) {
       setSnackbar({ open: true, message: '변경 실패', severity: 'error' });
+    }
+  };
+
+  const handleArticleMoved = async ({ ids, targetTitle }) => {
+    const movedIds = new Set(ids);
+    const remainingFiltered = filteredArticles.filter((article) => !movedIds.has(article.id));
+    setArticleToMove(null);
+    setViewArticle(null);
+    setArticles((current) => current.filter((article) => !movedIds.has(article.id)));
+    setSelectedIds((current) => current.filter((id) => !movedIds.has(id)));
+    setCurrentPage((page) => Math.min(page, Math.max(0, Math.ceil(remainingFiltered.length / ITEMS_PER_PAGE) - 1)));
+    setTotalItemCount((count) => Math.max(0, count - ids.length));
+    setSnackbar({ open: true, message: `${ids.length}개 글을 ${targetTitle}(으)로 이동했습니다.`, severity: 'success' });
+    try {
+      await loadTotalCount();
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: '글 이동은 완료했습니다. 전체 글 수를 갱신하려면 새로고침해주세요.',
+        severity: 'warning',
+      });
     }
   };
 
@@ -788,6 +851,19 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
         sx={searchFieldSx()}
       />
 
+      {canMoveArticles && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+          <Button
+            variant="outlined" disabled={selectedIds.length === 0}
+            onClick={() => setArticleToMove(articles.filter((article) => selectedIds.includes(article.id)))}
+          >
+            선택한 글 {selectedIds.length}개 남성난임으로 이동
+          </Button>
+          {selectedIds.length > 0 && <Button onClick={() => setSelectedIds([])}>선택 해제</Button>}
+          <Typography variant="caption" sx={{ color: colors.textSecondary }}>한 번에 최대 100개 선택</Typography>
+        </Box>
+      )}
+
       {/* Article Grid */}
       {filteredArticles.length === 0 ? (
         <Box
@@ -845,6 +921,19 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
                 )}
                 <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
                   <Box display="flex" alignItems="center" gap={1} mb={1.5}>
+                    {canMoveArticles && (
+                      <Checkbox
+                        checked={selectedIds.includes(article.id)}
+                        disabled={selectedIds.length >= 100 && !selectedIds.includes(article.id)}
+                        inputProps={{ 'aria-label': `${article.title} 선택` }}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setSelectedIds((current) => checked ? [...current, article.id] : current.filter((id) => id !== article.id));
+                        }}
+                        size="small"
+                      />
+                    )}
                     {!readOnly && (
                       <Chip
                         size="small"
@@ -1374,7 +1463,15 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
                 dangerouslySetInnerHTML={{ __html: viewArticle.content }}
               />
             </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+            <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexWrap: 'wrap' }}>
+              {canMoveArticles && (
+                <Button
+                  onClick={() => { setArticleToMove([viewArticle]); setViewArticle(null); }}
+                  variant="outlined"
+                >
+                  남성난임으로 이동
+                </Button>
+              )}
               {!readOnly && (
                 <Button
                   onClick={() => handleEditFromView(viewArticle)}
@@ -1391,6 +1488,16 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
           </>
         )}
       </Dialog>
+
+      {canMoveArticles && articleToMove && (
+        <ArticleMoveDialog
+          key={articleToMove.map((article) => article.id).join(',')}
+          articles={articleToMove}
+          sourceCollection={collectionName}
+          onClose={() => setArticleToMove(null)}
+          onMoved={handleArticleMoved}
+        />
+      )}
 
       {/* Snackbar */}
       <Snackbar
