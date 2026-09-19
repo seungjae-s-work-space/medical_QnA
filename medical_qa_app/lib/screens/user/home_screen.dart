@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../design/app_radii.dart';
 import '../../design/app_spacing.dart';
+import '../../legal/app_legal_notice.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
 import '../../services/notice_service.dart';
@@ -259,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     // 서비스 소개
                     const Text(
-                      '〈골통주부의 난임&상담톡〉은 『임신의 기술』, 『난임의사에게 속지 않는 법』의 저자이자 난임 전문 기자인 이승주가, 국내 난임 분야에서 임상 경험과 전문성을 인정받은 26인의 의료진의 자문과 협력을 바탕으로 개설한 난임 정보·상담 중심의 채팅 플랫폼입니다.',
+                      '〈골통주부의 난임&정보톡〉은 『임신의 기술』, 『난임의사에게 속지 않는 법』의 저자이자 난임 전문 기자인 이승주가, 국내 난임 분야에서 임상 경험과 전문성을 인정받은 26인의 의료진의 자문과 협력을 바탕으로 개설한 난임 정보·상담 중심의 채팅 플랫폼입니다.',
                       style: TextStyle(
                         fontSize: 16,
                         color: textPrimary,
@@ -391,6 +392,113 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLegalNoticeSheet() {
+    const sheetBg = Colors.white;
+    const textPrimary = AppColors.textPrimary;
+    const textSecondary = AppColors.textSecondary;
+    const dividerColor = AppColors.border;
+    const cardBg = AppColors.surfaceMuted;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: sheetBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.45,
+        maxChildSize: 0.92,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    AppLegalNotice.title,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: textPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: textSecondary),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: dividerColor),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final section in AppLegalNotice.sections) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: dividerColor),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              section.title,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            for (final paragraph in section.paragraphs) ...[
+                              Text(
+                                paragraph,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: textSecondary,
+                                  height: 1.6,
+                                ),
+                              ),
+                              if (paragraph != section.paragraphs.last)
+                                const SizedBox(height: 10),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    const SizedBox(height: 28),
                   ],
                 ),
               ),
@@ -562,9 +670,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // 로고 영역
-          _buildLogoSection(),
-          const SizedBox(height: 24),
+          // // 로고 영역
+          // _buildLogoSection(),
+          // const SizedBox(height: 24),
 
           // 공지사항 배너
           _buildNoticeBanner(),
@@ -575,6 +683,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildLogoSection() {
     return Image.asset(
       'assets/images/loggo_section4x.png',
@@ -763,6 +872,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Divider(height: 1, color: AppColors.border),
                 ),
                 _buildSettingItem(
+                  icon: Icons.policy_outlined,
+                  title: AppLegalNotice.title,
+                  iconColor: AppColors.accent,
+                  onTap: _showLegalNoticeSheet,
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Divider(height: 1, color: AppColors.border),
+                ),
+                _buildSettingItem(
                   icon: Icons.logout,
                   title: '로그아웃',
                   iconColor: Colors.red.shade300,
@@ -934,7 +1053,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _getAppBarTitle() {
     switch (_currentIndex) {
       case 0:
-        return '난임상담톡';
+        return '난임정보톡';
       case 1:
         return '난임백과';
       case 2:
@@ -942,7 +1061,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 3:
         return '마이페이지';
       default:
-        return '난임상담톡';
+        return '난임정보톡';
     }
   }
 
@@ -1060,7 +1179,8 @@ class _ChatBanner extends StatelessWidget {
         child: Image.asset(
           'assets/images/chatting4xgreen.png',
           width: double.infinity,
-          fit: BoxFit.contain,
+          height: 133,
+          fit: BoxFit.cover,
         ),
       ),
     );

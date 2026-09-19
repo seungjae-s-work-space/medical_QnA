@@ -60,7 +60,7 @@ class NotificationService {
   /// Windows 알림 초기화
   Future<void> _initializeWindows() async {
     await localNotifier.setup(
-      appName: '난임&상담톡',
+      appName: '난임&정보톡',
       shortcutPolicy: ShortcutPolicy.requireCreate,
     );
 

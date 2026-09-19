@@ -63,7 +63,7 @@ void main() async {
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.normal,
-      title: '골통주부의 난임&상담톡',
+      title: '골통주부의 난임&정보톡',
     );
 
     windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -85,7 +85,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
-        title: '골통주부의 난임&상담톡',
+        title: '골통주부의 난임&정보톡',
         navigatorKey: appNavigatorKey,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
@@ -140,7 +140,7 @@ class _AuthWrapperState extends State<AuthWrapper> with TrayListener {
   /// Windows 시스템 트레이 초기화
   Future<void> _initSystemTray() async {
     await trayManager.setIcon('windows/runner/resources/app_icon.ico');
-    await trayManager.setToolTip('골통주부의 난임&상담톡');
+    await trayManager.setToolTip('골통주부의 난임&정보톡');
 
     Menu menu = Menu(
       items: [
