@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/notification_service.dart';
 import '../../models/conversation_model.dart';
+import '../../models/article_section.dart';
 import '../../widgets/conversation_tile.dart';
 import '../../utils/app_colors.dart';
 import 'admin_chat_screen.dart';
@@ -65,6 +66,8 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
       case 2:
         return '뉴스 관리';
       case 3:
+        return '남성난임 관리';
+      case 4:
         return '설정';
       default:
         return '관리자';
@@ -275,6 +278,8 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
             _buildConversationsContent(),
             _buildEncyclopediaContent(),
             _buildNewsContent(),
+            const AdminEncyclopediaScreen(
+                section: ArticleSection.maleInfertility),
             _buildSettingsContent(),
           ],
         ),
@@ -296,7 +301,8 @@ class _AdminConversationsScreenState extends State<AdminConversationsScreen> {
               _buildNavItem(0, Icons.chat_bubble_outline, Icons.chat_bubble),
               _buildNavItem(1, Icons.menu_book_outlined, Icons.menu_book),
               _buildNavItem(2, Icons.newspaper_outlined, Icons.newspaper),
-              _buildNavItem(3, Icons.settings_outlined, Icons.settings),
+              _buildNavItem(3, Icons.male_outlined, Icons.male),
+              _buildNavItem(4, Icons.settings_outlined, Icons.settings),
             ],
           ),
         ),

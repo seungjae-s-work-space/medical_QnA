@@ -67,3 +67,4 @@ medical_qa_app/android/keystore.properties
 
 # Local git worktrees
 .worktrees/
+.gstack/

@@ -32,7 +32,7 @@ describe('news view count display', () => {
 
     expect(encyclopedia).toMatch(/increment/);
     expect(encyclopedia).toMatch(/viewCount: increment\(1\)/);
-    expect(encyclopedia).toMatch(/doc\(db, 'encyclopedia', article\.id\)/);
+    expect(encyclopedia).toMatch(/doc\(db, collectionName, article\.id\)/);
     expect(encyclopedia).toMatch(/!readOnly \|\| !auth\.currentUser/);
 
     expect(rules).toMatch(/match \/news\/\{newsId\}/);

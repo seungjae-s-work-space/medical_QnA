@@ -14,7 +14,7 @@ describe('membership prompt behavior', () => {
     const dialog = read('components/MembershipRequiredDialog.jsx');
 
     expect(app).not.toMatch(/MembershipRequiredGate/);
-    expect(app).toMatch(/<EncyclopediaManager readOnly=\{!isAdmin\} \/>/);
+    expect(app).toMatch(/<EncyclopediaManager key="encyclopedia" readOnly=\{!isAdmin\} \/>/);
     expect(app).toMatch(/<NewsManager readOnly=\{!isAdmin\} \/>/);
     expect(layout).toMatch(/shouldShowMembershipPrompt\(location\.pathname, isLoggedIn\)/);
     expect(layout).toMatch(/navigate\(path\)/);

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../models/encyclopedia_model.dart';
+import '../../models/article_section.dart';
+import '../../services/paginated_result.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/encyclopedia_service.dart';
 import '../../utils/app_colors.dart';
@@ -31,7 +34,11 @@ String _stripHtml(String html) {
 }
 
 class AdminEncyclopediaScreen extends StatefulWidget {
-  const AdminEncyclopediaScreen({super.key});
+  const AdminEncyclopediaScreen(
+      {super.key, this.section = ArticleSection.encyclopedia, this.service});
+
+  final ArticleSection section;
+  final EncyclopediaService? service;
 
   @override
   State<AdminEncyclopediaScreen> createState() =>
@@ -39,22 +46,70 @@ class AdminEncyclopediaScreen extends StatefulWidget {
 }
 
 class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
-  final EncyclopediaService _service = EncyclopediaService();
+  late final EncyclopediaService _service =
+      widget.service ?? EncyclopediaService(section: widget.section);
+  late Future<PaginatedResult<EncyclopediaModel>> _page;
+  final List<DocumentSnapshot?> _pageCursors = [null];
+  int _pageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _page = _fetchPage();
+  }
+
+  Future<PaginatedResult<EncyclopediaModel>> _fetchPage() =>
+      _service.getArticlesPage(
+        publishedOnly: false,
+        pageSize: 20,
+        startAfter: _pageCursors[_pageIndex],
+      );
+
+  void _refresh() {
+    if (!mounted) return;
+    setState(() {
+      _pageIndex = 0;
+      _pageCursors.removeRange(1, _pageCursors.length);
+      _page = _fetchPage();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        FutureBuilder<List<EncyclopediaModel>>(
-          future: _service.getAllArticles(),
+        FutureBuilder<PaginatedResult<EncyclopediaModel>>(
+          future: _page,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final articles = snapshot.data ?? [];
+            if (snapshot.hasError) {
+              return Center(
+                  child: TextButton.icon(
+                onPressed: _refresh,
+                icon: const Icon(Icons.refresh),
+                label: const Text('글을 불러오지 못했습니다. 다시 시도'),
+              ));
+            }
+
+            final result = snapshot.data!;
+            final articles = result.items;
 
             if (articles.isEmpty) {
+              if (_pageIndex > 0) {
+                return Center(
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.chevron_left),
+                    label: const Text('이전 페이지'),
+                    onPressed: () => setState(() {
+                      _pageIndex--;
+                      _page = _fetchPage();
+                    }),
+                  ),
+                );
+              }
               return const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -85,21 +140,54 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
               );
             }
 
-            return ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: articles.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final article = articles[index];
-                return _AdminArticleCard(
-                  article: article,
-                  onTap: () => _viewArticle(article),
-                  onEdit: () => _editArticle(article),
-                  onDelete: () => _confirmDelete(article),
-                  onTogglePublish: () => _togglePublish(article),
-                );
-              },
-            );
+            return Column(children: [
+              Expanded(
+                  child: ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: articles.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final article = articles[index];
+                  return _AdminArticleCard(
+                    article: article,
+                    onTap: () => _viewArticle(article),
+                    onEdit: () => _editArticle(article),
+                    onDelete: () => _confirmDelete(article),
+                    onTogglePublish: () => _togglePublish(article),
+                  );
+                },
+              )),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 80),
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  IconButton(
+                    tooltip: '이전 페이지',
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: _pageIndex == 0
+                        ? null
+                        : () => setState(() {
+                              _pageIndex--;
+                              _page = _fetchPage();
+                            }),
+                  ),
+                  Text('${_pageIndex + 1}'),
+                  IconButton(
+                    tooltip: '다음 페이지',
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: !result.hasMore
+                        ? null
+                        : () => setState(() {
+                              _pageCursors.removeRange(
+                                  _pageIndex + 1, _pageCursors.length);
+                              _pageCursors.add(result.lastDocument);
+                              _pageIndex++;
+                              _page = _fetchPage();
+                            }),
+                  ),
+                ]),
+              ),
+            ]);
           },
         ),
         Positioned(
@@ -119,9 +207,9 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const ArticleEditScreen(),
+        builder: (context) => ArticleEditScreen(section: widget.section),
       ),
-    );
+    ).then((_) => _refresh());
   }
 
   void _viewArticle(EncyclopediaModel article) {
@@ -130,6 +218,7 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
       MaterialPageRoute(
         builder: (context) => AdminArticleDetailScreen(
           article: article,
+          section: widget.section,
           onEdit: () => _editArticle(article),
         ),
       ),
@@ -140,9 +229,10 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ArticleEditScreen(article: article),
+        builder: (context) =>
+            ArticleEditScreen(article: article, section: widget.section),
       ),
-    );
+    ).then((_) => _refresh());
   }
 
   void _confirmDelete(EncyclopediaModel article) {
@@ -172,6 +262,7 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
   Future<void> _deleteArticle(EncyclopediaModel article) async {
     try {
       await _service.deleteArticle(article.id);
+      _refresh();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -196,6 +287,7 @@ class _AdminEncyclopediaScreenState extends State<AdminEncyclopediaScreen> {
     try {
       final updated = article.copyWith(isPublished: !article.isPublished);
       await _service.updateArticle(updated);
+      _refresh();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -419,11 +511,13 @@ String _cleanHtmlContent(String html) {
 class AdminArticleDetailScreen extends StatelessWidget {
   final EncyclopediaModel article;
   final VoidCallback onEdit;
+  final ArticleSection section;
 
   const AdminArticleDetailScreen({
     super.key,
     required this.article,
     required this.onEdit,
+    this.section = ArticleSection.encyclopedia,
   });
 
   @override
@@ -437,9 +531,9 @@ class AdminArticleDetailScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          '난임백과',
-          style: TextStyle(
+        title: Text(
+          section.title,
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -652,8 +746,10 @@ class AdminArticleDetailScreen extends StatelessWidget {
 // 글 작성/수정 화면
 class ArticleEditScreen extends StatefulWidget {
   final EncyclopediaModel? article;
+  final ArticleSection section;
 
-  const ArticleEditScreen({super.key, this.article});
+  const ArticleEditScreen(
+      {super.key, this.article, this.section = ArticleSection.encyclopedia});
 
   @override
   State<ArticleEditScreen> createState() => _ArticleEditScreenState();
@@ -663,7 +759,8 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  final EncyclopediaService _service = EncyclopediaService();
+  late final EncyclopediaService _service =
+      EncyclopediaService(section: widget.section);
   final ImagePicker _imagePicker = ImagePicker();
 
   bool _isPublished = true;
@@ -726,7 +823,7 @@ class _ArticleEditScreenState extends State<ArticleEditScreen> {
       final fileName = '${const Uuid().v4()}.jpg';
       final ref = FirebaseStorage.instance
           .ref()
-          .child('encyclopedia_images')
+          .child(widget.section.imageFolder)
           .child(fileName);
 
       await ref.putFile(_selectedImage!);

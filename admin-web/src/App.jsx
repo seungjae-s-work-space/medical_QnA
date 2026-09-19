@@ -8,10 +8,14 @@ import ConversationList from './components/ConversationList';
 import ChatWindow from './components/ChatWindow';
 import UserChatWindow from './components/UserChatWindow';
 import EncyclopediaManager from './components/EncyclopediaManager';
+import { ARTICLE_SECTIONS } from './utils/articleSections';
 import NewsManager from './components/NewsManager';
 import NoticeManager from './components/NoticeManager';
 import VideoManager from './components/VideoManager';
 import UserManagement from './components/UserManagement';
+import PromotionManager from './components/PromotionManager';
+import PromotionDetail from './components/PromotionDetail';
+import CompanyProfile from './components/CompanyProfile';
 import { CircularProgress, Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme, { colors } from './theme';
@@ -51,12 +55,28 @@ function buildAbsoluteUrl(pathname) {
   return `${SITE_URL}${normalizedPath}`;
 }
 
+function normalizePathname(pathname) {
+  if (!pathname || pathname === '/') {
+    return '/';
+  }
+
+  return pathname.replace(/\/+$/, '');
+}
+
 function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
   if (pathname.startsWith('/chat/')) {
     return {
       title: `상담 채팅 관리 | ${SITE_NAME}`,
       description: '관리자가 사용자 문의를 확인하고 답변하는 상담 채팅 관리 화면입니다.',
       shouldIndex: false,
+    };
+  }
+
+  if (pathname.startsWith('/promotions/')) {
+    return {
+      title: `프로모션 | ${SITE_NAME}`,
+      description: '난임정보톡톡에서 진행 중인 프로모션과 안내를 확인할 수 있습니다.',
+      shouldIndex: true,
     };
   }
 
@@ -82,6 +102,12 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
       description: '난임정보톡톡 로그인 및 회원가입 화면입니다.',
       shouldIndex: false,
     },
+    '/company': {
+      title: '아기성공연구소 회사소개',
+      description:
+        '아기성공연구소 공식 회사소개 페이지입니다. 난임 전문 기자가 운영하는 무료 회원제 난임 정보·상담 플랫폼을 소개합니다.',
+      shouldIndex: true,
+    },
     '/encyclopedia': {
       title: `난임백과 | ${SITE_NAME}`,
       description: '난임 치료와 임신 준비에 도움이 되는 정보를 한곳에서 확인할 수 있습니다.',
@@ -90,6 +116,11 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
     '/news': {
       title: `뉴스 | ${SITE_NAME}`,
       description: '난임, 임신 준비, 의료 분야의 최신 소식을 확인할 수 있습니다.',
+      shouldIndex: true,
+    },
+    '/male-infertility': {
+      title: `남성난임 | ${SITE_NAME}`,
+      description: '남성난임과 임신 준비에 관한 정보를 확인할 수 있습니다.',
       shouldIndex: true,
     },
     '/notice': {
@@ -102,6 +133,17 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
       description: '난임과 임신 준비에 도움이 되는 영상 콘텐츠를 볼 수 있습니다.',
       shouldIndex: true,
     },
+    '/promotions': isAdmin
+      ? {
+          title: `광고 관리 | ${SITE_NAME}`,
+          description: '관리자가 프로모션 배너와 상세 페이지를 관리하는 화면입니다.',
+          shouldIndex: false,
+        }
+      : {
+          title: DEFAULT_TITLE,
+          description: DEFAULT_DESCRIPTION,
+          shouldIndex: false,
+        },
     '/users': {
       title: `사용자 관리 | ${SITE_NAME}`,
       description: '관리자가 가입 사용자 목록을 조회하는 화면입니다.',
@@ -120,12 +162,13 @@ function SeoManager({ isAdmin, isLoggedIn }) {
   const location = useLocation();
 
   useEffect(() => {
+    const normalizedPathname = normalizePathname(location.pathname);
     const { title, description, shouldIndex } = getRouteMetadata(
-      location.pathname,
+      normalizedPathname,
       isAdmin,
       isLoggedIn
     );
-    const canonicalUrl = buildAbsoluteUrl(location.pathname);
+    const canonicalUrl = buildAbsoluteUrl(normalizedPathname);
 
     document.title = title;
     updateMetaTag('name', 'description', description);
@@ -141,27 +184,37 @@ function SeoManager({ isAdmin, isLoggedIn }) {
   return null;
 }
 
-function AppRoutes() {
-  const { isAdmin, isLoggedIn, loading } = useAuth();
+function LoadingScreen() {
+  return (
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      sx={{ bgcolor: colors.background }}
+    >
+      <CircularProgress sx={{ color: colors.textSecondary }} />
+    </Box>
+  );
+}
 
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-        sx={{ bgcolor: colors.background }}
-      >
-        <CircularProgress sx={{ color: colors.textSecondary }} />
-      </Box>
-    );
+function RoutedAppContent() {
+  const { isAdmin, isLoggedIn, loading } = useAuth();
+  const location = useLocation();
+  const normalizedPathname = normalizePathname(location.pathname);
+  const isCompanyRoute = normalizedPathname === '/company';
+
+  if (loading && !isCompanyRoute) {
+    return <LoadingScreen />;
   }
 
   return (
-    <BrowserRouter>
+    <>
       <SeoManager isAdmin={isAdmin} isLoggedIn={isLoggedIn} />
       <Routes>
+        {/* 공개 회사소개 페이지 */}
+        <Route path="/company/*" element={<CompanyProfile />} />
+
         {/* 로그인 페이지 */}
         <Route
           path="/login"
@@ -213,7 +266,19 @@ function AppRoutes() {
           path="/encyclopedia"
           element={
             <Layout>
-              <EncyclopediaManager readOnly={!isAdmin} />
+              <EncyclopediaManager key="encyclopedia" readOnly={!isAdmin} />
+            </Layout>
+          }
+        />
+        <Route
+          path="/male-infertility"
+          element={
+            <Layout>
+              <EncyclopediaManager
+                key="male-infertility"
+                section={ARTICLE_SECTIONS.maleInfertility}
+                readOnly={!isAdmin}
+              />
             </Layout>
           }
         />
@@ -241,6 +306,28 @@ function AppRoutes() {
             </Layout>
           }
         />
+        <Route
+          path="/promotions/:promotionId"
+          element={
+            <Layout>
+              <PromotionDetail />
+            </Layout>
+          }
+        />
+
+        {/* 광고 관리 (관리자 전용) */}
+        <Route
+          path="/promotions"
+          element={
+            isAdmin ? (
+              <Layout>
+                <PromotionManager />
+              </Layout>
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
 
         {/* 사용자 관리 (관리자 전용) */}
         <Route
@@ -259,6 +346,14 @@ function AppRoutes() {
         {/* 기타 경로는 홈으로 */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+    </>
+  );
+}
+
+function AppRoutes() {
+  return (
+    <BrowserRouter>
+      <RoutedAppContent />
     </BrowserRouter>
   );
 }

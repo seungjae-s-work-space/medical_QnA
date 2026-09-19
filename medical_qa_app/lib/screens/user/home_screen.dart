@@ -3,18 +3,24 @@ import 'package:provider/provider.dart';
 import '../../design/app_radii.dart';
 import '../../design/app_spacing.dart';
 import '../../legal/app_legal_notice.dart';
+import '../../models/promotion_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
 import '../../services/notice_service.dart';
 import '../../models/notice_model.dart';
+import '../../services/promotion_service.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/membership_required_dialog.dart';
+import '../../widgets/promotion_carousel.dart';
 import 'chat_screen.dart';
 import 'encyclopedia_screen.dart';
+import '../../models/article_section.dart';
+import '../../widgets/home_news_banner.dart';
 import 'news_screen.dart';
 import 'notice_screen.dart';
 import 'video_screen.dart';
 import 'notification_settings_screen.dart';
+import 'promotion_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,10 +32,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final NotificationService _notificationService = NotificationService();
   final NoticeService _noticeService = NoticeService();
+  final PromotionService _promotionService = PromotionService();
   bool _notificationsEnabled = true;
   int _currentIndex = 0;
   DateTime? _lastBackPressTime;
   NoticeModel? _latestNotice;
+  List<PromotionModel> _promotions = [];
 
   /// 게스트 모드에서 로그인 필요 기능 접근 시 로그인 유도 다이얼로그
   void _showLoginRequiredDialog(String feature) {
@@ -166,6 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadNotificationSetting();
     _loadLatestNotice();
+    _loadPromotions();
   }
 
   @override
@@ -183,6 +192,19 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       debugPrint('Notice load error: $e');
+    }
+  }
+
+  Future<void> _loadPromotions() async {
+    try {
+      final promotions = await _promotionService.getPublishedPromotions();
+      if (mounted) {
+        setState(() {
+          _promotions = promotions;
+        });
+      }
+    } catch (e) {
+      debugPrint('Promotion load error: $e');
     }
   }
 
@@ -569,15 +591,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openMaleInfertilityScreen() {
+    if (_checkGuestAndShowMembershipPrompt(_openMaleInfertilityContent)) return;
+    _openMaleInfertilityContent();
+  }
+
+  void _openMaleInfertilityContent() {
+    _pushFeaturePage(
+      title: ArticleSection.maleInfertility.title,
+      child: const EncyclopediaScreen(section: ArticleSection.maleInfertility),
+    );
+  }
+
   Widget _buildFeatureMosaic() {
     return LayoutBuilder(
       builder: (context, constraints) {
         const gap = 14.0;
         final largeWidth = (constraints.maxWidth - gap) / 2;
-        final largeHeight = largeWidth * 0.86;
+        final largeHeight = (largeWidth * 0.86).clamp(184.0, 300.0);
 
         return Column(
           children: [
+            HomeNewsBanner(onTap: _openNewsScreen),
+            const SizedBox(height: gap),
             Row(
               children: [
                 Expanded(
@@ -618,13 +654,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: SizedBox(
                     height: largeHeight,
                     child: _LargeFeatureCard(
-                      title: '난임뉴스',
-                      icon: Icons.public_outlined,
-                      tone: const Color(0xFF0C457B),
-                      surfaceTint: const Color(0xFFA5BBEC),
-                      imageAsset: 'assets/grid/news.png',
+                      title: '남성난임',
+                      icon: Icons.male_rounded,
+                      tone: AppColors.accentDeep,
+                      surfaceTint: AppColors.accentSoft,
+                      imageAsset: 'assets/grid/encyclopedia.png',
                       imageAlignment: Alignment.centerRight,
-                      onTap: _openNewsScreen,
+                      onTap: _openMaleInfertilityScreen,
                     ),
                   ),
                 ),
@@ -670,9 +706,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // // 로고 영역
-          // _buildLogoSection(),
-          // const SizedBox(height: 24),
+          PromotionCarousel(
+            promotions: _promotions,
+            onPromotionTap: _openPromotion,
+          ),
+          if (_promotions.isNotEmpty) const SizedBox(height: 14),
 
           // 공지사항 배너
           _buildNoticeBanner(),
@@ -680,15 +718,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildFeatureMosaic(),
         ],
       ),
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildLogoSection() {
-    return Image.asset(
-      'assets/images/loggo_section4x.png',
-      width: double.infinity,
-      fit: BoxFit.contain,
     );
   }
 
@@ -1050,6 +1079,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openPromotion(PromotionModel promotion) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PromotionDetailScreen(promotion: promotion),
+      ),
+    );
+  }
+
   String _getAppBarTitle() {
     switch (_currentIndex) {
       case 0:
@@ -1122,7 +1160,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildHomeContent(),
               _buildEncyclopediaContent(),
-              _buildHomeContent(), // placeholder (채팅은 Navigator로 이동)
+              const SizedBox.shrink(), // placeholder (채팅은 Navigator로 이동)
               _buildMyPageContent(),
             ],
           ),

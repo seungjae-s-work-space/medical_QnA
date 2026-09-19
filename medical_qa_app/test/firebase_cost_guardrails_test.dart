@@ -80,6 +80,9 @@ void main() {
     final rules = read('storage.rules');
 
     expect(rules, contains('function isAdmin()'));
+    expect(rules, contains('request.auth.token.admin == true'));
+    expect(rules, contains("request.auth.token.role == 'admin'"));
+    expect(rules, isNot(contains('firestore.get(')));
     expect(rules, contains('allow write: if isAdmin()'));
     expect(
       rules,
@@ -91,6 +94,32 @@ void main() {
       isNot(contains(
           'match /encyclopedia_images/{imageId} {\n      allow read: if request.auth != null;\n      allow write: if request.auth != null')),
     );
+  });
+
+  test('promotion rules allow public published reads and admin-only writes', () {
+    final firestoreRules = read('firestore.rules');
+    final storageRules = read('storage.rules');
+
+    expect(firestoreRules, contains('match /promotions/{promotionId}'));
+    expect(
+      firestoreRules,
+      contains('allow read: if resource.data.isPublished == true || isAdmin();'),
+    );
+    expect(firestoreRules, contains('allow create: if isAdmin();'));
+    expect(firestoreRules, contains('allow update: if isAdmin();'));
+    expect(firestoreRules, contains('allow delete: if isAdmin();'));
+
+    for (final path in ['promotion_banners', 'promotion_images']) {
+      expect(
+        storageRules,
+        contains('''
+match /$path/{imageId} {
+      allow read: if true;
+      allow write: if isAdmin()
+                   && isImageUnder(10 * 1024 * 1024);
+    }'''),
+      );
+    }
   });
 
   test('chat realtime streams are bounded', () {

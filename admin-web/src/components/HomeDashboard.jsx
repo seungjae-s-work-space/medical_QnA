@@ -10,6 +10,7 @@ import {
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
+import MaleRoundedIcon from '@mui/icons-material/MaleRounded';
 import CampaignRoundedIcon from '@mui/icons-material/CampaignRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded';
@@ -17,6 +18,7 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../theme';
+import PromotionCarousel from './PromotionCarousel';
 
 const quickLinks = [
   {
@@ -32,10 +34,10 @@ const quickLinks = [
     icon: <AutoStoriesRoundedIcon />,
   },
   {
-    label: '뉴스',
-    description: '최신 이슈 분석',
-    path: '/news',
-    icon: <ArticleRoundedIcon />,
+    label: '남성난임',
+    description: '남성난임 정보',
+    path: '/male-infertility',
+    icon: <MaleRoundedIcon />,
   },
   {
     label: '공지사항',
@@ -199,7 +201,7 @@ function HomeDashboard() {
           >
             <Box
               component="img"
-              src="/home-dashboard.png"
+              src="/home-dashboard.png?v=info-talktalk-poster"
               alt="난임정보톡톡"
               sx={{
                 display: 'block',
@@ -213,6 +215,8 @@ function HomeDashboard() {
           </Box>
         </Box>
 
+        <PromotionCarousel />
+
         <Box
           sx={{
             display: 'grid',
@@ -224,6 +228,34 @@ function HomeDashboard() {
             gap: 1.5,
           }}
         >
+          <Box
+            component="button"
+            type="button"
+            onClick={() => navigate('/news')}
+            sx={{
+              gridColumn: '1 / -1',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              p: { xs: 2, md: 2.5 },
+              minHeight: 88,
+              borderRadius: 3,
+              border: `1px solid ${colors.border}`,
+              bgcolor: colors.aqua,
+              color: colors.textPrimary,
+              textAlign: 'left',
+              font: 'inherit',
+              cursor: 'pointer',
+              '&:hover': { bgcolor: colors.primaryLight },
+              '&:focus-visible': { outline: `2px solid ${colors.primaryDark}`, outlineOffset: 3 },
+            }}
+          >
+            <ArticleRoundedIcon sx={{ fontSize: 32, color: colors.primaryDark, flexShrink: 0 }} />
+            <Typography component="span" sx={{ fontSize: 20, fontWeight: 800, flex: 1 }}>
+              난임뉴스
+            </Typography>
+            <ArrowForwardRoundedIcon sx={{ flexShrink: 0 }} />
+          </Box>
           {quickLinks.map((item) => (
             <Box
               key={item.label}
