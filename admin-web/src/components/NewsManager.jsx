@@ -156,6 +156,7 @@ function NewsManager({ readOnly = false }) {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalItemCount, setTotalItemCount] = useState(0);
+  const [publishedCount, setPublishedCount] = useState(0);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -391,8 +392,8 @@ function NewsManager({ readOnly = false }) {
     return query(collection(db, 'news'), ...constraints);
   };
 
-  const buildArticlesCountQuery = () => {
-    const constraints = readOnly ? [where('isPublished', '==', true)] : [];
+  const buildArticlesCountQuery = (publishedOnly = readOnly) => {
+    const constraints = publishedOnly ? [where('isPublished', '==', true)] : [];
     return query(collection(db, 'news'), ...constraints);
   };
 
@@ -402,8 +403,12 @@ function NewsManager({ readOnly = false }) {
   }));
 
   const loadTotalCount = async () => {
-    const snapshot = await getCountFromServer(buildArticlesCountQuery());
+    const [snapshot, publishedSnapshot] = await Promise.all([
+      getCountFromServer(buildArticlesCountQuery()),
+      readOnly ? null : getCountFromServer(buildArticlesCountQuery(true)),
+    ]);
     setTotalItemCount(snapshot.data().count);
+    setPublishedCount((publishedSnapshot || snapshot).data().count);
   };
 
   const updatePaginationCursor = (snapshot) => {
@@ -661,8 +666,7 @@ function NewsManager({ readOnly = false }) {
     setCurrentPage(0);
   };
 
-  const publishedCount = displayArticles.filter((a) => a.isPublished).length;
-  const draftCount = displayArticles.filter((a) => !a.isPublished).length;
+  const draftCount = Math.max(0, totalItemCount - publishedCount);
 
   if (loading) {
     return (
@@ -737,7 +741,8 @@ function NewsManager({ readOnly = false }) {
       {/* Search */}
       <TextField
         fullWidth
-        placeholder="제목 또는 내용 검색..."
+        placeholder="불러온 글에서 제목 또는 내용 검색..."
+        helperText={`현재 불러온 ${displayArticles.length}개 글에서 검색합니다.`}
         value={searchQuery}
         onChange={handleSearchChange}
         InputProps={{
@@ -920,6 +925,7 @@ function NewsManager({ readOnly = false }) {
         <Box
           sx={{
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'center',
             alignItems: 'center',
             gap: 1,
@@ -927,6 +933,7 @@ function NewsManager({ readOnly = false }) {
           }}
         >
           <IconButton
+            aria-label="이전 페이지"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 0}
             sx={{
@@ -947,8 +954,9 @@ function NewsManager({ readOnly = false }) {
             </Button>
           ))}
           <IconButton
+            aria-label="다음 페이지"
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={loadingMore || (currentPage >= totalPages - 1 && !hasMore)}
+            disabled={loadingMore || (currentPage >= totalPages - 1 && (Boolean(searchQuery) || !hasMore))}
             sx={{
               color: colors.textSecondary,
               '&:disabled': { color: colors.textTertiary },

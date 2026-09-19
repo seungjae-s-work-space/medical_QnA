@@ -162,6 +162,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalItemCount, setTotalItemCount] = useState(0);
+  const [publishedCount, setPublishedCount] = useState(0);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -398,8 +399,8 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
     return query(collection(db, collectionName), ...constraints);
   };
 
-  const buildArticlesCountQuery = () => {
-    const constraints = readOnly ? [where('isPublished', '==', true)] : [];
+  const buildArticlesCountQuery = (publishedOnly = readOnly) => {
+    const constraints = publishedOnly ? [where('isPublished', '==', true)] : [];
     return query(collection(db, collectionName), ...constraints);
   };
 
@@ -408,9 +409,14 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
     ...doc.data(),
   }));
 
-  const loadTotalCount = async () => {
-    const snapshot = await getCountFromServer(buildArticlesCountQuery());
+  const loadTotalCount = async (isActive = () => true) => {
+    const [snapshot, publishedSnapshot] = await Promise.all([
+      getCountFromServer(buildArticlesCountQuery()),
+      readOnly ? null : getCountFromServer(buildArticlesCountQuery(true)),
+    ]);
+    if (!isActive()) return;
     setTotalItemCount(snapshot.data().count);
+    setPublishedCount((publishedSnapshot || snapshot).data().count);
   };
 
   const updatePaginationCursor = (snapshot) => {
@@ -441,9 +447,8 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
     };
     const load = async () => {
       try {
-        const count = await getCountFromServer(buildArticlesCountQuery());
+        await loadTotalCount(() => active);
         if (!active) return;
-        setTotalItemCount(count.data().count);
         if (readOnly) {
           receivePage(await getDocs(q));
         } else {
@@ -688,8 +693,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
     setCurrentPage(0);
   };
 
-  const publishedCount = articles.filter((a) => a.isPublished).length;
-  const draftCount = articles.filter((a) => !a.isPublished).length;
+  const draftCount = Math.max(0, totalItemCount - publishedCount);
 
   if (loading) {
     return (
@@ -775,7 +779,8 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
       {/* Search */}
       <TextField
         fullWidth
-        placeholder="제목 또는 내용 검색..."
+        placeholder="불러온 글에서 제목 또는 내용 검색..."
+        helperText={`현재 불러온 ${displayArticles.length}개 글에서 검색합니다.`}
         value={searchQuery}
         onChange={handleSearchChange}
         InputProps={{
@@ -938,6 +943,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
         <Box
           sx={{
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'center',
             alignItems: 'center',
             gap: 1,
@@ -945,6 +951,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
           }}
         >
           <IconButton
+            aria-label="이전 페이지"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 0}
             sx={{
@@ -965,8 +972,9 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
             </Button>
           ))}
           <IconButton
+            aria-label="다음 페이지"
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={loadingMore || (currentPage >= totalPages - 1 && !hasMore)}
+            disabled={loadingMore || (currentPage >= totalPages - 1 && (Boolean(searchQuery) || !hasMore))}
             sx={{
               color: colors.textSecondary,
               '&:disabled': { color: colors.textTertiary },
