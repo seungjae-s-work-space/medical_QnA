@@ -76,6 +76,7 @@ import {
   paginationButtonSx,
   searchFieldSx,
   statCardSx,
+  stickyEditorToolbarSx,
   widePageShellSx, // extends pageShellSx for the wider encyclopedia grid
 } from '../utils/webDesignStyles';
 
@@ -1039,6 +1040,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
                     borderBottomRightRadius: 10,
                   },
                   '& .ql-toolbar': {
+                    ...stickyEditorToolbarSx,
                     borderTopLeftRadius: 10,
                     borderTopRightRadius: 10,
                     bgcolor: colors.backgroundAlt,

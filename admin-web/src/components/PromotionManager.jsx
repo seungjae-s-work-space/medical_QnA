@@ -59,6 +59,7 @@ import {
   paginationButtonSx,
   searchFieldSx,
   statCardSx,
+  stickyEditorToolbarSx,
 } from '../utils/webDesignStyles';
 import {
   PROMOTION_ADMIN_PAGE_SIZE,
@@ -891,6 +892,7 @@ function PromotionManager() {
               <Box
                 sx={{
                   '& .ql-toolbar': {
+                    ...stickyEditorToolbarSx,
                     borderColor: colors.inputBorder,
                     borderRadius: '10px 10px 0 0',
                     bgcolor: colors.cardTint,

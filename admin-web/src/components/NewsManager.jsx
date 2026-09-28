@@ -75,6 +75,7 @@ import {
   paginationButtonSx,
   searchFieldSx,
   statCardSx,
+  stickyEditorToolbarSx,
 } from '../utils/webDesignStyles';
 
 // 이미지 리사이즈 모듈 등록
@@ -1029,6 +1030,7 @@ function NewsManager({ readOnly = false }) {
                     borderBottomRightRadius: 10,
                   },
                   '& .ql-toolbar': {
+                    ...stickyEditorToolbarSx,
                     borderTopLeftRadius: 10,
                     borderTopRightRadius: 10,
                     bgcolor: colors.backgroundAlt,

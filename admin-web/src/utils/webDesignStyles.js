@@ -9,6 +9,13 @@ export const widePageShellSx = {
   maxWidth: 1400,
 };
 
+// Pin within DialogContent without moving or remounting the Quill editor.
+export const stickyEditorToolbarSx = {
+  position: 'sticky',
+  top: 0,
+  zIndex: 2,
+};
+
 export const pageHeaderSx = {
   mb: 4,
   p: { xs: 2.5, md: 3 },
