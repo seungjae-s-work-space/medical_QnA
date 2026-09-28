@@ -19,7 +19,6 @@ import {
   Snackbar,
   Alert,
   Grid,
-  InputAdornment,
 } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -27,7 +26,7 @@ import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import ArticleSearch from './ArticleSearch';
 import RemoveRedEyeRoundedIcon from '@mui/icons-material/RemoveRedEyeRounded';
 import ArticleRoundedIcon from '@mui/icons-material/ArticleRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
@@ -74,7 +73,6 @@ import {
   pageHeaderSx,
   pageShellSx,
   paginationButtonSx,
-  searchFieldSx,
   statCardSx,
   stickyEditorToolbarSx,
 } from '../utils/webDesignStyles';
@@ -152,7 +150,6 @@ function NewsManager({ readOnly = false }) {
   const [editingArticle, setEditingArticle] = useState(null);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [searchQuery, setSearchQuery] = useState('');
   const [viewArticle, setViewArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
@@ -462,13 +459,13 @@ function NewsManager({ readOnly = false }) {
 
     if (page >= totalPages) return;
 
-    const loadedPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE);
+    const loadedPages = Math.ceil(displayArticles.length / ITEMS_PER_PAGE);
     if (page < loadedPages) {
       setCurrentPage(page);
       return;
     }
 
-    if (searchQuery || !hasMore || !lastVisibleDoc) return;
+    if (!hasMore || !lastVisibleDoc) return;
 
     setLoadingMore(true);
     try {
@@ -645,29 +642,12 @@ function NewsManager({ readOnly = false }) {
   // readOnly 모드에서는 공개된 콘텐츠만 표시
   const displayArticles = readOnly ? articles.filter((a) => a.isPublished) : articles;
 
-  const filteredArticles = displayArticles.filter((article) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      (article.title || '').toLowerCase().includes(query) ||
-      (article.content || '').toLowerCase().includes(query)
-    );
-  });
-
   // 페이지네이션 계산
-  const totalPages = Math.ceil(
-    (searchQuery ? filteredArticles.length : totalItemCount) / ITEMS_PER_PAGE
-  );
-  const paginatedArticles = filteredArticles.slice(
+  const totalPages = Math.ceil(totalItemCount / ITEMS_PER_PAGE);
+  const paginatedArticles = displayArticles.slice(
     currentPage * ITEMS_PER_PAGE,
     (currentPage + 1) * ITEMS_PER_PAGE
   );
-
-  // 검색어 변경 시 첫 페이지로
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(0);
-  };
 
   const draftCount = Math.max(0, totalItemCount - publishedCount);
 
@@ -741,25 +721,15 @@ function NewsManager({ readOnly = false }) {
         </Box>
       )}
 
-      {/* Search */}
-      <TextField
-        fullWidth
-        placeholder="불러온 글에서 제목 또는 내용 검색..."
-        helperText={`현재 불러온 ${displayArticles.length}개 글에서 검색합니다.`}
-        value={searchQuery}
-        onChange={handleSearchChange}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchRoundedIcon sx={{ color: colors.textTertiary }} />
-            </InputAdornment>
-          ),
-        }}
-        sx={searchFieldSx()}
-      />
+      <ArticleSearch
+        section="news"
+        readOnly={readOnly}
+        onOpen={handleArticleOpen}
+        onEdit={handleOpenDialog}
+      >
 
       {/* Article Grid */}
-      {filteredArticles.length === 0 ? (
+      {displayArticles.length === 0 ? (
         <Box
           sx={emptyStateSx(colors)}
         >
@@ -778,7 +748,7 @@ function NewsManager({ readOnly = false }) {
             <ArticleRoundedIcon sx={{ fontSize: 36, color: colors.textTertiary }} />
           </Box>
           <Typography sx={{ color: colors.textSecondary, fontSize: 15, fontWeight: 500 }}>
-            {searchQuery ? '검색 결과가 없습니다' : '등록된 뉴스가 없습니다'}
+            등록된 뉴스가 없습니다
           </Typography>
         </Box>
       ) : (
@@ -959,7 +929,7 @@ function NewsManager({ readOnly = false }) {
           <IconButton
             aria-label="다음 페이지"
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={loadingMore || (currentPage >= totalPages - 1 && (Boolean(searchQuery) || !hasMore))}
+            disabled={loadingMore || (currentPage >= totalPages - 1 && !hasMore)}
             sx={{
               color: colors.textSecondary,
               '&:disabled': { color: colors.textTertiary },
@@ -969,6 +939,8 @@ function NewsManager({ readOnly = false }) {
           </IconButton>
         </Box>
       )}
+
+      </ArticleSearch>
 
       {/* Edit Dialog */}
       <Dialog

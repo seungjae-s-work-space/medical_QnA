@@ -19,7 +19,6 @@ import {
   Snackbar,
   Alert,
   Grid,
-  InputAdornment,
 } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -27,7 +26,7 @@ import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import ArticleSearch from './ArticleSearch';
 import RemoveRedEyeRoundedIcon from '@mui/icons-material/RemoveRedEyeRounded';
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded';
 import MaleRoundedIcon from '@mui/icons-material/MaleRounded';
@@ -75,7 +74,6 @@ import {
   emptyStateSx,
   pageHeaderSx,
   paginationButtonSx,
-  searchFieldSx,
   statCardSx,
   stickyEditorToolbarSx,
   widePageShellSx, // extends pageShellSx for the wider encyclopedia grid
@@ -158,7 +156,6 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
   const [editingArticle, setEditingArticle] = useState(null);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [searchQuery, setSearchQuery] = useState('');
   const [viewArticle, setViewArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
@@ -483,13 +480,13 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
 
     if (page >= totalPages) return;
 
-    const loadedPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE);
+    const loadedPages = Math.ceil(displayArticles.length / ITEMS_PER_PAGE);
     if (page < loadedPages) {
       setCurrentPage(page);
       return;
     }
 
-    if (searchQuery || !hasMore || !lastVisibleDoc) return;
+    if (!hasMore || !lastVisibleDoc) return;
 
     setLoadingMore(true);
     try {
@@ -672,29 +669,12 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
     ? articles.filter((a) => a.isPublished)
     : articles;
 
-  const filteredArticles = displayArticles.filter((article) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (article.title || '').toLowerCase().includes(q) ||
-      (article.content || '').toLowerCase().includes(q)
-    );
-  });
-
   // 페이지네이션 계산
-  const totalPages = Math.ceil(
-    (searchQuery ? filteredArticles.length : totalItemCount) / ITEMS_PER_PAGE
-  );
-  const paginatedArticles = filteredArticles.slice(
+  const totalPages = Math.ceil(totalItemCount / ITEMS_PER_PAGE);
+  const paginatedArticles = displayArticles.slice(
     currentPage * ITEMS_PER_PAGE,
     (currentPage + 1) * ITEMS_PER_PAGE
   );
-
-  // 검색어 변경 시 첫 페이지로
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(0);
-  };
 
   const draftCount = Math.max(0, totalItemCount - publishedCount);
 
@@ -779,25 +759,15 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
         </Box>
       )}
 
-      {/* Search */}
-      <TextField
-        fullWidth
-        placeholder="불러온 글에서 제목 또는 내용 검색..."
-        helperText={`현재 불러온 ${displayArticles.length}개 글에서 검색합니다.`}
-        value={searchQuery}
-        onChange={handleSearchChange}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchRoundedIcon sx={{ color: colors.textTertiary }} />
-            </InputAdornment>
-          ),
-        }}
-        sx={searchFieldSx()}
-      />
+      <ArticleSearch
+        section={collectionName}
+        readOnly={readOnly}
+        onOpen={handleArticleOpen}
+        onEdit={handleOpenDialog}
+      >
 
       {/* Article Grid */}
-      {filteredArticles.length === 0 ? (
+      {displayArticles.length === 0 ? (
         <Box
           sx={emptyStateSx(colors)}
         >
@@ -816,7 +786,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
             <SectionIcon sx={{ fontSize: 36, color: colors.textTertiary }} />
           </Box>
           <Typography sx={{ color: colors.textSecondary, fontSize: 15, fontWeight: 500 }}>
-            {searchQuery ? '검색 결과가 없습니다' : '등록된 글이 없습니다'}
+            등록된 글이 없습니다
           </Typography>
         </Box>
       ) : (
@@ -977,7 +947,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
           <IconButton
             aria-label="다음 페이지"
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={loadingMore || (currentPage >= totalPages - 1 && (Boolean(searchQuery) || !hasMore))}
+            disabled={loadingMore || (currentPage >= totalPages - 1 && !hasMore)}
             sx={{
               color: colors.textSecondary,
               '&:disabled': { color: colors.textTertiary },
@@ -987,6 +957,8 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
           </IconButton>
         </Box>
       )}
+
+      </ArticleSearch>
 
       {/* Edit Dialog */}
       <Dialog

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { getDocs, getCountFromServer, onSnapshot, updateDoc, addDoc } from 'firebase/firestore';
 import { auth } from '../firebase';
 import EncyclopediaManager from '../components/EncyclopediaManager';
+jest.mock('../services/articleSearchService', () => ({ searchArticles: jest.fn(), readSearchArticle: jest.fn() }));
 import { ARTICLE_SECTIONS } from '../utils/articleSections';
 import { shouldShowMembershipPrompt } from '../utils/membershipAccess';
 

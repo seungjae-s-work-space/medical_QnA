@@ -25,6 +25,30 @@ const db = getFirestore();
 const auth = getAuth();
 const messaging = getMessaging();
 const storage = getStorage();
+const { createArticleSearch } = require("./articleSearch");
+let articleSearch;
+function getArticleSearch() {
+  if (!articleSearch) articleSearch = createArticleSearch({ db, bucket: storage.bucket() });
+  return articleSearch;
+}
+
+exports.searchArticles = onCall(
+  { maxInstances: 3, concurrency: 20, timeoutSeconds: 30, memory: "256MiB" },
+  (request) => getArticleSearch().search(request),
+);
+
+for (const [name, section] of [
+  ["syncNewsSearchIndex", "news"],
+  ["syncEncyclopediaSearchIndex", "encyclopedia"],
+  ["syncMaleInfertilitySearchIndex", "male_infertility"],
+]) {
+  exports[name] = onDocumentWritten(
+    { document: `${section}/{articleId}`, retry: true, maxInstances: 2, timeoutSeconds: 120 },
+    (event) => getArticleSearch().sync(section, event.params.articleId,
+      event.data?.before.exists ? event.data.before.data() : null,
+      event.data?.after.exists ? event.data.after.data() : null),
+  );
+}
 
 function buildRoleClaims(existingClaims, role) {
   const nextClaims = { ...(existingClaims || {}) };

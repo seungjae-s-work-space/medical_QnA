@@ -4,6 +4,9 @@ import { getDocs, getCountFromServer, onSnapshot, updateDoc, deleteDoc } from 'f
 import NewsManager from '../components/NewsManager';
 import EncyclopediaManager from '../components/EncyclopediaManager';
 import { ARTICLE_SECTIONS } from '../utils/articleSections';
+import { searchArticles } from '../services/articleSearchService';
+
+jest.mock('../services/articleSearchService', () => ({ searchArticles: jest.fn(), readSearchArticle: jest.fn() }));
 
 // Render real MUI cards across pagination and search transitions.
 jest.setTimeout(20000);
@@ -60,6 +63,7 @@ beforeEach(() => {
   onSnapshot.mockImplementation((_query, callback) => { callback(page(1)); return jest.fn(); });
   updateDoc.mockResolvedValue();
   deleteDoc.mockResolvedValue();
+  searchArticles.mockResolvedValue({ items: [{ id: 'remote', title: '오래된 검색 결과', isPublished: true }], total: 1, page: 0, pageSize: 30 });
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -92,23 +96,29 @@ test.each(lists)('%s public list retains a single published-count read', async (
   expect(onSnapshot).not.toHaveBeenCalled();
 });
 
-test.each(lists)('%s shows the loaded search range and accessible wrapping pagination', async (_name, Component, props) => {
+test.each(lists)('%s searches the whole board on submit and restores the original browse page', async (name, Component, props) => {
   await render(Component, props);
-  const input = container.querySelector('input[placeholder="불러온 글에서 제목 또는 내용 검색..."]');
+  const input = container.querySelector('input');
   expect(input).not.toBeNull();
-  expect(container.textContent).toContain('현재 불러온 17개 글에서 검색합니다.');
   const next = container.querySelector('button[aria-label="다음 페이지"]');
   expect(next).not.toBeNull();
   expect(getComputedStyle(next.parentElement).flexWrap).toBe('wrap');
   expect(container.querySelector('button[aria-label="이전 페이지"]').disabled).toBe(true);
   await act(async () => next.click());
-  expect(container.textContent).toContain('현재 불러온 34개 글에서 검색합니다.');
+  expect(container.textContent).toContain('Article 18');
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '없는 제목');
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  expect(container.textContent).toContain('현재 불러온 34개 글에서 검색합니다.');
-  expect(container.querySelector('button[aria-label="다음 페이지"]').disabled).toBe(true);
+  expect(searchArticles).not.toHaveBeenCalled();
+  expect(container.textContent).toContain('Article 18');
+  await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  expect(searchArticles).toHaveBeenCalledWith({ section: name, query: '없는 제목', page: 0, includeDrafts: true });
+  expect(container.textContent).toContain('오래된 검색 결과');
+  expect(container.querySelector('.MuiCard-root')).toBeNull();
+  await act(async () => container.querySelector('button[aria-label="검색 초기화"]').click());
+  expect(container.textContent).toContain('Article 18');
+  expect(container.textContent).not.toContain('오래된 검색 결과');
 });
 
 test.each(lists.slice(0, 2))('%s refreshes global counts after changing visibility', async (_name, Component, props) => {
