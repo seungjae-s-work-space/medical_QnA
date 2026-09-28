@@ -1,3 +1,10 @@
+export const articleDividerSx = {
+  border: 0,
+  borderTop: '1px solid currentColor',
+  opacity: 0.3,
+  margin: '24px 0',
+};
+
 export function getArticleContentSx(colors) {
   return {
     lineHeight: 1.6,
@@ -7,6 +14,7 @@ export function getArticleContentSx(colors) {
     overflowX: 'hidden',
     boxSizing: 'border-box',
     '& p': { margin: 0 },
+    '& hr': articleDividerSx,
     '& h1, & h2, & h3': {
       fontWeight: 700,
       margin: '1em 0 0.3em 0',

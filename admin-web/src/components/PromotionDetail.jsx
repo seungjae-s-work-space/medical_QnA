@@ -23,6 +23,7 @@ const ALLOWED_PROMOTION_TAGS = new Set([
   'H4',
   'H5',
   'H6',
+  'HR',
   'I',
   'IMG',
   'LI',

@@ -21,6 +21,7 @@ jest.mock('firebase/firestore', () => ({
   serverTimestamp: () => 'timestamp', increment: (amount) => ({ increment: amount }),
 }));
 jest.mock('quill-image-resize-module-react', () => ({}));
+jest.mock('../components/EditorInsertTools', () => () => null);
 jest.mock('../utils/quillScrollGuard', () => ({
   installQuillDialogScrollGuard: () => () => {},
   isQuillDialogScrollGuardActive: () => false,

@@ -36,6 +36,7 @@ import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import AddPhotoAlternateRoundedIcon from '@mui/icons-material/AddPhotoAlternateRounded';
 import ReactQuill, { Quill } from 'react-quill';
+import EditorInsertTools from './EditorInsertTools';
 import 'react-quill/dist/quill.snow.css';
 import ImageResize from 'quill-image-resize-module-react';
 import {
@@ -60,7 +61,7 @@ import { db, storage, auth } from '../firebase';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
-import { getArticleContentSx } from '../utils/articleContentStyles';
+import { articleDividerSx, getArticleContentSx } from '../utils/articleContentStyles';
 import { ARTICLE_SECTIONS } from '../utils/articleSections';
 import {
   handleQuillPasteWithPreservedScroll,
@@ -102,6 +103,7 @@ const quillFormats = [
   'indent',
   'align',
   'blockquote',
+  'divider',
   'image',
   'width',
   'height',
@@ -1047,6 +1049,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
                   },
                   '& .ql-editor': {
                     minHeight: 500,
+                    '& hr': articleDividerSx,
                   },
                   '& .ql-clipboard': {
                     left: 0,
@@ -1126,6 +1129,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
                   placeholder="내용을 입력하세요 (툴바의 이미지 버튼으로 사진 추가)"
                   preserveWhitespace
                 />
+                <EditorInsertTools quillRef={quillRef} scrollRef={dialogContentRef} />
               </Box>
             </Box>
 

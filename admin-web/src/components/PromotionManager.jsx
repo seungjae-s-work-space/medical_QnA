@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -34,6 +34,8 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
 import ReactQuill from 'react-quill';
+import EditorInsertTools from './EditorInsertTools';
+import { articleDividerSx } from '../utils/articleContentStyles';
 import 'react-quill/dist/quill.snow.css';
 import {
   collection,
@@ -105,6 +107,7 @@ const quillFormats = [
   'bullet',
   'align',
   'blockquote',
+  'divider',
   'link',
 ];
 
@@ -138,6 +141,8 @@ function PromotionManager() {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalItemCount, setTotalItemCount] = useState(0);
+  const quillRef = useRef(null);
+  const dialogContentRef = useRef(null);
 
   const buildPromotionsQuery = (cursor = null, normalizedSearchQuery = '') => {
     const constraints = [];
@@ -787,7 +792,7 @@ function PromotionManager() {
         >
           {editingPromotion ? '광고 수정' : '새 광고 작성'}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent ref={dialogContentRef}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 180px' }, gap: 2 }}>
               <TextField
@@ -908,16 +913,19 @@ function PromotionManager() {
                     minHeight: 220,
                     lineHeight: 1.7,
                     color: colors.textPrimary,
+                    '& hr': articleDividerSx,
                   },
                 }}
               >
                 <ReactQuill
+                  ref={quillRef}
                   theme="snow"
                   value={form.contentHtml}
                   onChange={(value) => handleFormChange('contentHtml', value)}
                   modules={quillModules}
                   formats={quillFormats}
                 />
+                <EditorInsertTools quillRef={quillRef} scrollRef={dialogContentRef} />
               </Box>
             </Box>
 
