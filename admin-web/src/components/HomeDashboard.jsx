@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../theme';
 import PromotionCarousel from './PromotionCarousel';
+import HomeSupportSection from './HomeSupportSection';
 
 const quickLinks = [
   {
@@ -360,6 +361,8 @@ function HomeDashboard() {
             </Box>
           ))}
         </Box>
+
+        <HomeSupportSection />
 
         <Dialog
           open={membershipInfoOpen}
