@@ -119,8 +119,8 @@ const serviceLinks = [
 ];
 
 const companyHeroImage = {
-  src: '/home-dashboard.png?v=info-talktalk-poster',
-  alt: '아기성공연구소 서비스 홈 이미지',
+  src: '/company-brand-poster-20260929.png',
+  alt: '아기성공연구소 난임정보톡톡 서비스 소개',
 };
 
 const editorialFrameSx = {
@@ -403,6 +403,8 @@ function CompanyProfile() {
                 component="img"
                 src={companyHeroImage.src}
                 alt={companyHeroImage.alt}
+                width={1054}
+                height={1492}
                 loading="lazy"
                 sx={representativeImageSx}
               />

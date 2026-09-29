@@ -103,12 +103,16 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/fontWeight: 850/);
   });
 
-  test('company profile uses the home dashboard image as the representative visual', () => {
+  test('company profile uses its own approved poster without replacing the home visual', () => {
     const companyProfile = read('components/CompanyProfile.jsx');
+    const homeDashboard = read('components/HomeDashboard.jsx');
     const publicDir = path.join(srcDir, '..', 'public');
 
     expect(companyProfile).toMatch(/companyHeroImage/);
-    expect(companyProfile).toMatch(/home-dashboard\.png\?v=info-talktalk-poster/);
+    expect(companyProfile).toMatch(/company-brand-poster-20260929\.png/);
+    expect(companyProfile).not.toMatch(/home-dashboard\.png/);
+    expect(homeDashboard).toMatch(/home-dashboard\.png\?v=info-talktalk-poster/);
+    expect(homeDashboard).not.toMatch(/company-brand-poster/);
     expect(companyProfile).not.toMatch(/대표 이미지/);
     expect(companyProfile).not.toMatch(/홈 화면 대표 이미지/);
     expect(companyProfile).not.toMatch(/서비스의 분위기와 핵심 메시지/);
@@ -123,6 +127,7 @@ describe('company profile page', () => {
     const homeDashboardPath = path.join(publicDir, 'home-dashboard.png');
 
     expect(fs.existsSync(homeDashboardPath)).toBe(true);
+    expect(fs.existsSync(path.join(publicDir, 'company-brand-poster-20260929.png'))).toBe(true);
     expect(fs.existsSync(path.join(publicDir, 'company-app-home.jpg'))).toBe(false);
     expect(fs.existsSync(path.join(publicDir, 'company-app-encyclopedia.jpg'))).toBe(false);
     expect(fs.existsSync(path.join(publicDir, 'company-app-news.jpg'))).toBe(false);
