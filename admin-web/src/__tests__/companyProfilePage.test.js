@@ -103,7 +103,7 @@ describe('company profile page', () => {
     expect(companyProfile).not.toMatch(/fontWeight: 850/);
   });
 
-  test('company profile uses its own approved poster without replacing the home visual', () => {
+  test('company profile and home use the same approved brand poster', () => {
     const companyProfile = read('components/CompanyProfile.jsx');
     const homeDashboard = read('components/HomeDashboard.jsx');
     const publicDir = path.join(srcDir, '..', 'public');
@@ -111,8 +111,8 @@ describe('company profile page', () => {
     expect(companyProfile).toMatch(/companyHeroImage/);
     expect(companyProfile).toMatch(/company-brand-poster-20260929\.png/);
     expect(companyProfile).not.toMatch(/home-dashboard\.png/);
-    expect(homeDashboard).toMatch(/home-dashboard\.png\?v=info-talktalk-poster/);
-    expect(homeDashboard).not.toMatch(/company-brand-poster/);
+    expect(homeDashboard).toMatch(/src="\/company-brand-poster-20260929\.png"/);
+    expect(homeDashboard).not.toMatch(/home-dashboard\.png/);
     expect(companyProfile).not.toMatch(/대표 이미지/);
     expect(companyProfile).not.toMatch(/홈 화면 대표 이미지/);
     expect(companyProfile).not.toMatch(/서비스의 분위기와 핵심 메시지/);

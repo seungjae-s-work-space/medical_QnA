@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { colors } from '../theme';
 import PromotionCarousel from './PromotionCarousel';
 import HomeSupportSection from './HomeSupportSection';
+import HomePartnershipSection from './HomePartnershipSection';
 
 const quickLinks = [
   {
@@ -202,7 +203,7 @@ function HomeDashboard() {
           >
             <Box
               component="img"
-              src="/home-dashboard.png?v=info-talktalk-poster"
+              src="/company-brand-poster-20260929.png"
               alt="난임정보톡톡"
               sx={{
                 display: 'block',
@@ -363,6 +364,7 @@ function HomeDashboard() {
         </Box>
 
         <HomeSupportSection />
+        <HomePartnershipSection />
 
         <Dialog
           open={membershipInfoOpen}

@@ -22,7 +22,7 @@ describe('home routing', () => {
     expect(layout).toMatch(/path: '\/chat'/);
     expect(layout).toMatch(/location\.pathname\.startsWith\(`\$\{item\.path\}\/`\)/);
     expect(chatWindow).toMatch(/navigate\('\/chat'\)/);
-    expect(homeDashboard).toMatch(/home-dashboard\.png/);
+    expect(homeDashboard).toMatch(/company-brand-poster-20260929\.png/);
     expect(homeDashboard).toMatch(/useNavigate/);
     expect(homeDashboard).toMatch(/상담하기/);
     expect(homeDashboard).toMatch(/난임백과/);
@@ -38,6 +38,6 @@ describe('home routing', () => {
     expect(homeDashboard).toMatch(/navigate\('\/encyclopedia'\)/);
     expect(homeDashboard).toMatch(/navigate\('\/news'\)/);
     expect(homeDashboard).toMatch(/navigate\('\/login'\)/);
-    expect(fs.existsSync(path.join(srcDir, '..', 'public', 'home-dashboard.png'))).toBe(true);
+    expect(fs.existsSync(path.join(srcDir, '..', 'public', 'company-brand-poster-20260929.png'))).toBe(true);
   });
 });
