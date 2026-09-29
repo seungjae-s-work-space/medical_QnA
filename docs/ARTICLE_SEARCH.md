@@ -2,15 +2,17 @@
 
 ## Behavior
 
-News, encyclopedia, and male-infertility searches cover their own entire board.
+News, encyclopedia, male-infertility, and Agisungong TV searches cover their own entire board.
 Enter or the search button submits the query. Typing alone does not change the list.
 Results show 30 titles per page, newest first; opening a title reads its current
-Firestore document and uses the existing detail dialog. Clearing the search
+Firestore document and uses the existing detail/playback dialog. Clearing the search
 restores the previous browsing page. Administrators can edit a result directly.
 
 Matching is a case-insensitive, Unicode-normalized substring in the title or
 visible HTML body text. Whitespace is normalized; this is not fuzzy or semantic
 search. Image URLs, HTML attributes, scripts, and image contents are not searched.
+Videos search their title and plain-text `description`, preserving literal text
+such as `<5%`; only registered `videos` documents are searched, not all of YouTube.
 
 ## Server And Privacy
 
@@ -26,10 +28,12 @@ documents, excluding deleted or unpublished articles from public responses.
 Draft searches require a current `users/{uid}.role === 'admin'` check. Direct
 article reads still use Firestore security rules.
 
-Three document-write triggers update the catalogs. Generation preconditions and
+Four document-write triggers update the catalogs. Generation preconditions and
 retries protect concurrent updates. Triggers read the current source document so
 out-of-order events do not restore stale data. View-count/updatedAt-only events
 return without reading or rewriting the catalog.
+Video description changes update the video catalog; URL, thumbnail, and video ID
+changes alone do not. Playback always reads the latest full source document.
 
 Index updates are asynchronous. New/edited titles, matches, and total counts can
 lag until their trigger finishes. A deleted/unpublished hit can temporarily leave
@@ -46,7 +50,7 @@ No Flutter release, Firestore schema migration, or new client rules are needed.
 2. Deploy only the search functions from the repository root:
 
 ```sh
-firebase deploy --project medicalqa-e5313 --only functions:searchArticles,functions:syncNewsSearchIndex,functions:syncEncyclopediaSearchIndex,functions:syncMaleInfertilitySearchIndex
+firebase deploy --project medicalqa-e5313 --only functions:searchArticles,functions:syncNewsSearchIndex,functions:syncEncyclopediaSearchIndex,functions:syncMaleInfertilitySearchIndex,functions:syncVideoSearchIndex
 ```
 
 3. With authorized Application Default Credentials, bootstrap existing articles:
@@ -63,6 +67,20 @@ Firebase CLI sign-in alone does not necessarily provide ADC. Do not put service
 account keys in the repository. The script prints counts only, never article text.
 It leaves existing catalogs unchanged; `--rebuild` explicitly reconstructs them.
 It does not modify source articles, send notifications, or delete existing content.
+
+For the video-only extension of an already deployed article search, deploy just
+the callable and new video trigger, then bootstrap only the video catalog:
+
+```sh
+firebase deploy --project medicalqa-e5313 --only functions:searchArticles,functions:syncVideoSearchIndex
+node functions/scripts/buildArticleSearchIndex.js \
+  --project medicalqa-e5313 \
+  --bucket medicalqa-e5313.firebasestorage.app \
+  --section videos
+```
+
+Do not deploy the updated web before these two steps succeed. Existing article
+catalogs and original content remain unchanged; no `--rebuild` is needed.
 
 4. Verify counts (including drafts), a known older title/body match in every board,
    public draft exclusion, administrator editing, and no public Storage access.

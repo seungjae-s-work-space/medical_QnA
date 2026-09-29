@@ -8,7 +8,7 @@ export async function searchArticles(params) {
 }
 
 export async function readSearchArticle(section, id, includeDrafts = false) {
-  if (!['news', 'encyclopedia', 'male_infertility'].includes(section)) {
+  if (!['news', 'encyclopedia', 'male_infertility', 'videos'].includes(section)) {
     throw new Error('올바르지 않은 게시판입니다.');
   }
   const snapshot = await getDocFromServer(doc(db, section, id));

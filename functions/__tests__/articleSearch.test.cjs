@@ -12,14 +12,15 @@ function fixture(initial = {}) {
     collection: (name) => ({
       doc: (id) => ({ path: `${name}/${id}`, get: async () => { metrics.reads++; return snapshot(`${name}/${id}`); } }),
       orderBy: () => {
-        let cursor = ''; let size = 200;
+        let cursor = ''; let size = 200; let fields;
         const query = {
-          select: () => query,
+          select: (...value) => { fields = value; return query; },
           limit: (value) => { size = value; return query; },
           startAfter: (value) => { cursor = value.id; return query; },
           get: async () => {
             metrics.scans++;
-            return { docs: [...records.keys()].filter(key => key.startsWith(`${name}/`) && key.split('/')[1] > cursor).sort().slice(0, size).map(snapshot) };
+            const docs = [...records.keys()].filter(key => key.startsWith(`${name}/`) && key.split('/')[1] > cursor).sort().slice(0, size).map(snapshot);
+            return { docs: docs.map(doc => ({ ...doc, data: () => Object.fromEntries(fields.filter(key => key in doc.data()).map(key => [key, doc.data()[key]])) })) };
           },
         };
         return query;
@@ -144,4 +145,58 @@ test('a republish event fences an older unpublish even when the catalog already 
   const result = await f.service.search({ data: { section: 'news', query: '반복' } });
   assert.equal(result.total, 1);
   assert.equal(result.items[0].isPublished, true);
+});
+
+const video = (title, extra = {}) => ({ title, description: '정자 DNA 검사 <5% & 회복\nIVF', isPublished: true, createdAt: 10, videoId: 'youtube1234', ...extra });
+
+test('video descriptions are indexed as plain text and relevant changes trigger updates', () => {
+  const entry = toSearchEntry('video', video('검사'), 'videos');
+  assert.equal(entry.text, '정자 dna 검사 <5% & 회복 ivf');
+  assert.equal(isSearchChange(video('검사'), video('검사', { description: '새 설명' }), 'videos'), true);
+  assert.equal(isSearchChange(video('검사'), video('검사', { videoId: 'replacement', updatedAt: 20 }), 'videos'), false);
+  assert.equal(isSearchChange(article('글'), article('글', { description: 'unused' }), 'news'), false);
+});
+
+test('video search covers all projected descriptions across catalog pages with bounded result reads', async () => {
+  const records = Object.fromEntries(Array.from({ length: 215 }, (_, i) => [`videos/${String(i).padStart(3, '0')}`, video(`영상 ${i}`, { createdAt: i })]));
+  records['news/other'] = article('다른 게시판 DNA');
+  records['videos/private'] = video('DNA 비공개', { isPublished: false });
+  const f = fixture(records);
+  await f.service.bootstrap('videos');
+  assert.equal(f.metrics.scans, 2);
+  const first = await f.service.search({ data: { section: 'videos', query: 'DNA' } });
+  assert.equal(first.total, 215);
+  assert.equal(first.items.length, 30);
+  assert.equal(f.metrics.reads, 30);
+  const last = await f.service.search({ data: { section: 'videos', query: '<5%', page: 7 } });
+  assert.equal(last.items.length, 5);
+  assert.equal(last.items[4].title, '영상 0');
+  assert.deepEqual(Object.keys(last.items[0]).sort(), ['id', 'isPublished', 'title']);
+  const title = await f.service.search({ data: { section: 'videos', query: '영상 0' } });
+  assert.equal(title.total, 1);
+  assert.equal(f.metrics.scans, 2, 'searches never scan the source collection');
+});
+
+test('video search preserves draft privacy and catches description edits and deletions', async () => {
+  const original = video('공개 영상');
+  const f = fixture({ 'videos/a': original, 'videos/private': video('비공개', { isPublished: false }), 'users/admin': { role: 'admin' } });
+  await f.service.bootstrap('videos');
+  await assert.rejects(f.service.search({ data: { section: 'videos', query: '비공개', includeDrafts: true } }), /관리자/);
+  const drafts = await f.service.search({ data: { section: 'videos', query: '비공개', includeDrafts: true }, auth: { uid: 'admin' } });
+  assert.equal(drafts.items[0].title, '비공개');
+  const updated = video('공개 영상', { description: '새로운 설명 검색어' });
+  f.records.set('videos/a', updated);
+  await f.service.sync('videos', 'a', original, updated);
+  assert.equal((await f.service.search({ data: { section: 'videos', query: '새로운 설명' } })).items[0].id, 'a');
+  f.records.set('videos/a', { ...updated, isPublished: false });
+  assert.deepEqual((await f.service.search({ data: { section: 'videos', query: '새로운 설명' } })).items, []);
+  f.records.delete('videos/a');
+  await f.service.sync('videos', 'a', updated, null);
+  assert.equal((await f.service.search({ data: { section: 'videos', query: '새로운 설명' } })).total, 0);
+});
+
+test('video catalog synchronization is wired to the source collection', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  assert.match(fs.readFileSync(path.join(__dirname, '../index.js'), 'utf8'), /\["syncVideoSearchIndex", "videos"\]/);
 });

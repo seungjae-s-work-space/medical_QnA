@@ -27,7 +27,6 @@ import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import PlayCircleFilledRoundedIcon from '@mui/icons-material/PlayCircleFilledRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
@@ -52,6 +51,7 @@ import {
 import { db, auth } from '../firebase';
 import { colors } from '../theme';
 import { protectedContentSx } from '../utils/contentProtection';
+import ArticleSearch from './ArticleSearch';
 import {
   contentCardSx,
   dialogPaperSx,
@@ -59,7 +59,6 @@ import {
   pageHeaderSx,
   pageShellSx,
   paginationButtonSx,
-  searchFieldSx,
   statCardSx,
 } from '../utils/webDesignStyles';
 
@@ -122,7 +121,6 @@ function VideoManager({ readOnly = false }) {
   const [editingVideo, setEditingVideo] = useState(null);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [searchQuery, setSearchQuery] = useState('');
   const [viewVideo, setViewVideo] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
@@ -244,13 +242,13 @@ function VideoManager({ readOnly = false }) {
 
     if (page >= totalPages) return;
 
-    const loadedPages = Math.ceil(filteredVideos.length / ITEMS_PER_PAGE);
+    const loadedPages = Math.ceil(displayVideos.length / ITEMS_PER_PAGE);
     if (page < loadedPages) {
       setCurrentPage(page);
       return;
     }
 
-    if (searchQuery || !hasMore || !lastVisibleDoc) return;
+    if (!hasMore || !lastVisibleDoc) return;
 
     setLoadingMore(true);
     try {
@@ -401,29 +399,12 @@ function VideoManager({ readOnly = false }) {
   // readOnly 모드에서는 공개된 콘텐츠만 표시
   const displayVideos = readOnly ? videos.filter((v) => v.isPublished) : videos;
 
-  const filteredVideos = displayVideos.filter((video) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (video.title || '').toLowerCase().includes(q) ||
-      (video.description || '').toLowerCase().includes(q)
-    );
-  });
-
   // 페이지네이션 계산
-  const totalPages = Math.ceil(
-    (searchQuery ? filteredVideos.length : totalItemCount) / ITEMS_PER_PAGE
-  );
-  const paginatedVideos = filteredVideos.slice(
+  const totalPages = Math.ceil(totalItemCount / ITEMS_PER_PAGE);
+  const paginatedVideos = displayVideos.slice(
     currentPage * ITEMS_PER_PAGE,
     (currentPage + 1) * ITEMS_PER_PAGE
   );
-
-  // 검색어 변경 시 첫 페이지로
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(0);
-  };
 
   const publishedCount = displayVideos.filter((v) => v.isPublished).length;
   const draftCount = displayVideos.filter((v) => !v.isPublished).length;
@@ -498,24 +479,10 @@ function VideoManager({ readOnly = false }) {
         </Box>
       )}
 
-      {/* Search */}
-      <TextField
-        fullWidth
-        placeholder="제목 또는 설명 검색..."
-        value={searchQuery}
-        onChange={handleSearchChange}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchRoundedIcon sx={{ color: colors.textTertiary }} />
-            </InputAdornment>
-          ),
-        }}
-        sx={searchFieldSx()}
-      />
+      <ArticleSearch section="videos" readOnly={readOnly} onOpen={setViewVideo} onEdit={handleOpenDialog}>
 
       {/* Video Grid */}
-      {filteredVideos.length === 0 ? (
+      {displayVideos.length === 0 ? (
         <Box
           sx={emptyStateSx(colors)}
         >
@@ -534,7 +501,7 @@ function VideoManager({ readOnly = false }) {
             <YouTubeIcon sx={{ fontSize: 36, color: colors.textTertiary }} />
           </Box>
           <Typography sx={{ color: colors.textSecondary, fontSize: 15, fontWeight: 500 }}>
-            {searchQuery ? '검색 결과가 없습니다' : '등록된 영상이 없습니다'}
+            등록된 영상이 없습니다
           </Typography>
         </Box>
       ) : (
@@ -737,6 +704,8 @@ function VideoManager({ readOnly = false }) {
           </IconButton>
         </Box>
       )}
+
+      </ArticleSearch>
 
       {/* Edit Dialog */}
       <Dialog

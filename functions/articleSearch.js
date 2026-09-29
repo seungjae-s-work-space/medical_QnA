@@ -2,7 +2,7 @@ const { convert } = require("html-to-text");
 const { FieldPath } = require("firebase-admin/firestore");
 const { HttpsError } = require("firebase-functions/v2/https");
 
-const SECTIONS = ["news", "encyclopedia", "male_infertility"];
+const SECTIONS = ["news", "encyclopedia", "male_infertility", "videos"];
 const PAGE_SIZE = 30;
 const MAX_RETRIES = 5;
 
@@ -15,8 +15,8 @@ function timestamp(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function toSearchEntry(id, data) {
-  const text = convert(String(data.content || ""), {
+function toSearchEntry(id, data, section) {
+  const text = section === "videos" ? String(data.description || "") : convert(String(data.content || ""), {
     wordwrap: false,
     limits: { maxInputLength: Infinity },
     selectors: [
@@ -35,9 +35,10 @@ function toSearchEntry(id, data) {
   };
 }
 
-function isSearchChange(before, after) {
+function isSearchChange(before, after, section) {
   if (!before || !after) return Boolean(before || after);
-  return before.title !== after.title || before.content !== after.content ||
+  const textField = section === "videos" ? "description" : "content";
+  return before.title !== after.title || before[textField] !== after[textField] ||
     before.isPublished !== after.isPublished || timestamp(before.createdAt) !== timestamp(after.createdAt);
 }
 
@@ -87,12 +88,13 @@ function createArticleSearch({ db, bucket }) {
       if (current && !rebuild) return { section, count: Object.keys(current.catalog.entries).length, created: false };
       const entries = Object.create(null);
       let cursor;
+      const textField = section === "videos" ? "description" : "content";
       do {
         let query = db.collection(section).orderBy(FieldPath.documentId())
-          .select("title", "content", "isPublished", "createdAt").limit(200);
+          .select("title", textField, "isPublished", "createdAt").limit(200);
         if (cursor) query = query.startAfter(cursor);
         const snapshot = await query.get();
-        for (const doc of snapshot.docs) entries[doc.id] = toSearchEntry(doc.id, doc.data());
+        for (const doc of snapshot.docs) entries[doc.id] = toSearchEntry(doc.id, doc.data(), section);
         cursor = snapshot.docs.length === 200 ? snapshot.docs[snapshot.docs.length - 1] : null;
       } while (cursor);
       try {
@@ -106,7 +108,7 @@ function createArticleSearch({ db, bucket }) {
 
   async function sync(section, id, before, after) {
     validateSection(section);
-    if (!isSearchChange(before, after)) return;
+    if (!isSearchChange(before, after, section)) return;
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       let current = await readCatalog(section);
       if (!current) {
@@ -116,7 +118,7 @@ function createArticleSearch({ db, bucket }) {
       // Events may arrive out of order. Always index the current source document.
       const snapshot = await db.collection(section).doc(id).get();
       const entries = { ...current.catalog.entries };
-      if (snapshot.exists) entries[id] = toSearchEntry(id, snapshot.data());
+      if (snapshot.exists) entries[id] = toSearchEntry(id, snapshot.data(), section);
       else delete entries[id];
       // Even matching values must advance the generation to fence older in-flight events.
       try {

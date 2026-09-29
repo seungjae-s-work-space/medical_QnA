@@ -10,7 +10,7 @@ async function main() {
     section: { type: "string", default: "all" }, rebuild: { type: "boolean", default: false },
   } });
   if (!values.project || !values.bucket || (values.section !== "all" && !SECTIONS.includes(values.section))) {
-    throw new Error("Specify --project PROJECT_ID --bucket BUCKET --section all|news|encyclopedia|male_infertility [--rebuild]");
+    throw new Error(`Specify --project PROJECT_ID --bucket BUCKET --section all|${SECTIONS.join("|")} [--rebuild]`);
   }
   initializeApp({ projectId: values.project, storageBucket: values.bucket });
   const search = createArticleSearch({ db: getFirestore(), bucket: getStorage().bucket() });

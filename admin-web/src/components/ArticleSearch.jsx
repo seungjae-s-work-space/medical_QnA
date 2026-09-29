@@ -61,7 +61,7 @@ function BoardSearch({ section, readOnly, onOpen, onEdit, children }) {
       const article = await readSearchArticle(section, id, !readOnly);
       if (sequence === openId.current) (edit ? onEdit : onOpen)?.(article);
     } catch (failure) {
-      if (sequence === openId.current) setOpenError('글을 열 수 없습니다. 삭제 또는 공개 상태 변경 여부를 확인하거나 다시 시도해주세요.');
+      if (sequence === openId.current) setOpenError(`${section === 'videos' ? '영상을' : '글을'} 열 수 없습니다. 삭제 또는 공개 상태 변경 여부를 확인하거나 다시 시도해주세요.`);
     } finally {
       if (sequence === openId.current) setOpeningId(null);
     }
@@ -74,7 +74,7 @@ function BoardSearch({ section, readOnly, onOpen, onEdit, children }) {
         const query = draft.trim();
         if (query) runSearch(query); else clear();
       }} sx={{ mb: 3 }}>
-        <TextField fullWidth inputRef={inputRef} label="제목 또는 내용 검색" value={draft}
+        <TextField fullWidth inputRef={inputRef} label={section === 'videos' ? '제목 또는 설명 검색' : '제목 또는 내용 검색'} value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.keyCode === 229)) event.preventDefault();

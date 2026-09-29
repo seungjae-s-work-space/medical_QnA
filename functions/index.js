@@ -41,6 +41,7 @@ for (const [name, section] of [
   ["syncNewsSearchIndex", "news"],
   ["syncEncyclopediaSearchIndex", "encyclopedia"],
   ["syncMaleInfertilitySearchIndex", "male_infertility"],
+  ["syncVideoSearchIndex", "videos"],
 ]) {
   exports[name] = onDocumentWritten(
     { document: `${section}/{articleId}`, retry: true, maxInstances: 2, timeoutSeconds: 120 },

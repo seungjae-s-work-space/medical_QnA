@@ -39,3 +39,12 @@ test('unexpected collections are never read', async () => {
   await expect(readSearchArticle('users', 'admin', true)).rejects.toThrow();
   expect(getDocFromServer).not.toHaveBeenCalled();
 });
+
+test('video results read the current full video and enforce public visibility', async () => {
+  const data = { title: '영상', description: '설명', videoId: 'youtube1234', isPublished: true };
+  getDocFromServer.mockResolvedValueOnce({ id: 'older-video', exists: () => true, data: () => data });
+  expect(await readSearchArticle('videos', 'older-video')).toEqual({ ...data, id: 'older-video' });
+  expect(getDocFromServer).toHaveBeenCalledWith({ section: 'videos', id: 'older-video' });
+  getDocFromServer.mockResolvedValueOnce({ exists: () => true, data: () => ({ ...data, isPublished: false }) });
+  await expect(readSearchArticle('videos', 'older-video')).rejects.toThrow('비공개');
+});
