@@ -29,6 +29,7 @@ import MaleRoundedIcon from '@mui/icons-material/MaleRounded';
 import CampaignRoundedIcon from '@mui/icons-material/CampaignRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
+import BarChartRoundedIcon from '@mui/icons-material/BarChartRounded';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
@@ -170,6 +171,14 @@ function Layout({ children }) {
         description: '사용자 목록 조회',
         badge: 0,
         visible: isAdmin, // 관리자만
+      },
+      {
+        path: '/statistics',
+        label: '통계',
+        icon: <BarChartRoundedIcon />,
+        description: '웹 게시글 조회 분석',
+        badge: 0,
+        visible: isAdmin,
       },
     ];
 

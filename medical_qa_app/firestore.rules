@@ -9,7 +9,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin';
     }
 
     function isOwner(userId) {
@@ -19,10 +19,17 @@ service cloud.firestore {
     // users 컬렉션
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isOwner(userId) && request.resource.data.get('role', 'user') == 'user';
+      allow update: if (isOwner(userId) &&
+                        request.resource.data.get('role', 'user') == resource.data.get('role', 'user')) || isAdmin();
       allow delete: if isAdmin();
     }
+
+    // Web analytics are accessed only through the authorized Admin SDK callables.
+    match /web_view_meta/{id} { allow read, write: if false; }
+    match /web_view_daily/{id} { allow read, write: if false; }
+    match /web_view_events/{id} { allow read, write: if false; }
+    match /web_view_limits/{id} { allow read, write: if false; }
 
     // deviceTokens 컬렉션 (설치/기기 단위 FCM 목적지)
     match /deviceTokens/{deviceId} {

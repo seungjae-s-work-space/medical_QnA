@@ -13,6 +13,7 @@ import NewsManager from './components/NewsManager';
 import NoticeManager from './components/NoticeManager';
 import VideoManager from './components/VideoManager';
 import UserManagement from './components/UserManagement';
+import WebArticleStatistics from './components/WebArticleStatistics';
 import PromotionManager from './components/PromotionManager';
 import PromotionDetail from './components/PromotionDetail';
 import CompanyProfile from './components/CompanyProfile';
@@ -147,6 +148,11 @@ function getRouteMetadata(pathname, isAdmin, isLoggedIn) {
     '/users': {
       title: `사용자 관리 | ${SITE_NAME}`,
       description: '관리자가 가입 사용자 목록을 조회하는 화면입니다.',
+      shouldIndex: false,
+    },
+    '/statistics': {
+      title: `통계 | ${SITE_NAME}`,
+      description: '관리자 전용 웹 게시글 조회 통계입니다.',
       shouldIndex: false,
     },
   };
@@ -341,6 +347,11 @@ function RoutedAppContent() {
               <Navigate to="/" />
             )
           }
+        />
+
+        <Route
+          path="/statistics"
+          element={isAdmin ? <Layout><WebArticleStatistics /></Layout> : <Navigate to="/" replace />}
         />
 
         {/* 기타 경로는 홈으로 */}

@@ -52,10 +52,10 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
-  increment,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
+import { recordWebArticleView } from '../services/webArticleStatisticsService';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
@@ -261,12 +261,11 @@ function NewsManager({ readOnly = false }) {
   };
 
   const incrementArticleViewCount = async (article) => {
-    if (!readOnly || !auth.currentUser) return;
+    if (!readOnly) return;
 
     try {
-      await updateDoc(doc(db, 'news', article.id), {
-        viewCount: increment(1),
-      });
+      const result = await recordWebArticleView('news', article.id);
+      if (!result.recorded) return;
       setArticles((prev) => prev.map((item) => (
         item.id === article.id
           ? { ...item, viewCount: (item.viewCount || 0) + 1 }

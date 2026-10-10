@@ -105,5 +105,9 @@
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    { "collectionGroup": "web_view_daily", "fieldPath": "articles", "indexes": [] },
+    { "collectionGroup": "web_view_events", "fieldPath": "expiresAt", "ttl": true, "indexes": [] },
+    { "collectionGroup": "web_view_limits", "fieldPath": "expiresAt", "ttl": true, "indexes": [] }
+  ]
 }

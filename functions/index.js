@@ -25,6 +25,17 @@ const db = getFirestore();
 const auth = getAuth();
 const messaging = getMessaging();
 const storage = getStorage();
+const { createWebArticleStatistics } = require('./webArticleStatistics');
+const webArticleStatistics = createWebArticleStatistics({ db });
+const statisticsOptions = {
+  maxInstances: 3, concurrency: 20, timeoutSeconds: 30, memory: '256MiB',
+  cors: ['https://agisungong.net', 'https://www.agisungong.net', /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/],
+};
+exports.recordWebArticleView = onCall(statisticsOptions, request => webArticleStatistics.record(request));
+exports.getWebArticleStatistics = onCall(
+  { ...statisticsOptions, maxInstances: 1, concurrency: 1, memory: '512MiB' },
+  request => webArticleStatistics.report(request),
+);
 const { createArticleSearch } = require("./articleSearch");
 let articleSearch;
 function getArticleSearch() {

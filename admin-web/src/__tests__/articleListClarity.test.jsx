@@ -4,8 +4,10 @@ import { getDocs, getCountFromServer, onSnapshot, updateDoc, deleteDoc } from 'f
 import NewsManager from '../components/NewsManager';
 import EncyclopediaManager from '../components/EncyclopediaManager';
 import { ARTICLE_SECTIONS } from '../utils/articleSections';
-import { searchArticles } from '../services/articleSearchService';
+import { searchArticles, readSearchArticle } from '../services/articleSearchService';
 import { auth } from '../firebase';
+import { recordWebArticleView } from '../services/webArticleStatisticsService';
+jest.mock('../services/webArticleStatisticsService', () => ({ recordWebArticleView: jest.fn() }));
 
 jest.mock('../services/articleSearchService', () => ({ searchArticles: jest.fn(), readSearchArticle: jest.fn() }));
 
@@ -59,6 +61,7 @@ let counts;
 beforeEach(() => {
   global.IS_REACT_ACT_ENVIRONMENT = true;
   jest.clearAllMocks();
+  recordWebArticleView.mockResolvedValue({ recorded: true });
   auth.currentUser = { uid: 'admin' };
   counts = { total: 193, published: 192 };
   getCountFromServer.mockImplementation(async (q) => ({
@@ -108,10 +111,11 @@ for (const role of ['guest', 'member', 'admin']) {
       expect(dialog.querySelector('.MuiDialogTitle-root').textContent).not.toContain('·');
     }
 
-    if (role === 'member') {
-      expect(updateDoc).toHaveBeenCalledTimes(1);
-      expect(updateDoc).toHaveBeenCalledWith({ name, id: 'article-1' }, { viewCount: { increment: 1 } });
-    } else expect(updateDoc).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+    if (role !== 'admin') {
+      expect(recordWebArticleView).toHaveBeenCalledTimes(1);
+      expect(recordWebArticleView).toHaveBeenCalledWith(name, 'article-1');
+    } else expect(recordWebArticleView).not.toHaveBeenCalled();
   });
 }
 
@@ -132,6 +136,33 @@ test.each(lists)('%s public list retains a single published-count read', async (
     name, constraints: [{ where: ['isPublished', '==', true] }],
   }));
   expect(onSnapshot).not.toHaveBeenCalled();
+});
+
+test.each(lists)('%s counts a guest search result only after its detail loads', async (name, Component, props) => {
+  auth.currentUser = null;
+  await render(Component, { ...props, readOnly: true });
+  const input = container.querySelector('input');
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '검색');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  readSearchArticle.mockRejectedValueOnce(new Error('not-found'));
+  await act(async () => container.querySelector('button[aria-label="오래된 검색 결과"]').click());
+  expect(recordWebArticleView).not.toHaveBeenCalled();
+  readSearchArticle.mockResolvedValueOnce({ id: 'remote', title: '검색 본문', content: '<p>검색 결과 내용</p>', isPublished: true });
+  await act(async () => container.querySelector('button[aria-label="오래된 검색 결과"]').click());
+  expect(recordWebArticleView).toHaveBeenCalledWith(name, 'remote');
+  expect(document.querySelector('[role="dialog"]').textContent).toContain('검색 결과 내용');
+});
+
+test.each(lists)('%s content remains readable when telemetry is unavailable', async (_name, Component, props) => {
+  recordWebArticleView.mockRejectedValueOnce(new Error('unavailable'));
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  await render(Component, { ...props, readOnly: true });
+  await act(async () => container.querySelector('.MuiCard-root').click());
+  expect(document.querySelector('[role="dialog"]').textContent).toContain('본문');
+  expect(updateDoc).not.toHaveBeenCalled();
 });
 
 test.each(lists)('%s searches the whole board on submit and restores the original browse page', async (name, Component, props) => {

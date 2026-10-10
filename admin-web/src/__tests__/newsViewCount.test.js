@@ -17,7 +17,7 @@ describe('news view count display', () => {
     expect(news).toMatch(/조회 \{viewArticle\.viewCount \|\| 0\}/);
   });
 
-  test('news and encyclopedia increment view counts when members open public content', () => {
+  test('web uses server-side tracking while existing mobile increments stay authorized', () => {
     const news = read('components/NewsManager.jsx');
     const encyclopedia = read('components/EncyclopediaManager.jsx');
     const rules = fs.readFileSync(
@@ -25,15 +25,10 @@ describe('news view count display', () => {
       'utf8'
     );
 
-    expect(news).toMatch(/increment/);
-    expect(news).toMatch(/viewCount: increment\(1\)/);
-    expect(news).toMatch(/doc\(db, 'news', article\.id\)/);
-    expect(news).toMatch(/!readOnly \|\| !auth\.currentUser/);
-
-    expect(encyclopedia).toMatch(/increment/);
-    expect(encyclopedia).toMatch(/viewCount: increment\(1\)/);
-    expect(encyclopedia).toMatch(/doc\(db, collectionName, article\.id\)/);
-    expect(encyclopedia).toMatch(/!readOnly \|\| !auth\.currentUser/);
+    expect(news).toContain("recordWebArticleView('news', article.id)");
+    expect(encyclopedia).toContain('recordWebArticleView(collectionName, article.id)');
+    expect(news).not.toContain('!readOnly || !auth.currentUser');
+    expect(encyclopedia).not.toContain('!readOnly || !auth.currentUser');
 
     expect(rules).toMatch(/match \/news\/\{newsId\}/);
     expect(rules).toMatch(/request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasOnly\(\['viewCount'\]\)/);

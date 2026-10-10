@@ -2,6 +2,8 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { getDocs, getCountFromServer, onSnapshot, updateDoc, addDoc } from 'firebase/firestore';
 import { auth } from '../firebase';
+import { recordWebArticleView } from '../services/webArticleStatisticsService';
+jest.mock('../services/webArticleStatisticsService', () => ({ recordWebArticleView: jest.fn() }));
 import EncyclopediaManager from '../components/EncyclopediaManager';
 jest.mock('../services/articleSearchService', () => ({ searchArticles: jest.fn(), readSearchArticle: jest.fn() }));
 import { ARTICLE_SECTIONS } from '../utils/articleSections';
@@ -46,6 +48,7 @@ const sample = { id: 'male-1', data: () => ({ title: '남성난임 게시글', c
 beforeEach(() => {
   global.IS_REACT_ACT_ENVIRONMENT = true;
   jest.clearAllMocks();
+  recordWebArticleView.mockResolvedValue({ recorded: true });
   auth.currentUser = null;
   getDocs.mockResolvedValue({ docs: [sample] });
   getCountFromServer.mockResolvedValue({ data: () => ({ count: 1 }) });
@@ -85,14 +88,16 @@ test('member views increment only the male infertility collection without displa
   auth.currentUser = { uid: 'member' };
   await render();
   await clickText('남성난임 게시글');
-  expect(updateDoc).toHaveBeenCalledWith({ name: 'male_infertility', id: 'male-1' }, { viewCount: { increment: 1 } });
+  expect(recordWebArticleView).toHaveBeenCalledWith('male_infertility', 'male-1');
+  expect(updateDoc).not.toHaveBeenCalled();
   expect(document.body.textContent).not.toContain('조회');
 });
 
-test('guest views still open the article without attempting an unauthorized increment', async () => {
+test('guest views use the public callable without writing Firestore directly', async () => {
   await render();
   await clickText('남성난임 게시글');
   expect(document.body.textContent).toContain('본문');
+  expect(recordWebArticleView).toHaveBeenCalledWith('male_infertility', 'male-1');
   expect(updateDoc).not.toHaveBeenCalled();
 });
 
