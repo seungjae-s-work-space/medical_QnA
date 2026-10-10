@@ -5,6 +5,7 @@ import NewsManager from '../components/NewsManager';
 import EncyclopediaManager from '../components/EncyclopediaManager';
 import { ARTICLE_SECTIONS } from '../utils/articleSections';
 import { searchArticles } from '../services/articleSearchService';
+import { auth } from '../firebase';
 
 jest.mock('../services/articleSearchService', () => ({ searchArticles: jest.fn(), readSearchArticle: jest.fn() }));
 
@@ -45,7 +46,10 @@ const lists = [
 const page = (start) => ({
   docs: Array.from({ length: 17 }, (_, index) => ({
     id: `article-${start + index}`,
-    data: () => ({ title: `Article ${start + index}`, content: '<p>본문</p>', isPublished: true }),
+    data: () => ({
+      title: `Article ${start + index}`, content: '<p>본문</p>', isPublished: true,
+      viewCount: 876543, createdAt: '2026-10-07T00:00:00Z',
+    }),
   })),
 });
 let root;
@@ -55,6 +59,7 @@ let counts;
 beforeEach(() => {
   global.IS_REACT_ACT_ENVIRONMENT = true;
   jest.clearAllMocks();
+  auth.currentUser = { uid: 'admin' };
   counts = { total: 193, published: 192 };
   getCountFromServer.mockImplementation(async (q) => ({
     data: () => ({ count: q.constraints.some((c) => c.where?.[0] === 'isPublished') ? counts.published : counts.total }),
@@ -76,6 +81,39 @@ afterEach(async () => {
 const render = async (Component, props) => act(async () => { root.render(<Component {...props} />); });
 const stat = (label) => [...container.querySelectorAll('p')]
   .find((node) => node.textContent === label).parentElement.querySelector('h4').textContent;
+
+for (const role of ['guest', 'member', 'admin']) {
+  test.each(lists)(`%s ${role} only sees view counts with admin access`, async (name, Component, props) => {
+    auth.currentUser = role === 'guest' ? null : { uid: role };
+    await render(Component, { ...props, readOnly: role !== 'admin' });
+    const card = container.querySelector('.MuiCard-root');
+    const date = new Date('2026-10-07T00:00:00Z').toLocaleDateString('ko-KR');
+    expect(card.textContent).toContain(date);
+    expect(card.textContent.includes('876543')).toBe(role === 'admin');
+    expect(Boolean(card.querySelector('[data-testid="RemoveRedEyeRoundedIcon"]'))).toBe(role === 'admin');
+    if (role !== 'admin') {
+      expect(card.querySelector('.MuiCardContent-root').lastElementChild.textContent).toBe('본문');
+    }
+
+    await act(async () => card.click());
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog).not.toBeNull();
+    expect(dialog.textContent).toContain('Article 1');
+    expect(dialog.textContent).toContain(date);
+    expect(dialog.textContent.includes('조회')).toBe(role === 'admin');
+    if (role === 'admin') expect(dialog.textContent).toContain('조회 876543');
+    else {
+      expect(dialog.textContent).not.toContain('876543');
+      expect(dialog.textContent).not.toContain('876544');
+      expect(dialog.querySelector('.MuiDialogTitle-root').textContent).not.toContain('·');
+    }
+
+    if (role === 'member') {
+      expect(updateDoc).toHaveBeenCalledTimes(1);
+      expect(updateDoc).toHaveBeenCalledWith({ name, id: 'article-1' }, { viewCount: { increment: 1 } });
+    } else expect(updateDoc).not.toHaveBeenCalled();
+  });
+}
 
 test.each(lists)('%s admin statistics cover the whole collection, not just the first page', async (name, Component, props) => {
   await render(Component, props);

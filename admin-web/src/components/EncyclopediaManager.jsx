@@ -858,7 +858,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
                   >
                     {stripHtml(article.content)}
                   </Typography>
-                  <Box
+                  {!readOnly && <Box
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
@@ -903,7 +903,7 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
                         </IconButton>
                       </Box>
                     )}
-                  </Box>
+                  </Box>}
                 </CardContent>
               </Card>
             </Grid>
@@ -1343,7 +1343,8 @@ function EncyclopediaManager({ readOnly = false, section = ARTICLE_SECTIONS.ency
                     />
                   )}
                   <Typography variant="body2" sx={{ color: colors.textTertiary }}>
-                    {formatDate(viewArticle.createdAt)} · 조회 {viewArticle.viewCount || 0}
+                    {formatDate(viewArticle.createdAt)}
+                    {!readOnly && <> · 조회 {viewArticle.viewCount || 0}</>}
                   </Typography>
                 </Box>
                 <IconButton size="small" onClick={() => setViewArticle(null)}>

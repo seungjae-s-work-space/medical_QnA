@@ -81,12 +81,12 @@ test('public list reads only published male infertility articles with a page lim
   expect(shouldShowMembershipPrompt('/male-infertility/', true)).toBe(false);
 });
 
-test('member views increment only the male infertility collection', async () => {
+test('member views increment only the male infertility collection without displaying the count', async () => {
   auth.currentUser = { uid: 'member' };
   await render();
   await clickText('남성난임 게시글');
   expect(updateDoc).toHaveBeenCalledWith({ name: 'male_infertility', id: 'male-1' }, { viewCount: { increment: 1 } });
-  expect(document.body.textContent).toContain('조회 1');
+  expect(document.body.textContent).not.toContain('조회');
 });
 
 test('guest views still open the article without attempting an unauthorized increment', async () => {

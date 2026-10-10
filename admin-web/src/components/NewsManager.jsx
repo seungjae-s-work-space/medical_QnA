@@ -831,7 +831,7 @@ function NewsManager({ readOnly = false }) {
                   >
                     {stripHtml(article.content)}
                   </Typography>
-                  <Box
+                  {!readOnly && <Box
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
@@ -885,7 +885,7 @@ function NewsManager({ readOnly = false }) {
                         </IconButton>
                       </Box>
                     )}
-                  </Box>
+                  </Box>}
                 </CardContent>
               </Card>
             </Grid>
@@ -1324,7 +1324,8 @@ function NewsManager({ readOnly = false }) {
                     />
                   )}
                   <Typography variant="caption" sx={{ color: colors.textTertiary, fontWeight: 500 }}>
-                    {formatDate(viewArticle.createdAt)} · 조회 {viewArticle.viewCount || 0}
+                    {formatDate(viewArticle.createdAt)}
+                    {!readOnly && <> · 조회 {viewArticle.viewCount || 0}</>}
                   </Typography>
                 </Box>
                 <IconButton
