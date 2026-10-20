@@ -11,6 +11,7 @@ import { shouldShowMembershipPrompt } from '../utils/membershipAccess';
 
 jest.mock('../firebase', () => ({ db: {}, storage: {}, auth: { currentUser: null } }));
 jest.mock('firebase/storage', () => ({ ref: jest.fn(), uploadBytes: jest.fn(), getDownloadURL: jest.fn() }));
+jest.mock('firebase/functions', () => ({ httpsCallable: jest.fn() }));
 jest.mock('firebase/firestore', () => ({
   collection: (_db, name) => ({ name }),
   doc: (_db, name, id) => ({ name, id }),

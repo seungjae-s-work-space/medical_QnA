@@ -56,6 +56,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '../firebase';
 import { recordWebArticleView } from '../services/webArticleStatisticsService';
+import { prepareArticleImages } from '../services/articleImages';
 import { colors } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
 import { nonCopyableContentProps, protectedContentSx } from '../utils/contentProtection';
@@ -149,6 +150,10 @@ function NewsManager({ readOnly = false }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [imageProgress, setImageProgress] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const saveInFlightRef = useRef(false);
+  const uploadInFlightRef = useRef(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [viewArticle, setViewArticle] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -187,61 +192,20 @@ function NewsManager({ readOnly = false }) {
   );
 
   const handleDialogPasteCapture = (event) => {
+    if (saveInFlightRef.current) return;
     const quill = quillRef.current?.getEditor?.();
     if (!quill || !dialogContentRef.current) return;
 
     handleQuillPasteWithPreservedScroll(quill, dialogContentRef.current, event);
   };
 
-  // base64 이미지를 Storage에 업로드하고 URL 반환
-  const uploadBase64Image = async (base64String) => {
-    try {
-      // base64에서 blob 생성
-      const response = await fetch(base64String);
-      const blob = await response.blob();
-
-      // MIME 타입에서 확장자 추출
-      const mimeType = blob.type || 'image/jpeg';
-      const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
-      const fileName = `${uuidv4()}.${ext}`;
-      const storageRef = ref(storage, `news_images/${fileName}`);
-
-      // 메타데이터와 함께 업로드
-      const metadata = { contentType: mimeType };
-      await uploadBytes(storageRef, blob, metadata);
-      return await getDownloadURL(storageRef);
-    } catch (error) {
-      console.error('Base64 upload error:', error);
-      return null;
-    }
-  };
-
-  // 콘텐츠 내 base64 이미지들을 Storage URL로 변환
-  const convertBase64ImagesToUrls = async (htmlContent) => {
-    const base64Regex = /<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"/g;
-    let match;
-    let result = htmlContent;
-    const matches = [];
-
-    while ((match = base64Regex.exec(htmlContent)) !== null) {
-      matches.push(match[1]);
-    }
-
-    for (const base64 of matches) {
-      const url = await uploadBase64Image(base64);
-      if (url) {
-        result = result.replace(base64, url);
-      }
-    }
-
-    return result;
-  };
-
   // 썸네일 업로드 핸들러
   const handleThumbnailUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    e.target.value = '';
+    if (!file || saveInFlightRef.current || uploadInFlightRef.current) return;
 
+    uploadInFlightRef.current = true;
     setUploadingThumbnail(true);
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
@@ -256,6 +220,7 @@ function NewsManager({ readOnly = false }) {
       console.error('Thumbnail upload error:', error);
       setSnackbar({ open: true, message: '썸네일 업로드 실패', severity: 'error' });
     } finally {
+      uploadInFlightRef.current = false;
       setUploadingThumbnail(false);
     }
   };
@@ -295,8 +260,10 @@ function NewsManager({ readOnly = false }) {
 
     input.onchange = async () => {
       const file = input.files[0];
-      if (!file) return;
+      if (!file || saveInFlightRef.current || uploadInFlightRef.current) return;
 
+      uploadInFlightRef.current = true;
+      setUploadingImage(true);
       try {
         // 파일 확장자 추출
         const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
@@ -319,6 +286,9 @@ function NewsManager({ readOnly = false }) {
       } catch (error) {
         console.error('Image upload error:', error);
         setSnackbar({ open: true, message: '이미지 업로드 실패', severity: 'error' });
+      } finally {
+        uploadInFlightRef.current = false;
+        setUploadingImage(false);
       }
     };
   };
@@ -540,6 +510,9 @@ function NewsManager({ readOnly = false }) {
   };
 
   const handleSave = async () => {
+    if (saveInFlightRef.current || uploadInFlightRef.current) return;
+    // The resize plugin listens on document and otherwise bypasses Quill readOnly.
+    quillRef.current?.getEditor?.()?.getModule?.('imageResize')?.hide?.();
     const currentContent = getCurrentEditorContent();
 
     if (!title.trim() || !currentContent.trim()) {
@@ -547,23 +520,17 @@ function NewsManager({ readOnly = false }) {
       return;
     }
 
+    saveInFlightRef.current = true;
     setSaving(true);
+    setImageProgress(null);
 
     try {
-      // base64 이미지를 Storage URL로 변환
-      let convertedContent = await convertBase64ImagesToUrls(currentContent.trim());
-      // 연속된 blockquote 병합
-      convertedContent = mergeConsecutiveBlockquotes(convertedContent);
-
-      // 변환된 콘텐츠에서 이미지 추출
-      const updatedImages = extractImagesFromContent(convertedContent);
-      // 커스텀 썸네일 > 선택된 본문 이미지 > 첫 번째 본문 이미지
-      let imageUrl = customThumbnail;
-      if (!imageUrl) {
-        imageUrl = selectedImageUrl && updatedImages.includes(selectedImageUrl)
-          ? selectedImageUrl
-          : (updatedImages.length > 0 ? updatedImages[0] : null);
-      }
+      const prepared = await prepareArticleImages({
+        section: 'news', content: currentContent.trim(),
+        selectedImageUrl, customThumbnail, onProgress: setImageProgress,
+      });
+      const convertedContent = mergeConsecutiveBlockquotes(prepared.content);
+      const imageUrl = prepared.imageUrl;
 
       const user = auth.currentUser;
 
@@ -599,7 +566,9 @@ function NewsManager({ readOnly = false }) {
       console.error('Save error:', error);
       setSnackbar({ open: true, message: '저장 실패: ' + error.message, severity: 'error' });
     } finally {
+      saveInFlightRef.current = false;
       setSaving(false);
+      setImageProgress(null);
     }
   };
 
@@ -975,7 +944,9 @@ function NewsManager({ readOnly = false }) {
           onPasteCapture={handleDialogPasteCapture}
           sx={{ flex: 1, overflow: 'auto' }}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+          <Box component="fieldset" disabled={saving}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2, mx: 0, p: 0, border: 0, minWidth: 0,
+              pointerEvents: saving ? 'none' : undefined }}>
             <TextField
               label="제목"
               value={title}
@@ -1085,6 +1056,7 @@ function NewsManager({ readOnly = false }) {
                   ref={quillRef}
                   theme="snow"
                   defaultValue={content}
+                  readOnly={saving}
                   onChange={handleEditorChange}
                   modules={quillModules}
                   formats={quillFormats}
@@ -1106,7 +1078,10 @@ function NewsManager({ readOnly = false }) {
               <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 {/* 커스텀 썸네일 업로드 버튼 */}
                 <Box
-                  onClick={() => thumbnailInputRef.current?.click()}
+                  onClick={() => {
+                    if (!saveInFlightRef.current && !uploadInFlightRef.current) thumbnailInputRef.current?.click();
+                  }}
+                  aria-disabled={saving || uploadingImage || uploadingThumbnail}
                   sx={{
                     width: 100,
                     height: 100,
@@ -1116,7 +1091,7 @@ function NewsManager({ readOnly = false }) {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer',
+                    cursor: uploadingImage || uploadingThumbnail ? 'wait' : 'pointer',
                     transition: 'all 0.2s',
                     bgcolor: colors.backgroundAlt,
                     '&:hover': {
@@ -1138,6 +1113,7 @@ function NewsManager({ readOnly = false }) {
                 </Box>
                 <input
                   ref={thumbnailInputRef}
+                  disabled={saving || uploadingImage || uploadingThumbnail}
                   type="file"
                   accept="image/*"
                   hidden
@@ -1274,9 +1250,16 @@ function NewsManager({ readOnly = false }) {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+          {saving && (
+            <Typography role="status" variant="body2" sx={{ mr: 'auto', color: colors.textSecondary }}>
+              {imageProgress?.total > imageProgress?.completed
+                ? `이미지 저장 중 ${imageProgress.completed} / ${imageProgress.total}`
+                : '게시글 저장 중'}
+            </Typography>
+          )}
           <Button
             onClick={handleCloseDialog}
-            disabled={saving}
+            disabled={saving || uploadingImage || uploadingThumbnail}
             sx={{ px: 3, color: colors.textSecondary }}
           >
             취소
@@ -1284,7 +1267,7 @@ function NewsManager({ readOnly = false }) {
           <Button
             variant="contained"
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || uploadingImage || uploadingThumbnail}
             sx={{ px: 4 }}
           >
             {saving ? <CircularProgress size={20} color="inherit" /> : '저장'}

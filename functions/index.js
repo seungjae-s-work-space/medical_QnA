@@ -48,6 +48,21 @@ exports.searchArticles = onCall(
   (request) => getArticleSearch().search(request),
 );
 
+let articleImageImporter;
+exports.importArticleImage = onCall(
+  {
+    maxInstances: 2, concurrency: 1, timeoutSeconds: 30, memory: "512MiB",
+    cors: ['https://agisungong.net', 'https://www.agisungong.net', /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/],
+  },
+  (request) => {
+    if (!articleImageImporter) {
+      const { createArticleImageImporter } = require("./articleImageImport");
+      articleImageImporter = createArticleImageImporter({ db, bucket: storage.bucket() });
+    }
+    return articleImageImporter.importImage(request);
+  },
+);
+
 for (const [name, section] of [
   ["syncNewsSearchIndex", "news"],
   ["syncEncyclopediaSearchIndex", "encyclopedia"],
