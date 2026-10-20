@@ -74,7 +74,7 @@ function BoardSearch({ section, readOnly, onOpen, onEdit, children }) {
         const query = draft.trim();
         if (query) runSearch(query); else clear();
       }} sx={{ mb: 3 }}>
-        <TextField fullWidth inputRef={inputRef} label={section === 'videos' ? '제목 또는 설명 검색' : '제목 또는 내용 검색'} value={draft}
+        <TextField fullWidth inputRef={inputRef} label="제목 검색" value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.keyCode === 229)) event.preventDefault();

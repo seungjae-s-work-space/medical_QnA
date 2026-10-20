@@ -8,17 +8,18 @@ Results show 30 titles per page, newest first; opening a title reads its current
 Firestore document and uses the existing detail/playback dialog. Clearing the search
 restores the previous browsing page. Administrators can edit a result directly.
 
-Matching is a case-insensitive, Unicode-normalized substring in the title or
-visible HTML body text. Whitespace is normalized; this is not fuzzy or semantic
-search. Image URLs, HTML attributes, scripts, and image contents are not searched.
-Videos search their title and plain-text `description`, preserving literal text
-such as `<5%`; only registered `videos` documents are searched, not all of YouTube.
+Matching is a case-insensitive, Unicode-normalized substring in the title only,
+for all four boards and for both public and administrator searches. Whitespace
+is normalized; this is not fuzzy, semantic, or separate-keyword search. Article
+bodies, video descriptions, image URLs, HTML attributes, scripts, and image contents
+are not searched. Only registered `videos` documents are searched, not all of YouTube.
 
 ## Server And Privacy
 
 `searchArticles` is a Firebase callable. It reads a private compressed JSON catalog
 at `_article_search/v1/{section}.json` in the default Storage bucket. Catalogs
-contain body text and may include drafts: never make this prefix public, attach
+retain body/description text for compatibility, although matching now ignores it,
+and may include drafts: never make this prefix public, attach
 download tokens, or copy it into the web build. Existing Storage rules do not grant
 client access to it; deployment must also keep bucket/object IAM private.
 
@@ -82,12 +83,27 @@ node functions/scripts/buildArticleSearchIndex.js \
 Do not deploy the updated web before these two steps succeed. Existing article
 catalogs and original content remain unchanged; no `--rebuild` is needed.
 
-4. Verify counts (including drafts), a known older title/body match in every board,
+4. Verify counts (including drafts), a known older title match in every board,
+   exclusion of body/description-only matches,
    public draft exclusion, administrator editing, and no public Storage access.
 5. Deploy the web through the existing main/GitHub Pages workflow.
 
 If rollback is needed, roll back the web first. Catalogs are derived data and can
 be rebuilt; they are not article backups. Keep existing article backups intact.
+
+### Title-Only Update (2026-10-20)
+
+For an installation where all four searches already work, deploy only the
+updated callable, then the web label change:
+
+```sh
+firebase deploy --project medicalqa-e5313 --only functions:searchArticles
+```
+
+Existing catalogs already contain titles, so no bootstrap, rebuild, data rewrite,
+trigger redeployment, rules change, or Flutter release is required. Verify that
+title matches still paginate and that body/description-only matches return no
+results, including administrator searches.
 
 ## Cost Characteristics
 

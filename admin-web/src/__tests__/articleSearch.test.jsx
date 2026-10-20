@@ -31,6 +31,12 @@ beforeEach(() => {
 });
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
 
+test.each(['news', 'encyclopedia', 'male_infertility', 'videos'])('%s labels the input as title-only search', async (section) => {
+  await render({ section });
+  const label = container.querySelector(`label[for="${input().id}"]`);
+  expect(label.textContent).toBe('제목 검색');
+});
+
 test('typing preserves browsing; submission searches the board and shows compact titles only', async () => {
   await render();
   await type('  자궁  ');

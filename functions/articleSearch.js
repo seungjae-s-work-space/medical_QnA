@@ -149,7 +149,7 @@ function createArticleSearch({ db, bucket }) {
     if (!current) throw new HttpsError("failed-precondition", "전체 검색 데이터를 준비 중입니다. 잠시 후 다시 시도해주세요.");
     const matches = Object.values(current.catalog.entries)
       .filter(entry => (includeDrafts || entry.isPublished) &&
-        (normalizeSearchText(entry.title).includes(query) || entry.text.includes(query)))
+        normalizeSearchText(entry.title).includes(query))
       .sort((left, right) => right.createdAt - left.createdAt || left.id.localeCompare(right.id));
     const actualPage = Math.min(page, Math.max(0, Math.ceil(matches.length / PAGE_SIZE) - 1));
     const candidates = matches.slice(actualPage * PAGE_SIZE, (actualPage + 1) * PAGE_SIZE);

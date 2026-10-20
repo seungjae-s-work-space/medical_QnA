@@ -58,7 +58,7 @@ test('video search submits the full-board query and clearing restores the previo
   expect(container.querySelectorAll('.MuiCard-root')).toHaveLength(0);
   expect(container.querySelector('img')).toBeNull();
   expect(getDocs).toHaveBeenCalledTimes(reads);
-  expect(container.querySelector('label').textContent).toContain('제목 또는 설명 검색');
+  expect(container.querySelector('label').textContent).toBe('제목 검색');
   await act(async () => button('검색 초기화').click());
   expect(container.textContent).toContain('영상 18');
   expect(container.textContent).not.toContain('오래된 DNA 영상');
